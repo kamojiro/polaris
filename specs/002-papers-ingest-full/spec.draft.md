@@ -85,9 +85,19 @@ class Embedding(BaseModel):
 | Structure(LLM抽出)のスキーマ検証失敗 | pydantic-aiの通常retriesに従う(失敗率はeval対象) |
 | Embedding生成失敗 | warningsに記録し、Item/PaperRecordは登録済みのまま終了 |
 
+## Embeddingモデル(決定)
+
+`sentence-transformers` 経由で `Qwen/Qwen3-Embedding-0.6B` をローカルGPUでロードして使う(OpenRouter等のAPI経由ではなく自前ホスト)。チャット用のLLM(OpenRouter経由のQwen3-30B-A3B/Qwen3.6-35B-A3B)とは別軸のモデル選択であり、このプロジェクトで初めて「ローカルモデル」を実際に使う箇所になる。
+
+実装時の注意点:
+- モデルのロード(`SentenceTransformer(...)`)はアプリ起動時に1回だけ行い、プロセス内でシングルトンとして保持する(呼び出しごとに再ロードしない)
+- `model.encode()` は同期・ブロッキング呼び出しのため、async前提のIngestパイプライン/FastAPIハンドラから呼ぶ際は `asyncio.to_thread()` 等でスレッドに逃がし、イベントループを塞がない
+- 論文1本分のChunkはまとめてバッチでencodeする(1件ずつ呼ばない)
+- `Embedding.model` フィールドに `"Qwen/Qwen3-Embedding-0.6B"` を正確に記録し、将来モデル変更時に再生成対象を判別できるようにする
+- Embedding呼び出しは小さなインターフェース(`Protocol`)の裏に隠し、将来API経由の別モデルに切り替え可能にしておく
+
 ## 未決定事項
 
-- Embeddingモデルの選定(OpenRouter経由 or ローカルsentence-transformers系)
 - ストレージ(SQLite vs Postgres、wishlist側の結論に従う)
 - チャンク分割の粒度(セクション検出精度次第で調整)
 
