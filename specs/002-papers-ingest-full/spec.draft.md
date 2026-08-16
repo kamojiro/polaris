@@ -96,9 +96,12 @@ class Embedding(BaseModel):
 - `Embedding.model` フィールドに `"Qwen/Qwen3-Embedding-0.6B"` を正確に記録し、将来モデル変更時に再生成対象を判別できるようにする
 - Embedding呼び出しは小さなインターフェース(`Protocol`)の裏に隠し、将来API経由の別モデルに切り替え可能にしておく
 
+## ストレージ(決定)
+
+SQLite(FTS5 + sqlite-vec)を採用。経緯は `docs/adr/0001-storage-sqlite.md` 参照。
+
 ## 未決定事項
 
-- ストレージ(SQLite vs Postgres、wishlist側の結論に従う)
 - チャンク分割の粒度(セクション検出精度次第で調整)
 
 ## 完了の定義
