@@ -1,0 +1,77 @@
+[project]
+name = "polaris"
+version = "0.1.0"
+description = "個人用の知識・生活管理プラットフォーム"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.121.3",
+    "httpx>=0.28.1",
+    "pydantic>=2.12.4",
+    "pydantic-ai-slim[ag-ui,openrouter]>=2.30.0",
+    "pydantic-settings>=2.12.0",
+    "sqlmodel>=0.0.27",
+    "uvicorn>=0.38.0",
+]
+
+[dependency-groups]
+dev = [
+    "nodeenv>=1.9.1",
+    "nox>=2025.10.16",
+    "nox-uv>=0.6.3",
+    "pyright>=1.1.407",
+    "pytest>=9.0.0",
+    "pytest-asyncio>=1.3.0",
+    "respx>=0.22.0",
+    "ruff>=0.14.4",
+]
+
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/polaris"]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".pytest_cache",
+    ".venv",
+]
+
+line-length = 120
+target-version = "py314"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+fixable = ["ALL"]
+# CPY001: 個人プロジェクトのため著作権ヘッダーは付けない
+ignore = ["D203", "D213", "COM812", "TD003", "FIX", "FBT", "CPY001"]
+allowed-confusables = ["！", "？", "（", "）"]
+unfixable = []
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.lint.pylint]
+max-args = 15
+max-positional-args = 5
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "SLF001", "S608", "PLC0415", "TC003"]
+# SQLModel の table=True クラスはクラス定義時に実際の型が必要なため、
+# `from __future__ import annotations` で遅延評価にしない(TC003 を意図的に無視する)。
+"src/polaris/domain/entities.py" = ["TC003"]
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src"]
+asyncio_mode = "auto"

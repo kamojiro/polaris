@@ -4,8 +4,8 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 
 | # | spec | ステータス | 備考 |
 |---|---|---|---|
-| 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | ✅ 実装開始可能 | 依存なし。最初に着手する |
-| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | ⏸ 001完了待ち | Embeddingモデル・ストレージ(SQLite/Postgres)が未決定。001が動いてから決める |
+| 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | 🚧 実装中 | バックエンド(FastAPI+AG-UI+SQLite)・フロントエンド(Vite+React+@ag-ui/client)実装済み。実LLMキーでの動作確認待ち |
+| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | ⏸ 001完了待ち | Embeddingモデル・ストレージ(SQLite/Postgres)が未決定。001が動いてから決める。永続化は SQLModel を採用済み(001参照) |
 
 ## ステータスの意味
 

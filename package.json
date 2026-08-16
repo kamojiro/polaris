@@ -1,0 +1,9 @@
+{
+  "name": "polaris",
+  "version": "0.1.0",
+  "private": true,
+  "description": "個人用の知識・生活管理プラットフォーム",
+  "devDependencies": {
+    "cspell": "^9.3.2"
+  }
+}
