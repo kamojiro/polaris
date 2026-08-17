@@ -109,3 +109,11 @@ SQLite(FTS5 + sqlite-vec)を採用。経緯は `docs/adr/0001-storage-sqlite.md`
 - arXiv URLを1件入力すると、Item + PaperRecord + Chunk(1件以上)+ Embedding(1件以上)が永続化される
 - 同じarXiv URLを再度入力しても重複登録されない
 - PDF本文抽出に失敗しても、abstractベースでメタデータと要約は登録される
+
+## 実装状況(2026-08-17)
+
+✔️完了。ただし当初スコープから縮小してある。
+
+- 実装したのはarXiv入力のみ。処理フローの「入力判定(arxiv/url/local_pdf)」のうち`InputKind`の判定ロジック自体は将来拡張できる形で用意したが、url/local_pdf経路の実装は行っていない。
+- url/local_pdf対応は `014-paper-url-pdf-ingest` に切り出した(未着手)。「目的・スコープ」に書いた「PDF / URL / arXiv を入力として」は014が終わるまでは達成されていない点に注意。
+- PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)の一連は動作確認済み。
