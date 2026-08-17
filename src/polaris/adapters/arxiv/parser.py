@@ -26,6 +26,7 @@ class ArxivMetadata(BaseModel):
     abstract: str
     year: int | None
     doi: str | None
+    comment: str | None  # 例: "Accepted at NeurIPS 2024"。venue 推定のヒントに使う
 
 
 class PaperNotFoundError(Exception):
@@ -68,6 +69,7 @@ def parse_atom_entry(xml_text: str) -> ArxivMetadata:
     published = _clean_text(entry.findtext("atom:published", namespaces=_NAMESPACES))
     year = int(published[:4]) if len(published) >= 4 and published[:4].isdigit() else None  # noqa: PLR2004
     doi = _clean_text(entry.findtext("arxiv:doi", namespaces=_NAMESPACES)) or None
+    comment = _clean_text(entry.findtext("arxiv:comment", namespaces=_NAMESPACES)) or None
 
     return ArxivMetadata(
         arxiv_id=arxiv_id,
@@ -76,4 +78,5 @@ def parse_atom_entry(xml_text: str) -> ArxivMetadata:
         abstract=abstract,
         year=year,
         doi=doi,
+        comment=comment,
     )

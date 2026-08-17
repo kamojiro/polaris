@@ -6,10 +6,13 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import Session, select
 
-from polaris.domain.entities import Item, PaperRecord
+from polaris.db.vector_store import save_embeddings as _save_embeddings
+from polaris.domain.entities import Chunk, Item, PaperRecord
 
 if TYPE_CHECKING:
     from sqlalchemy import Engine
+
+    from polaris.domain.entities import EmbeddingRecord
 
 
 class PaperRepository:
@@ -50,3 +53,34 @@ class PaperRepository:
                 .order_by(Item.created_at.desc())  # type: ignore[union-attr]
             ).all()
             return list(rows)
+
+    def update_item(self, item: Item) -> None:
+        """既存の Item を更新する(Structure ステップでの summary 更新等に使う)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            session.merge(item)
+            session.commit()
+
+    def update_paper_record(self, record: PaperRecord) -> None:
+        """既存の PaperRecord を更新する(venue/pdf_path の後埋めに使う)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            session.merge(record)
+            session.commit()
+
+    def save_chunks(self, chunks: list[Chunk]) -> None:
+        """本文チャンクをまとめて 1 トランザクションで保存する."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            for chunk in chunks:
+                session.add(chunk)
+            session.commit()
+
+    def list_chunks(self, item_id: str) -> list[Chunk]:
+        """指定した Item のチャンクを並び順(order)で返す."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            rows = session.exec(
+                select(Chunk).where(Chunk.item_id == item_id).order_by(Chunk.order)  # type: ignore[arg-type]
+            ).all()
+            return list(rows)
+
+    def save_embeddings(self, records: list[EmbeddingRecord]) -> None:
+        """Chunk の Embedding をまとめて sqlite-vec の vec0 テーブルへ保存する."""
+        _save_embeddings(self._engine, records)

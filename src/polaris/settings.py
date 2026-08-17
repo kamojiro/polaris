@@ -16,16 +16,32 @@ class LLMSettings(BaseModel):
     model_id: str = "qwen/qwen3-30b-a3b:free"
 
 
+class IngestSettings(BaseModel):
+    """論文 Ingest パイプライン(002-papers-ingest-full)の設定.
+
+    Embedding モデルは ADR-0001 / spec.draft.md で決定済み(Qwen3-Embedding-0.6B、
+    sentence-transformers 経由でローカルロード)。チャンク分割の粒度は未確定のため、
+    設定値で調整できるようにしておく。
+    """
+
+    pdf_dir: str = "data/pdfs"
+    embedding_model_id: str = "Qwen/Qwen3-Embedding-0.6B"
+    embedding_dim: int = 1024
+    chunk_chars: int = 1200
+    chunk_overlap_chars: int = 200
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
-    `.env` ファイルおよび環境変数(`LLM__` プレフィクスでネスト)から読み込む。
+    `.env` ファイルおよび環境変数(`LLM__` / `INGEST__` プレフィクスでネスト)から読み込む。
     """
 
     DB_PATH: str = "data/polaris.db"
     LOG_LEVEL: str = "INFO"
 
     llm: LLMSettings = LLMSettings()
+    ingest: IngestSettings = IngestSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",
