@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Protocol
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
+from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from .model import build_model
 
@@ -25,6 +26,16 @@ _INSTRUCTIONS = """\
 - venue: 掲載先の会議・ジャーナル名がコメント欄等から明確に読み取れる場合のみ記入し、
   分からなければ null にする(推測で埋めない)
 """
+
+
+# summary/venue の構造化出力が安定して返れば十分で、reasoning(思考過程)は不要な上に
+# レイテンシとコストが増えるだけなので明示的に無効化する。openrouter_reasoning だけでは
+# ルーティング先のプロバイダによっては無視されることがあるため、Qwen3系の
+# chat_template_kwargs.enable_thinking も併せて渡しておく(二重の抑制)。
+_STRUCTURE_MODEL_SETTINGS = OpenRouterModelSettings(
+    openrouter_reasoning={"enabled": False},
+    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+)
 
 
 class StructuredPaper(BaseModel):
@@ -43,8 +54,13 @@ class PaperStructurer(Protocol):
 
 
 def build_structure_agent(settings: Settings) -> Agent[None, StructuredPaper]:
-    """設定値から Structure 用の pydantic-ai エージェントを組み立てる."""
-    return Agent(build_model(settings), output_type=StructuredPaper, instructions=_INSTRUCTIONS)
+    """設定値から Structure 用の pydantic-ai エージェントを組み立てる(reasoningは無効化)."""
+    return Agent(
+        build_model(settings),
+        output_type=StructuredPaper,
+        instructions=_INSTRUCTIONS,
+        model_settings=_STRUCTURE_MODEL_SETTINGS,
+    )
 
 
 class AgentPaperStructurer:

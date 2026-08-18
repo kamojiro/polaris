@@ -4,15 +4,18 @@
 注入する。arXiv のメタデータ取得・PDF ダウンロードは respx でモックする。
 """
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
 import pytest
 import respx
+from sqlalchemy.exc import IntegrityError
 
 from polaris.agent.structure_paper import StructuredPaper
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
+from polaris.domain.entities import Item, ItemType, PaperRecord
 from polaris.services.ingest_paper import InvalidPaperUrlError, ingest_paper_from_url
 from polaris.settings import IngestSettings, Settings
 
@@ -183,6 +186,79 @@ async def test_ingest_paper_normalizes_source_url_to_abs(tmp_path: Path) -> None
             )
 
     assert result.record.source_url == "https://arxiv.org/abs/1706.03762"
+
+
+class _RaceyRepository(PaperRepository):
+    """1回目の save_paper 呼び出し時に、別リクエストが先に確定した競合状態を模倣する.
+
+    find_by_arxiv_id で「無い」と判定してから保存するまではアトミックではないため、
+    同じ arxiv_id を同時に取り込もうとする2つのリクエストが両方とも新規作成に
+    進んでしまうことがある。ここでは実際にそれを再現するのではなく、
+    「別リクエストがちょうど先に確定した」状況を直接注入して検証する。
+    """
+
+    def __init__(self, engine: object, winner_item: Item, winner_record: PaperRecord) -> None:
+        super().__init__(engine)  # type: ignore[arg-type]
+        self._winner_item = winner_item
+        self._winner_record = winner_record
+        self._triggered = False
+
+    def save_paper(self, item: Item, record: PaperRecord) -> None:
+        """1回目だけ勝者のレコードを先に保存し、IntegrityError を送出する."""
+        if not self._triggered:
+            self._triggered = True
+            super().save_paper(self._winner_item, self._winner_record)
+            statement = "INSERT"
+            msg = "UNIQUE constraint failed: paper_records.arxiv_id"
+            raise IntegrityError(statement, {}, Exception(msg))
+        super().save_paper(item, record)
+
+
+async def test_ingest_paper_switches_to_winner_on_concurrent_insert_conflict(tmp_path: Path) -> None:
+    """同じ arxiv_id への同時保存で UNIQUE 制約違反が起きても、先に確定した方に切り替えて続行する."""
+    now = datetime.now(UTC)
+    winner_record = PaperRecord(
+        id="winner-rec",
+        item_id="winner-item",
+        authors=["Someone Else"],
+        year=2017,
+        arxiv_id="1706.03762",
+        abstract="raced abstract",
+        source_url="https://arxiv.org/abs/1706.03762",
+        ingested_at=now,
+    )
+    winner_item = Item(
+        id="winner-item",
+        item_type=ItemType.paper,
+        title="Attention Is All You Need",
+        summary="raced abstract",
+        created_at=now,
+        source_ref="paper:winner-rec",
+    )
+    engine = create_db_engine(str(tmp_path / "test.db"), embedding_dim=_EMBEDDING_DIM)
+    repo = _RaceyRepository(engine, winner_item, winner_record)
+    settings = _make_settings(tmp_path)
+
+    with respx.mock:
+        _mock_arxiv_metadata()
+        _mock_arxiv_pdf()
+        async with httpx.AsyncClient() as client:
+            result = await ingest_paper_from_url(
+                _URL,
+                repo=repo,
+                http_client=client,
+                embedder=_FakeEmbedder(),
+                structurer=_FakeStructurer(),
+                settings=settings,
+            )
+
+    # 自分で組み立てたレコードではなく、先に確定した勝者のレコードに紐づいて続行していること。
+    assert result.item.id == "winner-item"
+    assert result.record.id == "winner-rec"
+    assert len(repo.list_papers()) == 1  # 重複した Item/PaperRecord が残っていない
+    assert len(result.chunks) > 0
+    stored_chunks = repo.list_chunks("winner-item")
+    assert len(stored_chunks) == len(result.chunks)
 
 
 async def test_ingest_paper_rejects_non_arxiv_url(tmp_path: Path) -> None:

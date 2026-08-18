@@ -39,6 +39,10 @@ class Settings(BaseSettings):
 
     DB_PATH: str = "data/polaris.db"
     LOG_LEVEL: str = "INFO"
+    LOG_PATH: str = "data/polaris.log"
+    # Embeddingのバッチ進捗・GPUメモリ診断ログはリクエストごとに数十行出て他のログに
+    # 埋もれやすいため、専用ファイルに分けて追いやすくする(コンソール/LOG_PATHにも引き続き出る)。
+    GPU_LOG_PATH: str = "data/gpu.log"
 
     llm: LLMSettings = LLMSettings()
     ingest: IngestSettings = IngestSettings()

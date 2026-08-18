@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from polaris.db.vector_store import save_embeddings as _save_embeddings
 from polaris.domain.entities import Chunk, Item, PaperRecord
@@ -44,15 +44,29 @@ class PaperRepository:
             session.add(record)
             session.commit()
 
-    def list_papers(self) -> list[tuple[Item, PaperRecord]]:
-        """保存済みの論文を作成日時の降順で返す."""
+    def list_papers(self, *, limit: int | None = None) -> list[tuple[Item, PaperRecord]]:
+        """保存済みの論文を作成日時の降順で返す.
+
+        `limit` を指定すると SQL の LIMIT で件数を絞る(全件を毎回 DB から読んで
+        LLM に渡すと、件数が増えるほど DB 負荷・トークン量とも際限なく増えるため、
+        絞り込みは呼び出し側の Python ではなくここで行う)。
+        """
         with Session(self._engine, expire_on_commit=False) as session:
-            rows = session.exec(
+            query = (
                 select(Item, PaperRecord)
                 .join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
                 .order_by(Item.created_at.desc())  # type: ignore[union-attr]
-            ).all()
+            )
+            if limit is not None:
+                query = query.limit(limit)
+            rows = session.exec(query).all()
             return list(rows)
+
+    def count_papers(self) -> int:
+        """保存済みの論文の総数を返す(一覧の省略表示に使う軽量なカウントのみのクエリ)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = select(func.count()).select_from(Item).join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
+            return session.exec(query).one()
 
     def update_item(self, item: Item) -> None:
         """既存の Item を更新する(Structure ステップでの summary 更新等に使う)."""

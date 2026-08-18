@@ -22,3 +22,6 @@ wheels/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+
+# Playwright MCP のスクリーンショット・ログ(動作確認用の一時ファイル)
+.playwright-mcp/

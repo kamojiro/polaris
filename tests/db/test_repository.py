@@ -1,6 +1,6 @@
 """PaperRepository の永続化テスト(一時 SQLite を使用)."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from polaris.db.repository import PaperRepository
@@ -8,11 +8,15 @@ from polaris.db.session import create_db_engine
 from polaris.domain.entities import Item, ItemType, PaperRecord
 
 
-def _make_paper(arxiv_id: str = "1706.03762") -> tuple[Item, PaperRecord]:
-    now = datetime.now(UTC)
+def _make_paper(
+    arxiv_id: str = "1706.03762",
+    *,
+    created_at: datetime | None = None,
+) -> tuple[Item, PaperRecord]:
+    now = created_at or datetime.now(UTC)
     record = PaperRecord(
-        id="rec-1",
-        item_id="item-1",
+        id=f"rec-{arxiv_id}",
+        item_id=f"item-{arxiv_id}",
         authors=["Ashish Vaswani", "Noam Shazeer"],
         year=2017,
         doi=None,
@@ -22,12 +26,12 @@ def _make_paper(arxiv_id: str = "1706.03762") -> tuple[Item, PaperRecord]:
         ingested_at=now,
     )
     item = Item(
-        id="item-1",
+        id=f"item-{arxiv_id}",
         item_type=ItemType.paper,
         title="Attention Is All You Need",
         summary="attention is all you need",
         created_at=now,
-        source_ref="paper:rec-1",
+        source_ref=f"paper:rec-{arxiv_id}",
     )
     return item, record
 
@@ -64,3 +68,28 @@ def test_find_by_arxiv_id_returns_none_when_missing(tmp_path: Path) -> None:
     repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
 
     assert repo.find_by_arxiv_id("9999.99999") is None
+
+
+def test_list_papers_limit_returns_most_recent_first(tmp_path: Path) -> None:
+    """Limit を指定すると、作成日時が新しい順に指定件数だけ返る."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    base = datetime.now(UTC)
+    for i in range(5):
+        item, record = _make_paper(f"1000.{i:05d}", created_at=base + timedelta(minutes=i))
+        repo.save_paper(item, record)
+
+    papers = repo.list_papers(limit=2)
+
+    assert len(papers) == 2  # noqa: PLR2004
+    assert [record.arxiv_id for _, record in papers] == ["1000.00004", "1000.00003"]
+
+
+def test_count_papers_matches_total_saved(tmp_path: Path) -> None:
+    """count_papers は limit に関係なく保存済みの総数を返す."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    for i in range(3):
+        item, record = _make_paper(f"2000.{i:05d}")
+        repo.save_paper(item, record)
+
+    assert repo.count_papers() == 3  # noqa: PLR2004
+    assert len(repo.list_papers(limit=1)) == 1

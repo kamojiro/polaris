@@ -11,23 +11,26 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 import httpx
+from sqlalchemy.exc import IntegrityError
 
 from polaris.adapters.arxiv.client import fetch_arxiv_metadata, fetch_arxiv_pdf
 from polaris.adapters.arxiv.parser import extract_arxiv_id
 from polaris.adapters.pdf.extractor import PdfExtractionError, extract_pdf_text
 from polaris.domain.entities import Chunk, EmbeddingRecord, Item, ItemType, PaperRecord
 from polaris.services.chunking import ChunkDraft, split_into_chunks
+from polaris.services.progress import set_progress
 
 if TYPE_CHECKING:
     from polaris.adapters.arxiv.parser import ArxivMetadata
     from polaris.adapters.embeddings import EmbeddingModel
-    from polaris.agent.structure_paper import PaperStructurer
+    from polaris.agent.structure_paper import PaperStructurer, StructuredPaper
     from polaris.db.repository import PaperRepository
     from polaris.settings import Settings
 
@@ -109,6 +112,78 @@ async def _fetch_body_text(
     return text, True
 
 
+async def _run_structure(
+    structurer: PaperStructurer,
+    *,
+    title: str,
+    abstract: str,
+    comment: str | None,
+) -> StructuredPaper:
+    """Structure(要約/venue生成)を実行し、進捗と所要時間を記録する."""
+    set_progress("structure", "要約を生成中…")
+    start = time.perf_counter()
+    structured = await structurer.structure(title=title, abstract=abstract, comment=comment)
+    logger.info("Structure完了(%.2fs): venue=%s", time.perf_counter() - start, structured.venue)
+    set_progress("structure", "要約生成完了")
+    return structured
+
+
+async def _chunk_and_embed(
+    body_text: str,
+    *,
+    from_pdf: bool,
+    item: Item,
+    embedder: EmbeddingModel,
+    repo: PaperRepository,
+    settings: Settings,
+) -> list[Chunk]:
+    """本文をチャンク分割し、Embeddingを生成してどちらも永続化する."""
+    if from_pdf:
+        chunk_drafts = split_into_chunks(
+            body_text,
+            chunk_chars=settings.ingest.chunk_chars,
+            overlap_chars=settings.ingest.chunk_overlap_chars,
+        )
+    else:
+        # PDF本文が使えない場合は abstract をチャンク分割せず単一チャンクとして扱う。
+        chunk_drafts = [ChunkDraft(section=None, order=0, text=body_text)]
+    chunks = [
+        Chunk(id=uuid.uuid4().hex, item_id=item.id, section=draft.section, order=draft.order, text=draft.text)
+        for draft in chunk_drafts
+    ]
+    repo.save_chunks(chunks)
+    logger.info("チャンク分割完了: %d チャンク", len(chunks))
+
+    logger.info("Embedding開始: %d チャンク (model=%s)", len(chunks), embedder.model_id)
+    set_progress("embedding", f"Embedding生成中: 0/{len(chunks)} チャンク完了")
+    vectors = await embedder.embed_batch([chunk.text for chunk in chunks])
+    embedding_records = [
+        EmbeddingRecord(chunk_id=chunk.id, vector=vector, model=embedder.model_id)
+        for chunk, vector in zip(chunks, vectors, strict=True)
+    ]
+    repo.save_embeddings(embedding_records)
+    return chunks
+
+
+def _resolve_save_conflict(
+    repo: PaperRepository,
+    arxiv_id: str,
+    error: IntegrityError,
+) -> tuple[Item, PaperRecord, list[Chunk]]:
+    """save_paper が UNIQUE 制約違反で失敗した際、先に確定した既存レコードを取得する.
+
+    同じ arxiv_id を同時に取り込もうとした別リクエストが先に確定した(競合)。
+    find_by_arxiv_id が「無い」と判定してから保存するまではアトミックではないため
+    起こりうる。自分で組み立てたレコードは使わず、先に確定した方へ切り替える。
+    """
+    logger.info("arxiv_id=%s は同時保存により競合、既存レコードへ切り替え", arxiv_id)
+    winner = repo.find_by_arxiv_id(arxiv_id)
+    if winner is None:
+        raise error
+    item, record = winner
+    return item, record, repo.list_chunks(item.id)
+
+
 async def ingest_paper_from_url(
     url: str,
     *,
@@ -128,6 +203,7 @@ async def ingest_paper_from_url(
         raise InvalidPaperUrlError(url)
 
     logger.info("Ingest開始: arxiv_id=%s", arxiv_id)
+    ingest_start = time.perf_counter()
 
     existing = repo.find_by_arxiv_id(arxiv_id)
     if existing is not None:
@@ -139,52 +215,63 @@ async def ingest_paper_from_url(
         logger.info("メタデータのみ登録済み、続きから再開: arxiv_id=%s", arxiv_id)
 
     # comment(venue推定のヒント)取得のため、既存レコードの再開時も含めて必ず取得する。
+    set_progress("stage", "メタデータを取得中…")
     metadata = await fetch_arxiv_metadata(arxiv_id, client=http_client)
     logger.info("メタデータ取得完了: title=%s", metadata.title)
 
     if existing is None:
         item, record = _build_metadata_records(metadata)
-        repo.save_paper(item, record)
+        try:
+            repo.save_paper(item, record)
+        except IntegrityError as exc:
+            item, record, winner_chunks = _resolve_save_conflict(repo, arxiv_id, exc)
+            if winner_chunks:
+                return IngestResult(item, record, winner_chunks, created=False)
     else:
         item, record = existing
 
-    body_text, from_pdf = await _fetch_body_text(record, arxiv_id, http_client=http_client, settings=settings)
-    logger.info(
-        "本文取得%s: %d文字",
-        "成功(PDF)" if from_pdf else "失敗のため abstract で続行",
-        len(body_text),
+    # 要約生成(Structure)はmetadataのtitle/abstract/commentだけで完結し、PDF本文や
+    # チャンク・Embeddingの結果には依存しない。ここでバックグラウンドタスクとして
+    # 起動しておき、PDF取得・チャンク分割・Embedding生成の間ずっと並行させ、
+    # 本当に必要になる最後(保存直前)まで結果を待たない。進捗表示も
+    # "stage"(PDF取得)と"structure"(要約)を別行にして、両方同時に見えるようにする。
+    set_progress("stage", "PDF取得中…")
+    structure_task = asyncio.create_task(
+        _run_structure(structurer, title=item.title, abstract=record.abstract, comment=metadata.comment),
     )
+    try:
+        body_text, from_pdf = await _fetch_body_text(record, arxiv_id, http_client=http_client, settings=settings)
+        set_progress("stage", None)
+        logger.info(
+            "本文取得%s: %d文字",
+            "成功(PDF)" if from_pdf else "失敗のため abstract で続行",
+            len(body_text),
+        )
+        chunks = await _chunk_and_embed(
+            body_text,
+            from_pdf=from_pdf,
+            item=item,
+            embedder=embedder,
+            repo=repo,
+            settings=settings,
+        )
+        structured = await structure_task
+    finally:
+        if not structure_task.done():
+            structure_task.cancel()
+        set_progress("stage", None)
+        set_progress("structure", None)
 
-    structured = await structurer.structure(title=item.title, abstract=record.abstract, comment=metadata.comment)
     item.summary = structured.summary
     record.venue = structured.venue
     repo.update_item(item)
     repo.update_paper_record(record)
-    logger.info("Structure完了: venue=%s", structured.venue)
 
-    if from_pdf:
-        chunk_drafts = split_into_chunks(
-            body_text,
-            chunk_chars=settings.ingest.chunk_chars,
-            overlap_chars=settings.ingest.chunk_overlap_chars,
-        )
-    else:
-        # PDF本文が使えない場合は abstract をチャンク分割せず単一チャンクとして扱う。
-        chunk_drafts = [ChunkDraft(section=None, order=0, text=body_text)]
-    chunks = [
-        Chunk(id=uuid.uuid4().hex, item_id=item.id, section=draft.section, order=draft.order, text=draft.text)
-        for draft in chunk_drafts
-    ]
-    repo.save_chunks(chunks)
-    logger.info("チャンク分割完了: %d チャンク", len(chunks))
-
-    logger.info("Embedding開始: %d チャンク (model=%s)", len(chunks), embedder.model_id)
-    vectors = await embedder.embed_batch([chunk.text for chunk in chunks])
-    embedding_records = [
-        EmbeddingRecord(chunk_id=chunk.id, vector=vector, model=embedder.model_id)
-        for chunk, vector in zip(chunks, vectors, strict=True)
-    ]
-    repo.save_embeddings(embedding_records)
-    logger.info("Ingest完了: arxiv_id=%s, %d チャンク", arxiv_id, len(chunks))
+    logger.info(
+        "Ingest完了(%.2fs): arxiv_id=%s, %d チャンク",
+        time.perf_counter() - ingest_start,
+        arxiv_id,
+        len(chunks),
+    )
 
     return IngestResult(item, record, chunks, created=True)

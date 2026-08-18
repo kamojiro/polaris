@@ -27,12 +27,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# 一覧表示の上限。件数が増えるほど DB 負荷・LLM に渡すトークン量が際限なく
+# 増えないよう、フロントではなくここ(list_papers の SQL LIMIT)で絞る。
+_RECENT_PAPERS_LIMIT = 20
+
 _INSTRUCTIONS = """\
 あなたは個人用の論文管理アシスタントです。次のルールに従ってください。
 
 - ユーザーのメッセージに arXiv の URL(または arXiv ID)が含まれていたら、
   必ず save_paper ツールを呼び出して保存してください。確認は不要です。
+  save_paper の結果に含まれる要約は省略せずそのままユーザーに伝えてください。
 - 「保存した論文」「今までの論文一覧」のように尋ねられたら list_papers ツールを呼び出してください。
+  list_papers の結果は画面側で一覧表示されるため、あなたは結果を文章で列挙せず、
+  「保存済みの論文一覧を表示しました」程度の一言だけ返してください。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
@@ -45,6 +52,17 @@ class PaperSummary(BaseModel):
     authors: list[str]
     year: int | None
     arxiv_id: str | None
+
+
+class PaperListResult(BaseModel):
+    """list_papers の戻り値.
+
+    `papers` は直近 `_RECENT_PAPERS_LIMIT` 件のみ、`total_count` は保存済みの
+    総件数(省略された残り件数をフロントが計算できるようにするため)。
+    """
+
+    papers: list[PaperSummary]
+    total_count: int
 
 
 def build_chat_agent(
@@ -83,20 +101,20 @@ def build_chat_agent(
         except InvalidPaperUrlError:
             return f"'{url}' から arXiv の論文IDを特定できませんでした。"
 
-        authors = "、".join(result.record.authors) if result.record.authors else "不明"
         status = "新規に保存しました" if result.created else "既に保存済みでした"
         return (
-            f"{status}: 『{result.item.title}』(著者: {authors}, arXiv:{result.record.arxiv_id}, "
-            f"チャンク数: {len(result.chunks)})"
+            f"{status}: 『{result.item.title}』(arXiv:{result.record.arxiv_id}, チャンク数: {len(result.chunks)})\n\n"
+            f"要約: {result.item.summary}"
         )
 
     @agent.tool_plain
-    def list_papers() -> list[PaperSummary]:
-        """保存済みの論文一覧を返す."""
+    def list_papers() -> PaperListResult:
+        """保存済みの論文一覧を直近分だけ返す(総件数も併せて返す)."""
         logger.info("tool call: list_papers()")
-        return [
+        papers = [
             PaperSummary(title=item.title, authors=record.authors, year=record.year, arxiv_id=record.arxiv_id)
-            for item, record in repo.list_papers()
+            for item, record in repo.list_papers(limit=_RECENT_PAPERS_LIMIT)
         ]
+        return PaperListResult(papers=papers, total_count=repo.count_papers())
 
     return agent
