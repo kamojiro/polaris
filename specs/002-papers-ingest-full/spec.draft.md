@@ -100,6 +100,23 @@ class Embedding(BaseModel):
 
 SQLite(FTS5 + sqlite-vec)を採用。経緯は `docs/adr/0001-storage-sqlite.md` 参照。
 
+## Structureフェーズのreasoning設定(決定)
+
+要約・欠落メタデータ生成(処理フロー5)はreasoning(thinking)を無効化する。単純な要約タスクにthinkingは不要で、有効なままだとレイテンシ・コストが余計にかかる。
+
+OpenRouterの汎用的な`reasoning.enabled=false`だけでは不十分な場合がある。Qwen3.5系以降はサーバー側デフォルトでthinkingがONのため、`reasoning.enabled=false`を送ってもenable_thinking自体が明示されず、thinkingが有効なままになる既知の不具合報告がある。確実に無効化するには、Qwen固有の`chat_template_kwargs: {"enable_thinking": false}`を`extra_body`経由で明示的に渡す。
+
+```python
+from pydantic_ai.models.openrouter import OpenRouterModelSettings
+
+structure_agent_settings = OpenRouterModelSettings(
+    openrouter_reasoning={"enabled": False},
+    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+)
+```
+
+実装時は、実際にreasoningトークンが発生していないかログ/OpenRouterの使用量画面で確認すること。
+
 ## 未決定事項
 
 - チャンク分割の粒度(セクション検出精度次第で調整)
