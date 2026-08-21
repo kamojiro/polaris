@@ -178,8 +178,12 @@ async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEv
     `openrouter_supports_cache_control=False` のため no-op だが、プロバイダ側の
     自動キャッシュが効くことがあるため `cache_read_tokens` を見れば実際にヒットしたか
     ターンごとに分かる(specの実測結果参照)。
+
+    コストは USD(`usage.cost`)に加えて、`settings.chat.usd_jpy_rate`(手動更新の
+    固定レート、為替APIは呼ばない)で換算した JPY も一緒に送る。
     """
     usage = result.usage
+    cost_usd = float(usage.cost) if usage.cost is not None else None
     yield CustomEvent(
         name="usage",
         value={
@@ -187,7 +191,8 @@ async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEv
             "output_tokens": usage.output_tokens,
             "cache_read_tokens": usage.cache_read_tokens,
             "cache_write_tokens": usage.cache_write_tokens,
-            "cost_usd": float(usage.cost) if usage.cost is not None else None,
+            "cost_usd": cost_usd,
+            "cost_jpy": cost_usd * settings.chat.usd_jpy_rate if cost_usd is not None else None,
         },
     )
 

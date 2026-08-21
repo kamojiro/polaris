@@ -43,6 +43,9 @@ class ChatSettings(BaseModel):
     # 実測: 保存済み論文の抽出全文は 35k〜151k 文字。200k(≒57kトークン)なら
     # 現行モデル(Qwen3-30B-A3B: 131K コンテキスト)に収まり、実データ全件をカバーできる。
     max_full_text_chars: int = 200_000
+    # チャットUIのコスト表示(USD→JPY)用の固定為替レート。為替APIは個人用ツールには
+    # 過剰なため呼び出さず、相場が動いたら手動でこの値を更新する運用にする。
+    usd_jpy_rate: float = 150.0
 
 
 class Settings(BaseSettings):

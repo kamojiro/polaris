@@ -44,6 +44,7 @@ export interface TurnUsage {
   cache_read_tokens: number;
   cache_write_tokens: number;
   cost_usd: number | null;
+  cost_jpy: number | null;
 }
 
 const ZERO_USAGE: TurnUsage = {
@@ -52,6 +53,7 @@ const ZERO_USAGE: TurnUsage = {
   cache_read_tokens: 0,
   cache_write_tokens: 0,
   cost_usd: 0,
+  cost_jpy: 0,
 };
 
 function addUsage(a: TurnUsage, b: TurnUsage): TurnUsage {
@@ -61,6 +63,7 @@ function addUsage(a: TurnUsage, b: TurnUsage): TurnUsage {
     cache_read_tokens: a.cache_read_tokens + b.cache_read_tokens,
     cache_write_tokens: a.cache_write_tokens + b.cache_write_tokens,
     cost_usd: a.cost_usd !== null && b.cost_usd !== null ? a.cost_usd + b.cost_usd : null,
+    cost_jpy: a.cost_jpy !== null && b.cost_jpy !== null ? a.cost_jpy + b.cost_jpy : null,
   };
 }
 

@@ -53,7 +53,10 @@ function formatUsageLine(usage: TurnUsage): string {
   if (usage.cache_read_tokens > 0) {
     parts.push(`キャッシュ読込 ${usage.cache_read_tokens.toLocaleString()}`);
   }
-  const costPart = usage.cost_usd !== null ? ` · $${usage.cost_usd.toFixed(4)}` : "";
+  const costPart =
+    usage.cost_jpy !== null && usage.cost_usd !== null
+      ? ` · ¥${usage.cost_jpy.toFixed(2)} ($${usage.cost_usd.toFixed(4)})`
+      : "";
   return `${parts.join(" / ")}${costPart}`;
 }
 
