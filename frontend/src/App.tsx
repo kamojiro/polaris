@@ -3,9 +3,11 @@ import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PaperList, type PaperListResult } from "./PaperList";
+import { TodoList, type TodoListResult } from "./TodoList";
 import { useChatAgent } from "./useChatAgent";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
+const LIST_TODOS_TOOL_NAME = "list_todos";
 
 function messageText(message: Message): string {
   if (typeof message.content === "string") {
@@ -15,18 +17,18 @@ function messageText(message: Message): string {
 }
 
 /**
- * assistant メッセージが list_papers を呼んでいれば、対応する tool メッセージの
+ * assistant メッセージが指定した名前のツールを呼んでいれば、対応する tool メッセージの
  * 結果(JSON文字列)を messages 配列から探して構造化データとして返す。
  * pydantic-ai の AG-UI アダプタは list/dict のツール結果を JSON 文字列化して
- * ToolMessage.content に乗せるため、JSON.parse するだけで良い。
+ * ToolMessage.content に乗せるため、JSON.parse するだけで良い(list_papers/list_todos共通)。
  */
-function findPaperListResults(message: Message, allMessages: readonly Message[]): PaperListResult[] {
+function findToolResults<T>(toolName: string, message: Message, allMessages: readonly Message[]): T[] {
   if (message.role !== "assistant" || !message.toolCalls) {
     return [];
   }
-  const results: PaperListResult[] = [];
+  const results: T[] = [];
   for (const call of message.toolCalls) {
-    if (call.function.name !== LIST_PAPERS_TOOL_NAME) {
+    if (call.function.name !== toolName) {
       continue;
     }
     const toolMessage = allMessages.find((m) => m.role === "tool" && m.toolCallId === call.id);
@@ -34,7 +36,7 @@ function findPaperListResults(message: Message, allMessages: readonly Message[])
       continue;
     }
     try {
-      results.push(JSON.parse(toolMessage.content) as PaperListResult);
+      results.push(JSON.parse(toolMessage.content) as T);
     } catch {
       // ツール結果が期待した形式でなければ無視する(壊れた表示より何も出さない方が良い)
     }
@@ -61,6 +63,10 @@ export default function App() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // IME変換確定のEnterで誤送信しないためのフラグ。event.nativeEvent.isComposing だけだと
+  // Safari で compositionend 直後の keydown でも true になり損ねることがあるため、
+  // compositionstart/compositionend でも独自に追跡して二重にガードする。
+  const isComposingRef = useRef(false);
 
   const submit = () => {
     const text = input.trim();
@@ -80,7 +86,7 @@ export default function App() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && !isComposingRef.current) {
       event.preventDefault();
       submit();
     }
@@ -119,7 +125,7 @@ export default function App() {
       <header>
         <h1>Polaris</h1>
         <p>
-          arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。「保存した論文は?」で一覧を確認できます。
+          arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。TODOも「明日までに〇〇したい」のように話しかけると追加できます。「保存した論文は?」「TODO一覧見せて」で一覧を確認できます。
         </p>
       </header>
 
@@ -133,10 +139,13 @@ export default function App() {
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageText(message)}</ReactMarkdown>
                 </div>
               )}
-              {findPaperListResults(message, messages).map((result, i) => (
-                // 同一メッセージ内で list_papers を複数回呼ぶことは想定していないが、
+              {findToolResults<PaperListResult>(LIST_PAPERS_TOOL_NAME, message, messages).map((result, i) => (
+                // 同一メッセージ内で同じツールを複数回呼ぶことは想定していないが、
                 // 念のため index も key に含めて一意にしておく。
-                <PaperList key={`${message.id}-${i}`} papers={result.papers} total_count={result.total_count} />
+                <PaperList key={`${message.id}-papers-${i}`} papers={result.papers} total_count={result.total_count} />
+              ))}
+              {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
+                <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
               ))}
             </div>
           ))}
@@ -177,6 +186,12 @@ export default function App() {
             autoResize(event.target);
           }}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={() => {
+            isComposingRef.current = false;
+          }}
           placeholder="arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)"
           rows={1}
           disabled={isRunning}

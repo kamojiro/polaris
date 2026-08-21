@@ -21,6 +21,7 @@ class ItemType(StrEnum):
     """Item の種別."""
 
     paper = "paper"
+    todo = "todo"
 
 
 class Item(SQLModel, table=True):
@@ -72,3 +73,28 @@ class EmbeddingRecord(BaseModel):
     chunk_id: str
     vector: list[float]
     model: str
+
+
+class TodoScale(StrEnum):
+    """TODOの時間スケール(バケット)."""
+
+    day = "day"
+    month = "month"
+    life = "life"
+
+
+class TodoRecord(SQLModel, table=True):
+    """TODOドメイン固有のサテライトテーブル(007-todo-domain).
+
+    タイトルは `Item.title`、詳細メモは `Item.summary` を流用する
+    (論文ドメインが `Item.summary` に要約を入れているのと同じ使い方)。
+    """
+
+    __tablename__ = "todo_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True)
+    scale: TodoScale
+    done: bool = False
+    updated_at: datetime  # 熟成度(優先度)算出の基準。編集・完了のたびに更新する
+    completed_at: datetime | None = None

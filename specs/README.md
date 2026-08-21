@@ -9,13 +9,12 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 1. 004 (citation-relations)
 2. 005 (eval-harness)
 3. 006 (chatlog-backfill) — 005に依存
-4. 007 (todo-domain)
-5. 008 (daily-digest-domain)
-6. 009 (dashboard)
-7. 010 (mobile-pwa) — 009に依存
-8. 011 (agent-registry)
-9. 012 (local-llm-cutover)
-10. 013 (ir-analysis-domain)
+4. 008 (daily-digest-domain)
+5. 009 (dashboard)
+6. 010 (mobile-pwa) — 009に依存
+7. 011 (agent-registry)
+8. 012 (local-llm-cutover)
+9. 013 (ir-analysis-domain)
 
 | # | spec | フェーズ | ステータス | 備考 |
 |---|---|---|---|---|
@@ -25,7 +24,7 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 | 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | ✅ 実装開始可能 | ライブラリ内の論文同士のみ`cites`のRelationを作る方針(スタブは作らない)。未取り込み分は集計カウントのみ保持 |
 | 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | ✅ 実装開始可能 | 対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化した |
 | 006 | [chatlog-backfill](006-chatlog-backfill/spec.draft.md) | 1 | 💤 スケルトンのみ | 005の後。Eval harnessの検証データとしても使う |
-| 007 | [todo-domain](007-todo-domain/spec.draft.md) | 2 | 💤 スケルトンのみ | 論文ドメインのパターンを横展開 |
+| 007 | [todo-domain](007-todo-domain/spec.draft.md) | 2 | ✔️ 完了 | v1はCRUD+3バケット(day/month/life)分類のみ。新規エージェント/レジストリは作らず既存の単一チャットエージェントにtool追加。バケット分類はLLMがadd_todoのscale引数を自然文から直接選ぶ。優先度は最終更新日からの経過時間(熟成度)のみ、Interest依存は008以降に持ち越し。リマインド・現況調査エージェントは対象外(将来spec) |
 | 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | 💤 スケルトンのみ | エコーチェンバー可視化。セレンディピティ機能の再検討を含む |
 | 009 | [dashboard](009-dashboard/spec.draft.md) | 3 | 💤 スケルトンのみ | 複数ドメインが揃ってから。003のgenerative UIの限界がトリガー |
 | 010 | [mobile-pwa](010-mobile-pwa/spec.draft.md) | 3 | 💤 スケルトンのみ | 009である程度画面が固まってから |

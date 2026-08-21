@@ -21,6 +21,7 @@ from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_ex
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
+from polaris.db.todo_repository import TodoRepository
 from polaris.services.progress import get_progress_lines
 from polaris.settings import Settings
 
@@ -80,11 +81,19 @@ for _logger_name in ("polaris.services.ingest_paper", "polaris.adapters.embeddin
 
 _engine = create_db_engine(settings.DB_PATH, embedding_dim=settings.ingest.embedding_dim)
 _repo = PaperRepository(_engine)
+_todo_repo = TodoRepository(_engine)  # 007-todo-domain: Paperと同じSQLiteファイルを使う
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
-_agent = build_chat_agent(settings, _repo, embedder=_embedder, structurer=_structurer, extractor=_extractor)
+_agent = build_chat_agent(
+    settings,
+    _repo,
+    embedder=_embedder,
+    structurer=_structurer,
+    extractor=_extractor,
+    todo_repo=_todo_repo,
+)
 
 _upload_dir = Path(settings.ingest.upload_dir)
 _upload_dir.mkdir(parents=True, exist_ok=True)

@@ -168,6 +168,57 @@ header p {
   font-size: 0.9rem;
 }
 
+/* TODO一覧(generative UI)。バケット(day/month/life)ごとに見出し+リストで表示する */
+.todo-list-wrapper {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.todo-bucket {
+  margin-bottom: 0.75em;
+}
+
+.todo-bucket:last-child {
+  margin-bottom: 0;
+}
+
+.todo-bucket h4 {
+  margin: 0 0 0.3em;
+  font-size: 0.85rem;
+  color: gray;
+  font-weight: 600;
+}
+
+.todo-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.9rem;
+}
+
+.todo-list li {
+  margin: 0.2em 0;
+}
+
+.todo-list .todo-description {
+  color: gray;
+  font-size: 0.85em;
+}
+
+.todo-list .todo-description::before {
+  content: " — ";
+}
+
+.todo-done .todo-title {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.todo-list-empty {
+  align-self: flex-start;
+  color: gray;
+  font-size: 0.9rem;
+}
+
 .error {
   color: #b91c1c;
   font-size: 0.9rem;
