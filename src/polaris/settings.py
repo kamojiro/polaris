@@ -37,6 +37,14 @@ class IngestSettings(BaseModel):
     metadata_head_chars: int = 4000
 
 
+class ChatSettings(BaseModel):
+    """チャットエージェント本体(agent/chat_agent.py)の設定(015-paper-qa-chat)."""
+
+    # 実測: 保存済み論文の抽出全文は 35k〜151k 文字。200k(≒57kトークン)なら
+    # 現行モデル(Qwen3-30B-A3B: 131K コンテキスト)に収まり、実データ全件をカバーできる。
+    max_full_text_chars: int = 200_000
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -52,6 +60,7 @@ class Settings(BaseSettings):
 
     llm: LLMSettings = LLMSettings()
     ingest: IngestSettings = IngestSettings()
+    chat: ChatSettings = ChatSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

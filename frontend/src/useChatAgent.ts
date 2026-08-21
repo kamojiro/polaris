@@ -22,6 +22,7 @@ function randomId(): string {
 const TOOL_STATUS_LABELS: Record<string, string> = {
   save_paper: "論文を保存中…(PDF取得・要約・Embedding生成)",
   list_papers: "論文一覧を取得中…",
+  get_paper_full_text: "論文の全文を読み込み中…",
 };
 
 function toolStatusLabel(toolCallName: string): string {

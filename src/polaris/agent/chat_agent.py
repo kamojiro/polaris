@@ -10,6 +10,11 @@ TODOツール(add_todo/list_todos/update_todo/complete_todo/delete_todo)は
 まだ無いため、既存の単一チャットエージェントにtoolを追加するだけに留めている
 (YAGNI)。バケット分類(day/month/life)も専用のStructureステップを設けず、
 LLMが add_todo の scale 引数をユーザーの自然文から直接選ぶ。
+
+論文QAツール(get_paper_full_text)は 015-paper-qa-chat で追加した。ベクトル検索
+(Chunk/Embedding)は経由せず、対象論文の抽出済み全文をそのまま会話に取り込む方式。
+一度取り込んだ全文は会話履歴に残るため、同じ論文について複数ターン質問しても
+ツールを再度呼ぶ必要はない。
 """
 
 from __future__ import annotations
@@ -27,9 +32,12 @@ from pydantic_ai import Agent
 # 文字列注釈になるため、TYPE_CHECKING ブロックに入れると実行時に解決できず
 # NameError になる)。そのため ruff の TC001(型チェック専用importへの移動提案)は
 # 意図的に無視する。
+from polaris.adapters.arxiv.parser import extract_arxiv_id
 from polaris.domain.entities import TodoScale  # noqa: TC001
 from polaris.services.ingest_paper import ingest_paper_from_url
+from polaris.services.paper_full_text import load_full_text
 from polaris.services.paper_source import InvalidPaperUrlError
+from polaris.services.progress import set_progress
 from polaris.services.todo import build_todo_records
 
 from .model import build_model
@@ -40,7 +48,8 @@ if TYPE_CHECKING:
     from polaris.agent.structure_paper import PaperStructurer
     from polaris.db.repository import PaperRepository
     from polaris.db.todo_repository import TodoRepository
-    from polaris.domain.entities import Item, TodoRecord
+    from polaris.domain.entities import Item, PaperRecord, TodoRecord
+    from polaris.services.paper_full_text import PaperFullText
     from polaris.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -68,6 +77,11 @@ _INSTRUCTIONS = """\
 - TODOの完了・編集・削除の指示があれば、対象のidが会話履歴から分からなければ
   先に list_todos で確認してから update_todo/complete_todo/delete_todo を
   呼んでください。
+- 特定の論文の内容について質問されたら(「〇〇という論文の手法は?」等)、まず
+  get_paper_full_text で全文を会話に取り込んでから答えてください。同じ論文に
+  ついて続けて質問された場合、全文は既に会話履歴に残っているのでツールを
+  再度呼ぶ必要はありません。複数の論文を比較する場合は、それぞれについて
+  ツールを呼んでください。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
@@ -181,6 +195,46 @@ def _register_paper_tools(
             for item, record in repo.list_papers(limit=_RECENT_PAPERS_LIMIT)
         ]
         return PaperListResult(papers=papers, total_count=repo.count_papers())
+
+
+def _format_full_text(item: Item, record: PaperRecord, full_text: PaperFullText) -> str:
+    """get_paper_full_text の戻り値を組み立てる(ヘッダ+本文)."""
+    arxiv_label = f", arXiv:{record.arxiv_id}" if record.arxiv_id else ""
+    header = f"# 『{item.title}』({'、'.join(record.authors) or '著者不明'}{arxiv_label})"
+    truncated_note = "\n(全文が長いため先頭部分のみ表示しています)" if full_text.truncated else ""
+    return f"{header}{truncated_note}\n---\n{full_text.text}"
+
+
+def _register_paper_qa_tools(agent: Agent, repo: PaperRepository, *, settings: Settings) -> None:
+    """get_paper_full_text ツールを登録する(015-paper-qa-chat)."""
+
+    @agent.tool_plain
+    async def get_paper_full_text(paper: str) -> str:
+        """保存済み論文の本文全文を取得し、会話に取り込む.
+
+        Args:
+            paper: 対象論文を指す文字列(arXivのURL/ID、または保存時のタイトルの一部)。
+
+        Returns:
+            論文の本文全文(見つからない/複数該当する場合はその旨の日本語メッセージ)。
+
+        """
+        logger.info("tool call: get_paper_full_text(paper=%s)", paper)
+        query = extract_arxiv_id(paper) or paper
+        matches = repo.search_papers(query)
+        if not matches:
+            return f"'{paper}' に該当する論文が見つかりませんでした。list_papers で保存済みの論文を確認してください。"
+        if len(matches) > 1:
+            titles = "、".join(f"『{item.title}』" for item, _record in matches)
+            return f"複数の論文が該当しました: {titles}。どの論文か、タイトルをもう少し詳しく指定してください。"
+
+        item, record = matches[0]
+        set_progress("stage", "論文の全文を読み込み中…")
+        try:
+            full_text = await load_full_text(item, record, repo=repo, max_chars=settings.chat.max_full_text_chars)
+        finally:
+            set_progress("stage", None)
+        return _format_full_text(item, record, full_text)
 
 
 def _register_todo_read_tools(agent: Agent, todo_repo: TodoRepository) -> None:
@@ -318,4 +372,5 @@ def build_chat_agent(
     )
     _register_todo_read_tools(agent, todo_repo)
     _register_todo_write_tools(agent, todo_repo)
+    _register_paper_qa_tools(agent, repo, settings=settings)
     return agent

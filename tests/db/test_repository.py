@@ -11,6 +11,7 @@ from polaris.domain.entities import Item, ItemType, PaperRecord
 def _make_paper(
     arxiv_id: str = "1706.03762",
     *,
+    title: str = "Attention Is All You Need",
     created_at: datetime | None = None,
 ) -> tuple[Item, PaperRecord]:
     now = created_at or datetime.now(UTC)
@@ -28,7 +29,7 @@ def _make_paper(
     item = Item(
         id=f"item-{arxiv_id}",
         item_type=ItemType.paper,
-        title="Attention Is All You Need",
+        title=title,
         summary="attention is all you need",
         created_at=now,
         source_ref=f"paper:rec-{arxiv_id}",
@@ -93,3 +94,54 @@ def test_count_papers_matches_total_saved(tmp_path: Path) -> None:
 
     assert repo.count_papers() == 3  # noqa: PLR2004
     assert len(repo.list_papers(limit=1)) == 1
+
+
+def test_search_papers_matches_by_arxiv_id(tmp_path: Path) -> None:
+    """arxiv_id の完全一致で検索できる(015-paper-qa-chat)."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+
+    results = repo.search_papers("1706.03762")
+
+    assert len(results) == 1
+    assert results[0][0].id == item.id
+
+
+def test_search_papers_matches_by_title_substring_case_insensitive(tmp_path: Path) -> None:
+    """タイトルの部分一致(大小無視)で検索できる."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+
+    results = repo.search_papers("attention is all")
+
+    assert len(results) == 1
+    assert results[0][0].id == item.id
+
+
+def test_search_papers_returns_empty_when_no_match(tmp_path: Path) -> None:
+    """該当する論文が無ければ空リストを返す."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+
+    assert repo.search_papers("nonexistent paper title") == []
+
+
+def test_search_papers_limit_and_order(tmp_path: Path) -> None:
+    """Limit を指定すると、作成日時が新しい順に指定件数だけ返る."""
+    repo = PaperRepository(create_db_engine(str(tmp_path / "test.db")))
+    base = datetime.now(UTC)
+    for i in range(3):
+        item, record = _make_paper(
+            f"3000.{i:05d}",
+            title=f"Common Title {i}",
+            created_at=base + timedelta(minutes=i),
+        )
+        repo.save_paper(item, record)
+
+    results = repo.search_papers("Common Title", limit=2)
+
+    assert len(results) == 2  # noqa: PLR2004
+    assert [record.arxiv_id for _, record in results] == ["3000.00002", "3000.00001"]

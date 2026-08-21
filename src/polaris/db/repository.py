@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlmodel import Session, func, select
+from sqlmodel import Session, func, or_, select
 
 from polaris.db.vector_store import save_embeddings as _save_embeddings
 from polaris.domain.entities import Chunk, Item, PaperRecord
@@ -71,6 +71,29 @@ class PaperRepository:
             if limit is not None:
                 query = query.limit(limit)
             rows = session.exec(query).all()
+            return list(rows)
+
+    def search_papers(self, query: str, *, limit: int = 5) -> list[tuple[Item, PaperRecord]]:
+        """arxiv_id/source_url の完全一致、またはタイトルの部分一致(大小無視)で論文を検索する.
+
+        015-paper-qa-chat: LLM がユーザーの自然文から論文を特定するための検索。
+        作成日時の降順で `limit` 件まで返す。
+        """
+        with Session(self._engine, expire_on_commit=False) as session:
+            query_stmt = (
+                select(Item, PaperRecord)
+                .join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
+                .where(
+                    or_(
+                        PaperRecord.arxiv_id == query,
+                        PaperRecord.source_url == query,
+                        Item.title.ilike(f"%{query}%"),  # type: ignore[attr-defined]
+                    )
+                )
+                .order_by(Item.created_at.desc())  # type: ignore[union-attr]
+                .limit(limit)
+            )
+            rows = session.exec(query_stmt).all()
             return list(rows)
 
     def count_papers(self) -> int:

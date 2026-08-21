@@ -145,7 +145,7 @@ async def _fetch_body_text(
         pdf_bytes = await fetch_arxiv_pdf(arxiv_id, client=http_client)
         await asyncio.to_thread(pdf_path.write_bytes, pdf_bytes)
         text = await asyncio.to_thread(extract_pdf_text, pdf_path)
-    except httpx.HTTPError, PdfExtractionError:
+    except (httpx.HTTPError, PdfExtractionError):
         logger.warning("PDF取得/抽出に失敗したため abstract のみで続行します: %s", arxiv_id, exc_info=True)
         return record.abstract, False
 
