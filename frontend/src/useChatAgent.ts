@@ -34,6 +34,37 @@ interface ProgressResponse {
 }
 
 /**
+ * 1ターン(agent.run 1回分、内部で複数回のLLMリクエストがあれば合算済み)のトークン使用量・
+ * コスト。バックエンドの `_emit_usage_event`(api/app.py)が AG-UI の CUSTOM イベントとして
+ * 送ってくる `RunUsage` の値をそのまま受け取る。
+ */
+export interface TurnUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  cost_usd: number | null;
+}
+
+const ZERO_USAGE: TurnUsage = {
+  input_tokens: 0,
+  output_tokens: 0,
+  cache_read_tokens: 0,
+  cache_write_tokens: 0,
+  cost_usd: 0,
+};
+
+function addUsage(a: TurnUsage, b: TurnUsage): TurnUsage {
+  return {
+    input_tokens: a.input_tokens + b.input_tokens,
+    output_tokens: a.output_tokens + b.output_tokens,
+    cache_read_tokens: a.cache_read_tokens + b.cache_read_tokens,
+    cache_write_tokens: a.cache_write_tokens + b.cache_write_tokens,
+    cost_usd: a.cost_usd !== null && b.cost_usd !== null ? a.cost_usd + b.cost_usd : null,
+  };
+}
+
+/**
  * AG-UI の HttpAgent をラップし、React から使いやすい形で公開するフック。
  * バックエンドは Vite の dev proxy 経由で /api/chat に接続する(同一オリジン扱い)。
  */
@@ -50,6 +81,8 @@ export function useChatAgent() {
   // 複数行(0件のこともある)として扱う。
   const [status, setStatus] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [usageByMessageId, setUsageByMessageId] = useState<Record<string, TurnUsage>>({});
+  const [totalUsage, setTotalUsage] = useState<TurnUsage>(ZERO_USAGE);
 
   useEffect(() => {
     if (!isRunning) {
@@ -98,6 +131,17 @@ export function useChatAgent() {
             onRunErrorEvent: ({ event }) => {
               setError(event.message);
             },
+            onCustomEvent: ({ event, messages: snapshotMessages }) => {
+              if (event.name !== "usage") {
+                return;
+              }
+              const usage = event.value as TurnUsage;
+              const lastMessage = snapshotMessages[snapshotMessages.length - 1];
+              if (lastMessage) {
+                setUsageByMessageId((prev) => ({ ...prev, [lastMessage.id]: usage }));
+              }
+              setTotalUsage((prev) => addUsage(prev, usage));
+            },
           },
         );
       } catch (err) {
@@ -110,5 +154,5 @@ export function useChatAgent() {
     [agent],
   );
 
-  return { messages, isRunning, status, error, sendMessage };
+  return { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage };
 }

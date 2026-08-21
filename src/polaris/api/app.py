@@ -9,8 +9,9 @@ import time
 import uuid
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from ag_ui.core import BaseEvent, CustomEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic_ai.ui.ag_ui import AGUIAdapter
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Callable
 
     from fastapi.responses import Response
+    from pydantic_ai.run import AgentRunResult
 
 # 進捗メッセージが変化していないかの内部チェック間隔。クライアントへの問い合わせではなく
 # サーバー内でのポーリングなので、間隔を詰めてもネットワーク負荷は発生しない。
@@ -168,7 +170,29 @@ async def upload_paper_pdf(file: UploadFile) -> dict[str, str]:
     return {"upload_id": upload_id, "filename": file.filename or "アップロードされたPDF"}
 
 
+async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
+    """ターンごとのトークン使用量・コストを AG-UI の CUSTOM イベントとしてフロントに渡す.
+
+    015-paper-qa-chat追加分。`RunUsage`(このターン内の複数リクエストの合算値)を
+    そのまま JSON 化して送るだけ。CachePoint は今のモデル(qwen系)では
+    `openrouter_supports_cache_control=False` のため no-op だが、プロバイダ側の
+    自動キャッシュが効くことがあるため `cache_read_tokens` を見れば実際にヒットしたか
+    ターンごとに分かる(specの実測結果参照)。
+    """
+    usage = result.usage
+    yield CustomEvent(
+        name="usage",
+        value={
+            "input_tokens": usage.input_tokens,
+            "output_tokens": usage.output_tokens,
+            "cache_read_tokens": usage.cache_read_tokens,
+            "cache_write_tokens": usage.cache_write_tokens,
+            "cost_usd": float(usage.cost) if usage.cost is not None else None,
+        },
+    )
+
+
 @app.post("/api/chat")
 async def chat(request: Request) -> Response:
     """AG-UI プロトコルでチャットエージェントを実行する."""
-    return await AGUIAdapter.dispatch_request(request, agent=_agent)
+    return await AGUIAdapter.dispatch_request(request, agent=_agent, on_complete=_emit_usage_event)

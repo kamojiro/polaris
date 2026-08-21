@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PaperList, type PaperListResult } from "./PaperList";
 import { TodoList, type TodoListResult } from "./TodoList";
-import { useChatAgent } from "./useChatAgent";
+import { type TurnUsage, useChatAgent } from "./useChatAgent";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -44,6 +44,19 @@ function findToolResults<T>(toolName: string, message: Message, allMessages: rea
   return results;
 }
 
+/**
+ * トークン使用量・コストの表示用フォーマット。cache_read_tokens は
+ * (015-paper-qa-chatで実測した通り)不安定にしか効かないため、0件のときは表示自体を省略する。
+ */
+function formatUsageLine(usage: TurnUsage): string {
+  const parts = [`入力 ${usage.input_tokens.toLocaleString()}`, `出力 ${usage.output_tokens.toLocaleString()}`];
+  if (usage.cache_read_tokens > 0) {
+    parts.push(`キャッシュ読込 ${usage.cache_read_tokens.toLocaleString()}`);
+  }
+  const costPart = usage.cost_usd !== null ? ` · $${usage.cost_usd.toFixed(4)}` : "";
+  return `${parts.join(" / ")}${costPart}`;
+}
+
 const TEXTAREA_MAX_HEIGHT_PX = 200;
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -57,7 +70,7 @@ interface UploadResponse {
 }
 
 export default function App() {
-  const { messages, isRunning, status, error, sendMessage } = useChatAgent();
+  const { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage } = useChatAgent();
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -127,6 +140,7 @@ export default function App() {
         <p>
           arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。TODOも「明日までに〇〇したい」のように話しかけると追加できます。「保存した論文は?」「TODO一覧見せて」で一覧を確認できます。
         </p>
+        {totalUsage.input_tokens > 0 && <p className="usage-total">この会話の使用量: {formatUsageLine(totalUsage)}</p>}
       </header>
 
       <main className="messages">
@@ -147,6 +161,9 @@ export default function App() {
               {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
                 <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
               ))}
+              {message.role === "assistant" && usageByMessageId[message.id] && (
+                <p className="usage-line">{formatUsageLine(usageByMessageId[message.id])}</p>
+              )}
             </div>
           ))}
         {isRunning && (
