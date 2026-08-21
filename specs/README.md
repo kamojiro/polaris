@@ -6,24 +6,31 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 
 `#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003は実装着手済みのため対象外。
 
-1. 004 (citation-relations)
-2. 005 (eval-harness)
-3. 006 (chatlog-backfill) — 005に依存
-4. 007 (todo-domain)
-5. 008 (daily-digest-domain)
-6. 009 (dashboard)
-7. 010 (mobile-pwa) — 009に依存
-8. 011 (agent-registry)
-9. 012 (local-llm-cutover)
-10. 013 (ir-analysis-domain)
+1. 015 (paper-qa-chat) — 実際に使ってて欲しくなった機能、002依存のみで着手可能
+2. ~~004 (citation-relations)~~ — 見送り
+3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+5. 007 (todo-domain)
+6. 008 (daily-digest-domain)
+7. 009 (dashboard)
+8. 010 (mobile-pwa) — 009に依存
+9. 011 (agent-registry)
+10. 012 (local-llm-cutover)
+11. 013 (ir-analysis-domain)
+
+## いつかやるリスト
+
+spec自体は書けていて実装開始可能だが、直近では優先度を下げて着手しないもの。
+
+- 005 (eval-harness): 設計は完了しているが、直近で計測してもデータ量的に旨みが薄いため後回し。着手する気になったらステータスを✅に戻す
 
 | # | spec | フェーズ | ステータス | 備考 |
 |---|---|---|---|---|
 | 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | 1 | ✔️ 完了 | AG-UI+FastAPI+pydantic-ai+Reactの一往復が動作確認済み |
 | 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み |
 | 003 | [chat-ui-polish](003-chat-ui-polish/spec.draft.md) | 1 | ✔️ 完了 | react-markdown導入・list_papersのgenerative UI化(専用テーブル)・レイアウト調整を実装。ブラウザでの見た目の最終確認済み |
-| 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | ✅ 実装開始可能 | ライブラリ内の論文同士のみ`cites`のRelationを作る方針(スタブは作らない)。未取り込み分は集計カウントのみ保持 |
-| 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | ✅ 実装開始可能 | 対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化した |
+| 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | 🚫 やらない | 見送り決定。設計(スタブは作らない方針)は記録として残す |
+| 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | 🗓 いつか | spec自体は完成済み(対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化)。直近では実装しない、いつかやるリスト行き |
 | 006 | [chatlog-backfill](006-chatlog-backfill/spec.draft.md) | 1 | 💤 スケルトンのみ | 005の後。Eval harnessの検証データとしても使う |
 | 007 | [todo-domain](007-todo-domain/spec.draft.md) | 2 | 💤 スケルトンのみ | 論文ドメインのパターンを横展開 |
 | 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | 💤 スケルトンのみ | エコーチェンバー可視化。セレンディピティ機能の再検討を含む |
@@ -33,6 +40,8 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 | 012 | [local-llm-cutover](012-local-llm-cutover/spec.draft.md) | 4 | 💤 スケルトンのみ | Layer0のモデル抽象を活かす想定。005の実績があると判断しやすい |
 | 013 | [ir-analysis-domain](013-ir-analysis-domain/spec.draft.md) | 5 | 💤 スケルトンのみ | データソースの契約・コストが絡むため優先度最低 |
 | 014 | [paper-url-pdf-ingest](014-paper-url-pdf-ingest/spec.draft.md) | 1 | ✔️ 完了 | 002で当初スコープから外したurl/local_pdf対応。URL直リンクは`adapters/pdf/downloader.py`でダウンロード、local_pdfは`POST /api/papers/upload`+`save_paper`ツール経由(ADR-0002、AG-UI添付は不採用)。非arXivのメタデータは`agent/extract_metadata.py`で本文冒頭から抽出、重複判定は`source_url`を流用 |
+| 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✅ 実装開始可能 | 1論文とのチャットはベクトル検索を使わず全文をコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingが今のモデル(A3B系)で効くかは要検証 |
+| 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
 
 ## ステータスの意味
 
@@ -41,5 +50,7 @@ feature単体のspecファイルには書きにくい「spec間の順序・着�
 - ✅ 実装開始可能: 依存・未決定事項なし。`/speckit.specify`等に渡してすぐ着手できる
 - 🚧 実装中
 - ✔️ 完了
+- 🚫 やらない: 検討した上で見送り。設計や判断の経緯は記録として残す
+- 🗓 いつか: spec自体は実装開始可能な状態まで詰めてあるが、優先度を下げて直近では着手しない
 
 スケルトンのspecを実際に着手するときは、`spec.draft.md`を書き足してから(必要ならADRも書いてから)ステータスを✅に上げる。
