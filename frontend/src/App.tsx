@@ -49,10 +49,18 @@ function autoResize(el: HTMLTextAreaElement) {
   el.style.height = `${Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT_PX)}px`;
 }
 
+interface UploadResponse {
+  upload_id: string;
+  filename: string;
+}
+
 export default function App() {
   const { messages, isRunning, status, error, sendMessage } = useChatAgent();
   const [input, setInput] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const submit = () => {
     const text = input.trim();
@@ -78,11 +86,41 @@ export default function App() {
     }
   };
 
+  // 014-paper-url-pdf-ingest: ローカルPDFはまず /api/papers/upload に保存だけしてもらい、
+  // 返ってきた upload_id を通常のチャットメッセージとして送る。こうすると save_paper
+  // ツール経由の既存の導線(進捗SSE・チャット履歴・一覧更新)がそのまま使える。
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // 同じファイルを連続選択しても onChange が発火するようにする
+    if (!file || isRunning || isUploading) {
+      return;
+    }
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/papers/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { detail?: string } | null;
+        throw new Error(body?.detail ?? `アップロードに失敗しました(status=${res.status})`);
+      }
+      const { upload_id: uploadId, filename } = (await res.json()) as UploadResponse;
+      void sendMessage(`「${filename}」を保存して (upload://${uploadId})`);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="app">
       <header>
         <h1>Polaris</h1>
-        <p>arXiv の URL を貼ると論文を保存します。「保存した論文は?」で一覧を確認できます。</p>
+        <p>
+          arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。「保存した論文は?」で一覧を確認できます。
+        </p>
       </header>
 
       <main className="messages">
@@ -112,8 +150,25 @@ export default function App() {
       </main>
 
       {error !== null && <div className="error">{error}</div>}
+      {uploadError !== null && <div className="error">{uploadError}</div>}
 
       <form className="composer" onSubmit={handleSubmit}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          hidden
+          onChange={(event) => void handleFileSelected(event)}
+        />
+        <button
+          type="button"
+          className="attach"
+          disabled={isRunning || isUploading}
+          onClick={() => fileInputRef.current?.click()}
+          title="PDFをアップロードして保存"
+        >
+          {isUploading ? "…" : "📎"}
+        </button>
         <textarea
           ref={textareaRef}
           value={input}
@@ -122,7 +177,7 @@ export default function App() {
             autoResize(event.target);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="arXiv の URL を貼るか、質問を入力…(Shift+Enter で改行)"
+          placeholder="arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)"
           rows={1}
           disabled={isRunning}
         />

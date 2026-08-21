@@ -18,6 +18,7 @@
     "cspell",
     "cuda",
     "cutover",
+    "dataclass",
     "edinet",
     "embedder",
     "evals",

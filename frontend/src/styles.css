@@ -206,3 +206,10 @@ header p {
   opacity: 0.5;
   cursor: default;
 }
+
+/* PDFアップロード用の📎ボタン(送信ボタンと見た目のトーンは揃え、控えめな色にする) */
+.composer button.attach {
+  background: #e5e7eb;
+  color: #111827;
+  padding: 0.65rem 0.9rem;
+}

@@ -29,6 +29,12 @@ class IngestSettings(BaseModel):
     embedding_dim: int = 1024
     chunk_chars: int = 1200
     chunk_overlap_chars: int = 200
+    # 014-paper-url-pdf-ingest: URL直リンク・ローカルPDFの取り込み用設定。
+    upload_dir: str = "data/uploads"
+    max_pdf_bytes: int = 50_000_000
+    # 非arXiv論文のメタデータ抽出(agent/extract_metadata.py)に渡す本文先頭の文字数。
+    # 長すぎるとプロンプトが肥大化するだけなので、書誌情報が載っている冒頭のみで十分。
+    metadata_head_chars: int = 4000
 
 
 class Settings(BaseSettings):

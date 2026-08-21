@@ -5,6 +5,7 @@
 
 import re
 import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 
 from pydantic import BaseModel
 
@@ -15,6 +16,10 @@ _NAMESPACES = {"atom": _ATOM_NS, "arxiv": _ARXIV_NS}
 # https://arxiv.org/abs/2401.12345, /pdf/2401.12345v2, 旧形式 cs/0301015, "arXiv:2401.12345"
 _NEW_ID_RE = re.compile(r"(\d{4}\.\d{4,5})(v\d+)?")
 _OLD_ID_RE = re.compile(r"([a-z-]+(?:\.[A-Z]{2})?/\d{7})(v\d+)?")
+
+# arxiv.org 以外の URL(例: https://example.com/papers/2401.12345.pdf)に対して
+# 数字列だけを見て誤って arXiv 扱いしないよう、スキーム付き URL の場合は host を確認する。
+_ARXIV_HOSTS = {"arxiv.org", "export.arxiv.org", "www.arxiv.org"}
 
 
 class ArxivMetadata(BaseModel):
@@ -34,8 +39,17 @@ class PaperNotFoundError(Exception):
 
 
 def extract_arxiv_id(url: str) -> str | None:
-    """URL または "arXiv:xxxx" 形式の文字列から arxiv_id(バージョン抜き)を取り出す."""
+    """URL または "arXiv:xxxx" 形式の文字列から arxiv_id(バージョン抜き)を取り出す.
+
+    `http(s)://` スキーム付きの URL の場合は host が arxiv.org 系でなければ
+    None を返す(014-paper-url-pdf-ingest で非arXivのPDF直リンクを別経路に
+    振り分けられるようにするため)。裸のID("2401.12345"や"arXiv:2401.12345")や
+    スキーム無しの文字列はそのまま数字列マッチのみで判定する。
+    """
     text = url.strip()
+    parsed = urlparse(text)
+    if parsed.scheme in ("http", "https") and parsed.hostname not in _ARXIV_HOSTS:
+        return None
     match = _NEW_ID_RE.search(text) or _OLD_ID_RE.search(text)
     if match is None:
         return None

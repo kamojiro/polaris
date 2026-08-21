@@ -11,6 +11,9 @@ dependencies = [
     "pydantic-ai-slim[ag-ui,openrouter]>=2.30.0",
     "pydantic-settings>=2.12.0",
     "pypdf>=6.16.1",
+    # FastAPI の UploadFile(multipart/form-data)に必須。014-paper-url-pdf-ingestの
+    # ローカルPDFアップロードエンドポイントで使う。
+    "python-multipart>=0.0.20",
     "sentence-transformers>=5.7.0",
     "sqlite-vec>=0.1.9",
     "sqlmodel>=0.0.27",

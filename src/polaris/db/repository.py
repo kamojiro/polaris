@@ -33,6 +33,17 @@ class PaperRepository:
                 return None
             return item, record
 
+    def find_by_source_url(self, source_url: str) -> tuple[Item, PaperRecord] | None:
+        """source_url で既存レコードを検索する(arxiv_id を持たない論文の重複防止に使う)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            record = session.exec(select(PaperRecord).where(PaperRecord.source_url == source_url)).first()
+            if record is None:
+                return None
+            item = session.get(Item, record.item_id)
+            if item is None:
+                return None
+            return item, record
+
     def save_paper(self, item: Item, record: PaperRecord) -> None:
         """Item → PaperRecord の順で 1 トランザクションとして保存する.
 

@@ -3,6 +3,7 @@
 後戻りしにくい・理由を残しておきたい決定をここに1件ずつ記録する(Nygard/MADR形式: Context / Decision / Consequences)。specは「何を作るか」、ADRは「なぜその選択をしたか」を担当する。
 
 - [0001. ストレージにSQLiteを採用する](0001-storage-sqlite.md)
+- [0002. ローカルPDFの取り込みは専用アップロードエンドポイントで行う](0002-local-pdf-upload-endpoint.md)
 
 まだ書き起こしていない候補(wishlist側の議論で既に方向性は決まっているもの):
 

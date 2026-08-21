@@ -2,11 +2,13 @@
 
 ## ステータス
 
-未着手
+✔️ 完了
 
 ## 概要
 
-`002-papers-ingest-full` はarXiv入力のみを実装して完了とした。当初スコープにあった「URL(PDF直リンク等)」「ローカルPDFファイル」からのIngestを、このspecで追加する。`InputKind`の判定ロジック自体は002の時点で将来拡張できる形にしてあるので、そこへの実装追加が中心になる。
+`002-papers-ingest-full` はarXiv入力のみを実装して完了とした。当初スコープにあった「URL(PDF直リンク等)」「ローカルPDFファイル」からのIngestを、このspecで追加する。
+
+**訂正(014着手時の調査で判明)**: 002 spec は「`InputKind`の判定ロジック自体は002の時点で将来拡張できる形にしてある」としていたが、実際にはコード上に `InputKind` は存在せず、`extract_arxiv_id() -> str | None` による二値判定(arXivか否か)しか無かった。014では `services/paper_source.py` として入力種別の判定を新設した(タグ付きdataclassの union: `ArxivSource` / `UrlSource` / `UploadSource`)。
 
 ## URL入力(PDF直リンク)
 
@@ -26,9 +28,33 @@
 - ローカルPDFファイルを何らかの手段(チャット添付 or 専用アップロードUI)でサーバーに渡すと論文が保存される
 - どちらの手段で取り込んだ場合も、保存後の一覧表示・検索は既存の論文(arXiv経由)と区別なく扱われる
 
-## 未決定事項
+## 未決定事項(結論)
 
-- AG-UIのバイナリ添付がpydantic-aiの`AGUIAdapter`経由で実際に動くか(着手時に検証し、ダメならフォールバックのアップロードエンドポイント方式に切り替える)
+- AG-UIのバイナリ添付がpydantic-aiの`AGUIAdapter`経由で実際に動くか →
+  **動く**ことを実装(`pydantic_ai/ui/ag_ui/_adapter.py`)を読んで確認したが、
+  **採用しなかった**。その経路はPDFをLLMのuser promptに載せる設計であり、
+  Polarisの本文抽出(pypdfによるサーバー側処理)・チャットモデル(text-only Qwen3系)
+  とは用途が噛み合わないため。専用アップロードエンドポイント方式(フォールバックと
+  していた方)を本命として採用した。判断の詳細は `docs/adr/0002-local-pdf-upload-endpoint.md` 参照。
+
+## 実装状況(2026-08-20)
+
+✔️完了。
+
+- URL直リンク: `adapters/pdf/downloader.py`(新規)でダウンロードし、既存の
+  本文抽出〜永続化フローに合流する。arXiv以外は `PaperStructurer` の代わりに
+  `agent/extract_metadata.py`(新規)で本文冒頭からtitle/authors/year/abstract/doi/venue
+  とsummaryをLLM1回で抽出する(title/abstractの供給元がarXiv APIのように別途無いため)。
+- local_pdf: `POST /api/papers/upload` でアップロードのみ行い、返る `upload_id` を
+  `upload://<id>` としてチャットメッセージに埋め込み、既存の `save_paper` ツール
+  経由で取り込む(ADR-0002)。
+- 重複判定は非arXiv(`arxiv_id=None`)には `source_url` を流用(`find_by_source_url`
+  を追加)。ローカルPDFは内容のsha256ハッシュを `source_url` に入れる。
+  DBスキーマにカラムは追加していない(既存 `data/polaris.db` のマイグレーション不要)。
+- `extract_arxiv_id` を厳格化し、arxiv.org以外のホストのURLに数字列が含まれていても
+  誤ってarXiv扱いしないようにした(過剰マッチの回帰防止)。
+- 実PDF・実LLM・実GPU embedderでarXiv/URL直リンク/アップロードの3経路すべてを
+  手動E2E確認済み。
 
 ## 依存
 

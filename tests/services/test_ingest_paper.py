@@ -1,7 +1,8 @@
 """ingest_paper_from_url(フルパイプライン)の純ロジックテスト.
 
-実LLM・実Embeddingモデルは使わず、フェイクの EmbeddingModel / PaperStructurer を
-注入する。arXiv のメタデータ取得・PDF ダウンロードは respx でモックする。
+実LLM・実Embeddingモデルは使わず、フェイクの EmbeddingModel / PaperStructurer /
+PaperMetadataExtractor を注入する。arXiv・URL直リンクのメタデータ取得・PDF
+ダウンロードは respx でモックする。
 """
 
 from datetime import UTC, datetime
@@ -12,11 +13,14 @@ import pytest
 import respx
 from sqlalchemy.exc import IntegrityError
 
+from polaris.adapters.pdf.extractor import PdfExtractionError
+from polaris.agent.extract_metadata import ExtractedPaper
 from polaris.agent.structure_paper import StructuredPaper
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.domain.entities import Item, ItemType, PaperRecord
-from polaris.services.ingest_paper import InvalidPaperUrlError, ingest_paper_from_url
+from polaris.services.ingest_paper import ingest_paper_from_url
+from polaris.services.paper_source import InvalidPaperUrlError
 from polaris.settings import IngestSettings, Settings
 
 _FIXTURE_DIR = Path(__file__).parent.parent / "adapters"
@@ -44,10 +48,27 @@ class _FakeStructurer:
         return StructuredPaper(summary=f"要約: {title}", venue=None)
 
 
+class _FakeExtractor:
+    """固定の書誌情報・要約を返すだけのフェイク メタデータ抽出エージェント."""
+
+    async def extract(self, *, body_head: str) -> ExtractedPaper:  # noqa: ARG002
+        """本文冒頭の内容によらず固定のメタデータを返す."""
+        return ExtractedPaper(
+            title="Fake Paper Title",
+            authors=["Fake Author"],
+            year=2024,
+            abstract="fake abstract",
+            doi=None,
+            venue=None,
+            summary="要約: Fake Paper Title",
+        )
+
+
 def _make_settings(tmp_path: Path) -> Settings:
     return Settings(
         ingest=IngestSettings(
             pdf_dir=str(tmp_path / "pdfs"),
+            upload_dir=str(tmp_path / "uploads"),
             embedding_model_id="fake-embedder",
             embedding_dim=_EMBEDDING_DIM,
             chunk_chars=200,
@@ -89,6 +110,7 @@ async def test_ingest_paper_persists_item_record_chunks_and_embeddings(tmp_path:
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
 
@@ -124,6 +146,7 @@ async def test_ingest_paper_falls_back_to_abstract_when_pdf_fails(tmp_path: Path
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
 
@@ -149,6 +172,7 @@ async def test_ingest_paper_is_idempotent(tmp_path: Path) -> None:
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
             second = await ingest_paper_from_url(
@@ -157,6 +181,7 @@ async def test_ingest_paper_is_idempotent(tmp_path: Path) -> None:
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
 
@@ -182,6 +207,7 @@ async def test_ingest_paper_normalizes_source_url_to_abs(tmp_path: Path) -> None
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
 
@@ -249,6 +275,7 @@ async def test_ingest_paper_switches_to_winner_on_concurrent_insert_conflict(tmp
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )
 
@@ -262,17 +289,157 @@ async def test_ingest_paper_switches_to_winner_on_concurrent_insert_conflict(tmp
 
 
 async def test_ingest_paper_rejects_non_arxiv_url(tmp_path: Path) -> None:
-    """ArXiv の URL / ID として解釈できない入力は InvalidPaperUrlError になる."""
+    """ArXiv の URL / ID、PDF直リンク、upload:// のいずれとしても解釈できない入力は InvalidPaperUrlError になる."""
     repo = _make_repo(tmp_path)
     settings = _make_settings(tmp_path)
 
     async with httpx.AsyncClient() as client:
         with pytest.raises(InvalidPaperUrlError):
             await ingest_paper_from_url(
-                "https://example.com/not-a-paper",
+                "not a url or id",
                 repo=repo,
                 http_client=client,
                 embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
+                settings=settings,
+            )
+
+
+async def test_ingest_paper_from_pdf_url(tmp_path: Path) -> None:
+    """非arXivのPDF直リンクURLから取り込むと、メタデータ抽出結果が Item/PaperRecord に反映される."""
+    repo = _make_repo(tmp_path)
+    settings = _make_settings(tmp_path)
+    pdf_url = "https://example.com/papers/some-paper.pdf"
+
+    with respx.mock:
+        respx.get(pdf_url).mock(
+            return_value=httpx.Response(200, content=_PDF_BYTES, headers={"content-type": "application/pdf"}),
+        )
+        async with httpx.AsyncClient() as client:
+            result = await ingest_paper_from_url(
+                pdf_url,
+                repo=repo,
+                http_client=client,
+                embedder=_FakeEmbedder(),
+                structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
+                settings=settings,
+            )
+
+    assert result.created is True
+    assert result.item.title == "Fake Paper Title"
+    assert result.item.summary == "要約: Fake Paper Title"
+    assert result.record.arxiv_id is None
+    assert result.record.source_url == pdf_url
+    assert result.record.pdf_path is not None
+    assert Path(result.record.pdf_path).exists()  # noqa: ASYNC240 - テストなのでブロッキング呼び出しで問題ない
+    assert len(result.chunks) > 0
+
+
+async def test_ingest_paper_from_pdf_url_is_idempotent(tmp_path: Path) -> None:
+    """同じPDF直リンクURLを2回投げても重複登録されない(source_urlで判定)."""
+    repo = _make_repo(tmp_path)
+    settings = _make_settings(tmp_path)
+    pdf_url = "https://example.com/papers/some-paper.pdf"
+
+    with respx.mock:
+        respx.get(pdf_url).mock(
+            return_value=httpx.Response(200, content=_PDF_BYTES, headers={"content-type": "application/pdf"}),
+        )
+        async with httpx.AsyncClient() as client:
+            first = await ingest_paper_from_url(
+                pdf_url,
+                repo=repo,
+                http_client=client,
+                embedder=_FakeEmbedder(),
+                structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
+                settings=settings,
+            )
+            second = await ingest_paper_from_url(
+                pdf_url,
+                repo=repo,
+                http_client=client,
+                embedder=_FakeEmbedder(),
+                structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
+                settings=settings,
+            )
+
+    assert first.created is True
+    assert second.created is False
+    assert first.item.id == second.item.id
+    assert len(repo.list_papers()) == 1
+
+
+async def test_ingest_paper_from_pdf_url_raises_when_extraction_fails(tmp_path: Path) -> None:
+    """非arXivは本文抽出に失敗するとabstractフォールバックが無いため例外を送出する."""
+    repo = _make_repo(tmp_path)
+    settings = _make_settings(tmp_path)
+    pdf_url = "https://example.com/papers/corrupt.pdf"
+    corrupt_bytes = (_FIXTURE_DIR / "fixtures" / "corrupt.pdf").read_bytes()
+
+    with respx.mock:
+        respx.get(pdf_url).mock(
+            return_value=httpx.Response(200, content=corrupt_bytes, headers={"content-type": "application/pdf"}),
+        )
+        async with httpx.AsyncClient() as client:
+            with pytest.raises(PdfExtractionError):
+                await ingest_paper_from_url(
+                    pdf_url,
+                    repo=repo,
+                    http_client=client,
+                    embedder=_FakeEmbedder(),
+                    structurer=_FakeStructurer(),
+                    extractor=_FakeExtractor(),
+                    settings=settings,
+                )
+
+
+async def test_ingest_paper_from_upload(tmp_path: Path) -> None:
+    """アップロード済みのローカルPDF(upload://)から取り込め、取り込み後にステージングファイルが削除される."""
+    repo = _make_repo(tmp_path)
+    settings = _make_settings(tmp_path)
+    upload_dir = Path(settings.ingest.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240 - テストなのでブロッキング呼び出しで問題ない
+    upload_id = "test-upload-id"
+    upload_path = upload_dir / f"{upload_id}.pdf"
+    upload_path.write_bytes(_PDF_BYTES)
+
+    async with httpx.AsyncClient() as client:
+        result = await ingest_paper_from_url(
+            f"upload://{upload_id}",
+            repo=repo,
+            http_client=client,
+            embedder=_FakeEmbedder(),
+            structurer=_FakeStructurer(),
+            extractor=_FakeExtractor(),
+            settings=settings,
+        )
+
+    assert result.created is True
+    assert result.item.title == "Fake Paper Title"
+    assert result.record.arxiv_id is None
+    assert result.record.source_url is not None
+    assert result.record.source_url.startswith("sha256:")
+    assert len(result.chunks) > 0
+    assert not upload_path.exists()
+
+
+async def test_ingest_paper_from_upload_missing_file_raises(tmp_path: Path) -> None:
+    """アップロードIDに対応するファイルが無ければ InvalidPaperUrlError になる."""
+    repo = _make_repo(tmp_path)
+    settings = _make_settings(tmp_path)
+
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(InvalidPaperUrlError):
+            await ingest_paper_from_url(
+                "upload://does-not-exist",
+                repo=repo,
+                http_client=client,
+                embedder=_FakeEmbedder(),
+                structurer=_FakeStructurer(),
+                extractor=_FakeExtractor(),
                 settings=settings,
             )

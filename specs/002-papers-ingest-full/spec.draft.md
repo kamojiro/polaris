@@ -114,6 +114,6 @@ SQLite(FTS5 + sqlite-vec)を採用。経緯は `docs/adr/0001-storage-sqlite.md`
 
 ✔️完了。ただし当初スコープから縮小してある。
 
-- 実装したのはarXiv入力のみ。処理フローの「入力判定(arxiv/url/local_pdf)」のうち`InputKind`の判定ロジック自体は将来拡張できる形で用意したが、url/local_pdf経路の実装は行っていない。
-- url/local_pdf対応は `014-paper-url-pdf-ingest` に切り出した(未着手)。「目的・スコープ」に書いた「PDF / URL / arXiv を入力として」は014が終わるまでは達成されていない点に注意。
+- 実装したのはarXiv入力のみ。処理フローの「入力判定(arxiv/url/local_pdf)」の判定ロジックは当初「将来拡張できる形で用意した」としていたが、実際には二値判定(arXivか否か)のみで、`InputKind`のような型は存在していなかった(014着手時の調査で判明、`specs/014-paper-url-pdf-ingest/spec.draft.md` に訂正を記載)。
+- url/local_pdf対応は `014-paper-url-pdf-ingest` に切り出し、2026-08-20 に完了した。「目的・スコープ」に書いた「PDF / URL / arXiv を入力として」はこれで達成された。
 - PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)の一連は動作確認済み。

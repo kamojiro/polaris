@@ -21,6 +21,12 @@ _FIXTURE_DIR = Path(__file__).parent
         ("https://arxiv.org/abs/cs/0301015v2", "cs/0301015"),
         ("https://example.com/not-arxiv", None),
         ("", None),
+        # 014-paper-url-pdf-ingest: arxiv.org 以外のホストは、URLに arXiv ID 風の
+        # 数字列が含まれていても arXiv 扱いしない(過剰マッチの回帰防止)。
+        ("https://example.com/papers/2401.12345.pdf", None),
+        ("https://openreview.net/pdf?id=2401.12345", None),
+        # スキーム無し(裸のID)はホスト判定の対象外なのでそのまま数字列マッチする。
+        ("2401.12345", "2401.12345"),
     ],
 )
 def test_extract_arxiv_id(url: str, expected: str | None) -> None:
