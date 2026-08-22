@@ -8,16 +8,16 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 `#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015は完了済みのため対象外。
 
-1. ~~004 (citation-relations)~~ — 見送り
-2. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-3. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-4. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-5. 008 (daily-digest-domain)
-6. 009 (dashboard)
-7. 010 (mobile-pwa) — 009に依存
-8. 011 (agent-registry)
-9. 012 (local-llm-cutover)
-10. 013 (ir-analysis-domain)
+1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで唯一いま着手可能。他が軒並み依存待ち/未詳細化のため優先度は最低のままだが順番を繰り上げた
+2. ~~004 (citation-relations)~~ — 見送り
+3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+5. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+6. 008 (daily-digest-domain) — 参照元(wishlist-design.md 3-2節)未発見のため詳細化できていない
+7. 009 (dashboard)
+8. 010 (mobile-pwa) — 009に依存
+9. 011 (agent-registry)
+10. 012 (local-llm-cutover)
 
 ## いつかやるリスト
 
@@ -39,7 +39,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 010 | [mobile-pwa](010-mobile-pwa/spec.draft.md) | 3 | 💤 スケルトンのみ | 009である程度画面が固まってから |
 | 011 | [agent-registry](011-agent-registry/spec.draft.md) | 4 | 💤 スケルトンのみ | 複数ドメインのエージェントが実在する状態で強化 |
 | 012 | [local-llm-cutover](012-local-llm-cutover/spec.draft.md) | 4 | 💤 スケルトンのみ | Layer0のモデル抽象を活かす想定。005の実績があると判断しやすい |
-| 013 | [ir-analysis-domain](013-ir-analysis-domain/spec.draft.md) | 5 | 💤 スケルトンのみ | データソースの契約・コストが絡むため優先度最低 |
+| 013 | [ir-analysis-domain](013-ir-analysis-domain/spec.draft.md) | 5 | ✅ 実装開始可能 | EDINET API v2(無料、要APIキー)の書類取得(`type=2`)はPDFをそのまま返すため、015と同じPDF→pypdf→全文チャット方式を流用する。企業名検索はAPI側に無いためv1はdocID直接入力のみ。ニュース関連付け・SEC EDGAR・XBRL構造化解析は範囲外 |
 | 014 | [paper-url-pdf-ingest](014-paper-url-pdf-ingest/spec.draft.md) | 1 | ✔️ 完了 | 002で当初スコープから外したurl/local_pdf対応。URL直リンクは`adapters/pdf/downloader.py`でダウンロード、local_pdfは`POST /api/papers/upload`+`save_paper`ツール経由(ADR-0002、AG-UI添付は不採用)。非arXivのメタデータは`agent/extract_metadata.py`で本文冒頭から抽出、重複判定は`source_url`を流用 |
 | 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了 | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした |
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |

@@ -76,7 +76,8 @@
     "venv",
     "vite",
     "vitejs",
-    "watchfiles"
+    "watchfiles",
+    "xbrl"
   ],
   "ignorePaths": [
     ".venv",
