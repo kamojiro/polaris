@@ -11,13 +11,14 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ag_ui.core import BaseEvent, CustomEvent
+from ag_ui.core import BaseEvent, CustomEvent, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic_ai.ui import StateDeps
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
-from polaris.agent.chat_agent import build_chat_agent
+from polaris.agent.chat_agent import PaperModeState, build_chat_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.repository import PaperRepository
@@ -199,5 +200,18 @@ async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEv
 
 @app.post("/api/chat")
 async def chat(request: Request) -> Response:
-    """AG-UI プロトコルでチャットエージェントを実行する."""
-    return await AGUIAdapter.dispatch_request(request, agent=_agent, on_complete=_emit_usage_event)
+    """AG-UI プロトコルでチャットエージェントを実行する.
+
+    論文モード(015拡張)の state は AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent
+    で毎ターン同期する。`deps` はリクエストごとに新しく作り、`on_complete` の
+    クロージャで同じオブジェクトを参照することで、run 中にツール(get_paper_full_text/
+    exit_paper_mode)が `ctx.deps.state` に加えた変更を読み出して返せる。
+    """
+    deps = StateDeps(state=PaperModeState())
+
+    async def on_complete(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
+        async for event in _emit_usage_event(result):
+            yield event
+        yield StateSnapshotEvent(snapshot=deps.state.model_dump(mode="json"))
+
+    return await AGUIAdapter.dispatch_request(request, agent=_agent, deps=deps, on_complete=on_complete)

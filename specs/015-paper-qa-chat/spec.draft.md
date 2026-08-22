@@ -61,6 +61,19 @@ OpenRouter経由のQwenモデルも、Anthropicと同様`cache_control: {"type":
 - ブラウザで実際に2ターン連続して確認済み: 各ターンの使用量が該当メッセージ下に表示され、ヘッダーの累積が正しく加算されること(例: 入力4,703+6,731=11,434)
 - コストは日本円表示を主、USDを括弧書きで併記(例: `¥0.24 ($0.0016)`)。円換算は`settings.chat.usd_jpy_rate`(既定159.0、2026-08-22時点の実勢に合わせて設定)の固定レートを`_emit_usage_event`側で掛けているだけで、為替APIは呼んでいない
 
+### 論文モード(2026-08-22追加、AG-UIのstate機能を使用)
+
+`get_paper_full_text`成功後の追撃質問は会話履歴だけでもある程度通っていたが、LLMの文脈推測任せで誤爆しうるため、AG-UIプロトコルの正式なstate同期(`StateSnapshotEvent`/`RunAgentInput.state`)で「今読んでいる論文」を明示的に持つように拡張した。
+
+- `agent/chat_agent.py`に`PaperModeState`(`active_paper: ActivePaper | None`)を追加し、`Agent(model, deps_type=StateDeps[PaperModeState], ...)`で登録。`get_paper_full_text`を`tool_plain`から`tool`(ctx対応)に変更し、1件ヒットで成功した際に`ctx.deps.state.active_paper`をセットする(=論文モードに入る)
+- `@agent.instructions`で動的instructions関数を登録し、`active_paper`が設定されていれば「曖昧な質問もこの論文への質問として解釈してよい、get_paper_full_textは再度呼ばない」という指示を追加する。設定されていなければ`None`を返し何も足さない
+- モードを抜ける経路は2つ: (1) 新規`exit_paper_mode`ツール(自然言語で「もう論文の話はいいや」等と言われたら呼ぶ)、(2) UIの「✕」ボタン(`agent.setState({ active_paper: null })`でLLMのターンを挟まず即座に反映)
+- 別の論文で`get_paper_full_text`が呼ばれれば`active_paper`は自動的に上書きされる(明示的なexitは不要)
+- サーバー→クライアントの通知は`api/app.py`の`on_complete`フック(usageイベントと同じ仕組み)で、run完了後に`StateSnapshotEvent(snapshot=deps.state.model_dump())`を毎ターン(activeがNoneでも)yieldする。クライアント側は`@ag-ui/client`の`prepareRunAgentInput()`が`agent.state`を自動的に次のリクエストへ含めてくれるため、往復の配線コードは書いていない
+- フロントは`useChatAgent.ts`に`paperMode`/`exitPaperMode`を追加(`agent.state`はrun完了後の`finally`で読む。`onStateSnapshotEvent`サブスクライバのstate引数は更新「前」の値を渡す実装だったため使わなかった)。`App.tsx`がcomposer直上に「📄 読書中: 〇〇」バッジ+✕ボタンを表示する
+- `save_paper`(新規Ingest)成功時に自動でモードへ入ることはしない(境界を`get_paper_full_text`だけに保つ、v1のスコープ外)
+- ブラウザで実LLM(本番モデル)によるE2E確認済み: (1)タイトル指定でモードに入りバッジ表示、(2)「限界は?」のような曖昧な追撃質問がツール再呼び出しなしで正しく回答される(2ターン目の入力トークンが1ターン目より小さく、全文が再送されていないことも確認)、(3)✕ボタンで即座にバッジが消え、以降の曖昧な質問が論文の話として扱われなくなる、(4)別の論文名を出すとバッジのタイトルが切り替わる、(5)自然言語「もう論文の話はいいや」で`exit_paper_mode`が呼ばれバッジが消える
+
 ## 会話が長くなった場合(v1では未対応、様子見)
 
 論文本体はキャッシュ(対応していれば)で固定しつつ、会話履歴側だけローリングウィンドウ/要約する、という最適化は理論上あるが、v1では実装しない。実際に会話が長くなってコンテキストを圧迫する事態が起きてから対応を検討する。

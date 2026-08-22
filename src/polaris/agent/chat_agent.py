@@ -15,6 +15,12 @@ LLMが add_todo の scale 引数をユーザーの自然文から直接選ぶ。
 (Chunk/Embedding)は経由せず、対象論文の抽出済み全文をそのまま会話に取り込む方式。
 一度取り込んだ全文は会話履歴に残るため、同じ論文について複数ターン質問しても
 ツールを再度呼ぶ必要はない。
+
+「論文モード」(015拡張)は、get_paper_full_text が成功すると AG-UI の state
+(PaperModeState.active_paper)に「今読んでいる論文」を記録し、動的instructions
+(_register_paper_qa_tools 内で登録)がそれを見て「曖昧な質問もこの論文への
+質問として解釈してよい」という指示を追加する。会話履歴だけに頼るのではなく、
+明示的な state を LLM への指示とフロントのバッジ表示の両方に使う。
 """
 
 from __future__ import annotations
@@ -25,7 +31,8 @@ from typing import TYPE_CHECKING
 
 import httpx
 from pydantic import BaseModel
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
+from pydantic_ai.ui import StateDeps
 
 # TodoScale は tool 関数の引数の型注釈として使われ、pydantic-ai が実行時に
 # シグネチャからスキーマを組み立てる(`from __future__ import annotations` で
@@ -107,6 +114,25 @@ class PaperListResult(BaseModel):
     total_count: int
 
 
+class ActivePaper(BaseModel):
+    """論文モード(015拡張)で「今読んでいる論文」を表す."""
+
+    item_id: str
+    title: str
+
+
+class PaperModeState(BaseModel):
+    """AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent で同期する会話状態(015拡張).
+
+    クライアントは毎ターン `state` をそのまま送り返してくるため、`Agent` の
+    `deps_type=StateDeps[PaperModeState]` で受け取り、`get_paper_full_text` が
+    成功した時点で `active_paper` をセットする。フロント側はこれを見て
+    「📄 読書中: (論文タイトル)」のバッジを表示する。
+    """
+
+    active_paper: ActivePaper | None = None
+
+
 class TodoSummary(BaseModel):
     """一覧表示用のTODOサマリ."""
 
@@ -138,7 +164,7 @@ def _todo_summary(item: Item, record: TodoRecord) -> TodoSummary:
 
 
 def _register_paper_tools(
-    agent: Agent,
+    agent: Agent[StateDeps[PaperModeState], str],
     repo: PaperRepository,
     *,
     settings: Settings,
@@ -205,14 +231,17 @@ def _format_full_text(item: Item, record: PaperRecord, full_text: PaperFullText)
     return f"{header}{truncated_note}\n---\n{full_text.text}"
 
 
-def _register_paper_qa_tools(agent: Agent, repo: PaperRepository, *, settings: Settings) -> None:
-    """get_paper_full_text ツールを登録する(015-paper-qa-chat)."""
+def _register_paper_qa_tools(
+    agent: Agent[StateDeps[PaperModeState], str], repo: PaperRepository, *, settings: Settings
+) -> None:
+    """get_paper_full_text/exit_paper_mode ツールと論文モードの動的instructionsを登録する(015-paper-qa-chat)."""
 
-    @agent.tool_plain
-    async def get_paper_full_text(paper: str) -> str:
-        """保存済み論文の本文全文を取得し、会話に取り込む.
+    @agent.tool
+    async def get_paper_full_text(ctx: RunContext[StateDeps[PaperModeState]], paper: str) -> str:
+        """保存済み論文の本文全文を取得し、会話に取り込む(論文モードに入る).
 
         Args:
+            ctx: pydantic-ai が注入する実行コンテキスト(論文モードのstateを保持)。
             paper: 対象論文を指す文字列(arXivのURL/ID、または保存時のタイトルの一部)。
 
         Returns:
@@ -234,10 +263,31 @@ def _register_paper_qa_tools(agent: Agent, repo: PaperRepository, *, settings: S
             full_text = await load_full_text(item, record, repo=repo, max_chars=settings.chat.max_full_text_chars)
         finally:
             set_progress("stage", None)
+        ctx.deps.state.active_paper = ActivePaper(item_id=item.id, title=item.title)
         return _format_full_text(item, record, full_text)
 
+    @agent.tool
+    def exit_paper_mode(ctx: RunContext[StateDeps[PaperModeState]]) -> str:
+        """論文モードを終了する(ユーザーが別の話題に移った、または明示的に終了を求めた場合に呼ぶ)."""
+        logger.info("tool call: exit_paper_mode()")
+        ctx.deps.state.active_paper = None
+        return "論文モードを終了しました。"
 
-def _register_todo_read_tools(agent: Agent, todo_repo: TodoRepository) -> None:
+    @agent.instructions
+    def _paper_mode_instructions(ctx: RunContext[StateDeps[PaperModeState]]) -> str | None:
+        active = ctx.deps.state.active_paper
+        if active is None:
+            return None
+        return (
+            f"現在は論文『{active.title}』について読んでいる「論文モード」です。"
+            "ユーザーの質問が曖昧でも、明確に他の話題に触れていなければこの論文についての"
+            "質問だと解釈して回答してください(全文は会話履歴に既にあるので "
+            "get_paper_full_text を再度呼ぶ必要はありません)。ユーザーが明確に別の話題へ"
+            "移ったり、論文の話を終えたいと言ったりしたら exit_paper_mode を呼んでください。"
+        )
+
+
+def _register_todo_read_tools(agent: Agent[StateDeps[PaperModeState], str], todo_repo: TodoRepository) -> None:
     """add_todo/list_todos ツールを登録する(007-todo-domain)."""
 
     @agent.tool_plain
@@ -269,7 +319,7 @@ def _register_todo_read_tools(agent: Agent, todo_repo: TodoRepository) -> None:
         return TodoListResult(todos=todos)
 
 
-def _register_todo_write_tools(agent: Agent, todo_repo: TodoRepository) -> None:
+def _register_todo_write_tools(agent: Agent[StateDeps[PaperModeState], str], todo_repo: TodoRepository) -> None:
     """update_todo/complete_todo/delete_todo ツールを登録する(007-todo-domain)."""
 
     @agent.tool_plain
@@ -358,10 +408,10 @@ def build_chat_agent(
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
     todo_repo: TodoRepository,
-) -> Agent:
+) -> Agent[StateDeps[PaperModeState], str]:
     """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODOリポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
-    agent = Agent(model, instructions=_INSTRUCTIONS)
+    agent = Agent(model, deps_type=StateDeps[PaperModeState], instructions=_INSTRUCTIONS)
     _register_paper_tools(
         agent,
         repo,

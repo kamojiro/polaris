@@ -73,7 +73,8 @@ interface UploadResponse {
 }
 
 export default function App() {
-  const { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage } = useChatAgent();
+  const { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage, paperMode, exitPaperMode } =
+    useChatAgent();
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -180,6 +181,15 @@ export default function App() {
 
       {error !== null && <div className="error">{error}</div>}
       {uploadError !== null && <div className="error">{uploadError}</div>}
+
+      {paperMode.active_paper !== null && (
+        <div className="paper-mode-badge">
+          <span>📄 読書中: {paperMode.active_paper.title}</span>
+          <button type="button" onClick={exitPaperMode} title="論文モードを終了">
+            ✕
+          </button>
+        </div>
+      )}
 
       <form className="composer" onSubmit={handleSubmit}>
         <input

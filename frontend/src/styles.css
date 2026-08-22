@@ -238,6 +238,30 @@ header p {
   margin: 0.5rem 0;
 }
 
+/* 論文モード(015拡張): AG-UIのstateで同期した「今読んでいる論文」バッジ */
+.paper-mode-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.6rem;
+  background: #e5e7eb;
+  color: #111827;
+  font-size: 0.85rem;
+}
+
+.paper-mode-badge button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+}
+
 .composer {
   display: flex;
   align-items: flex-end;

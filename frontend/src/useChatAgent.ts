@@ -23,6 +23,7 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   save_paper: "論文を保存中…(PDF取得・要約・Embedding生成)",
   list_papers: "論文一覧を取得中…",
   get_paper_full_text: "論文の全文を読み込み中…",
+  exit_paper_mode: "論文モードを終了中…",
 };
 
 function toolStatusLabel(toolCallName: string): string {
@@ -32,6 +33,22 @@ function toolStatusLabel(toolCallName: string): string {
 interface ProgressResponse {
   lines: string[];
 }
+
+/**
+ * 論文モード(015拡張)の会話状態。バックエンドの `PaperModeState`(chat_agent.py)と
+ * フィールド名を揃えている。AG-UI の state 機構(RunAgentInput.state ⇄
+ * StateSnapshotEvent)で毎ターン自動的にサーバー↔クライアント間を往復する。
+ */
+export interface ActivePaper {
+  item_id: string;
+  title: string;
+}
+
+export interface PaperModeState {
+  active_paper: ActivePaper | null;
+}
+
+const NO_PAPER_MODE: PaperModeState = { active_paper: null };
 
 /**
  * 1ターン(agent.run 1回分、内部で複数回のLLMリクエストがあれば合算済み)のトークン使用量・
@@ -86,6 +103,7 @@ export function useChatAgent() {
   const [error, setError] = useState<string | null>(null);
   const [usageByMessageId, setUsageByMessageId] = useState<Record<string, TurnUsage>>({});
   const [totalUsage, setTotalUsage] = useState<TurnUsage>(ZERO_USAGE);
+  const [paperMode, setPaperMode] = useState<PaperModeState>(NO_PAPER_MODE);
 
   useEffect(() => {
     if (!isRunning) {
@@ -152,10 +170,33 @@ export function useChatAgent() {
       } finally {
         setIsRunning(false);
         setStatus([]);
+        // agent.state は STATE_SNAPSHOT イベント受信時点で既に更新済み(run完了を
+        // 待つ processApplyEvents の中で同期的に適用される)。onStateSnapshotEvent
+        // サブスクライバの state 引数は更新「前」の値を渡す実装だったため使わず、
+        // run完了後にここで直接読む。
+        const state = agent.state as Partial<PaperModeState> | undefined;
+        setPaperMode({ active_paper: state?.active_paper ?? null });
       }
     },
     [agent],
   );
 
-  return { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage };
+  const exitPaperMode = useCallback(() => {
+    // LLMのターンを挟まず、クライアント側から即座にstateを書き換える。
+    // 次回送信時に RunAgentInput.state として自動的にサーバーへ送られる。
+    agent.setState(NO_PAPER_MODE);
+    setPaperMode(NO_PAPER_MODE);
+  }, [agent]);
+
+  return {
+    messages,
+    isRunning,
+    status,
+    error,
+    sendMessage,
+    usageByMessageId,
+    totalUsage,
+    paperMode,
+    exitPaperMode,
+  };
 }
