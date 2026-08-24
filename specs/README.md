@@ -51,7 +51,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
 | 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✅ 実装開始可能 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(追記のみ)+現在状態層(`memory/<theme>.md`、書き直し)の二層構造。抽出はターンごとバックグラウンド、テーマ分類は自動+明示指示での見直し可 |
 | 018 | [web-search-tool](018-web-search-tool/spec.draft.md) | - | ✅ 実装開始可能 | 自前ホスト済みのSearXNGを、既存のMCPサーバー実装(候補: `SecretiveShell/MCP-searxng`)経由でpydantic-aiのMCP toolsetとして接続する。自前クライアントは書かない。007/013/017など複数specから使われる横断インフラ |
-| 019 | [diary-domain](019-diary-domain/spec.draft.md) | - | 💤 スケルトンのみ | チャットで会話すると日記がつけられる。017と同じログ層+現在状態層の仕組みをキーが「テーマ」ではなく「日付」の場合として再利用できそうという着想。チャット入力欄の「日記モード」は015のPaperModeStateと同じ構造。保存先ディレクトリは`memory/`と分けて`diary/`にする |
+| 019 | [diary-domain](019-diary-domain/spec.draft.md) | - | 💤 スケルトンのみ | チャットで会話すると日記がつけられる。017と同じログ層+現在状態層の仕組みをキーが「テーマ」ではなく「日付」の場合として再利用できそうという着想。保存先ディレクトリは`memory/`と分けて`diary/`にする。入力欄のモードチップUI(paper/diary併存、日記はセッション単位トグル)はモックアップで確認済み |
 | 020 | [google-workspace-integration](020-google-workspace-integration/spec.draft.md) | - | 💤 スケルトンのみ | Google Calendar/Driveとの連携。用途未確定(Calendarは007のリマインド、Driveは文書取り込み元/バックアップ先候補)。公式MCP(Calendar)とコミュニティMCP(Drive候補)が混在しうる |
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |

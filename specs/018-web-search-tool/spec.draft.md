@@ -6,27 +6,25 @@
 
 ## 概要
 
-チャットエージェント(および将来の前処理/後処理パイプライン)から使える汎用Web検索toolを追加する。自前ホスト済みのSearXNGインスタンスを検索バックエンドとして使い、既存のMCPサーバー実装をpydantic-aiのMCP toolsetとして接続する(自前でSearXNGのHTTP APIクライアントを書かない)。
+チャットエージェント(および将来の前処理/後処理パイプライン)から使える汎用Web検索toolを追加する。自前ホスト済みのSearXNGインスタンスを検索バックエンドとして使う。接続方式はMCPではなく**自前のHTTPクライアント(adapter)**にする(2026-08-23、方針転換。詳細は背景・判断参照)。
 
 ## 背景・判断
 
 - 汎用Web検索は複数ドメインから必要とされている: 論文ドメインのセレンディピティ的発見、`007-todo-domain`が将来spec扱いにした現況調査エージェント、`013-ir-analysis-domain`の企業背景確認、`017-chat-memory`の想起・抽出まわりなど。1つ作れば複数specの前提を同時に満たせるため優先度を上げる(`specs/IDEAS.md`参照)
-- 自前でSearXNG用クライアントを書くのではなく、既存のMCPサーバー実装(例: `SecretiveShell/MCP-searxng`)をpydantic-aiのMCP toolsetとして繋ぐ。`specs/IDEAS.md`の「MCP vs 自前adapter」判断基準でいう「良質な既存MCPサーバーがある汎用インフラ系」に該当するため
 - SearXNGは既に自前ホスト済みで運用中なので、追加のサードパーティ依存・APIキー契約は不要
+- **接続方式の再検討(2026-08-23)**: 当初はMCP toolset経由(`SecretiveShell/MCP-searxng`等)を想定していたが、方針転換した。SearXNGの検索エンドポイントは`GET /search?q=...&format=json`1本・認証不要という単純なAPIで、MCPサーバー(サードパーティのサブプロセス、単一メンテナのお守りリスクがある)を挟むメリットが薄い。`adapters/arxiv/client.py`/`adapters/edinet/client.py`と同じ形で`adapters/searxng/client.py`に`httpx`呼び出し1つを書く方が、依存を増やさずシンプルに済む
+- これに伴い、`specs/IDEAS.md`の「MCP vs 自前adapter」の判断基準も「汎用インフラ系かどうか」から「APIの複雑さ・信頼できる実装の有無」に整理し直した(`specs/IDEAS.md`参照)。Google Calendar/Gmail(OAuth・複数エンドポイント・複雑なデータ構造、かつ公式MCPがある)はMCP側、SearXNG(単純なGET1本)は自前adapter側、という切り分けになる
 
 ## tool設計
 
-- チャットエージェントに`web_search(query)`相当のtoolを1つ追加する。MCP toolset経由のため、実際のtool名・引数はMCPサーバー側の定義にそのまま従う想定(ラップし直すかは実装時に判断)
-- 複数クエリを並列に投げたいユースケース(017の想起判定、007の現況調査等)が具体化したら、並列マルチクエリ対応の実装(例: `jae-jae/searxng-mul-mcp`)への切り替えを検討する。v1は単一クエリで十分
+- チャットエージェントに`web_search(query)`toolを1つ追加する。`adapters/searxng/client.py::search(query) -> list[SearchResult]`を薄くラップする
+- 複数クエリを並列に投げたいユースケース(017の想起判定、007の現況調査等)が具体化したら、`asyncio.gather`で複数リクエストを並列実行すればよい(MCPサーバーを並列対応実装に差し替える必要はない)
 
 ## 接続方式
 
-pydantic-aiのMCP toolsetとして接続する。SearXNG MCPサーバーの起動方式は2通り考えられる。
+自前adapter(`adapters/searxng/client.py`)による直接HTTP呼び出し。`httpx`で`GET {settings.searxng_url}/search?q=...&format=json`を叩き、結果をパースして返す。MCPは使わない。
 
-- `MCPServerStdio`: Polarisのプロセスと同じマシンでサブプロセスとして起動する。追加の常駐プロセス管理が増えない
-- `MCPServerStreamableHTTP`: 常駐サービスとして別途立てておき、HTTP経由で接続する(SSEより現行の推奨トランスポート)
-
-v1は`MCPServerStdio`から始める(常駐プロセスを増やさない、YAGNI)。必要になれば常駐化を検討する。
+SearXNGはコンテナで運用中。`settings.searxng_url`は環境に応じて、Polarisと同じdocker-composeネットワーク内なら`http://searxng:<port>`(サービス名解決)、そうでなければポートマッピング済みの`http://localhost:<port>`を指す想定。追加のプロセス(MCPサーバー等)を挟まないぶん、コンテナ構成もシンプルなまま(SearXNGコンテナ+Polarisコンテナ/プロセスの2者間HTTPのみ)。
 
 ## 利用箇所(想定、具体的な組み込みは各specで判断)
 
@@ -37,9 +35,9 @@ v1は`MCPServerStdio`から始める(常駐プロセスを増やさない、YAGN
 
 ## 未決定事項
 
-- 採用する具体的なSearXNG MCPサーバー実装(`SecretiveShell/MCP-searxng`が基本形の第一候補、着手時に選定・動作確認する)
 - チャットエージェントに常時toolとして持たせるか、必要なドメインだけに持たせるか
 - 検索結果をそのままLLMコンテキストに渡すか、件数・文字数を絞る前処理を挟むか
+- SearXNGのレスポンス形式(`format=json`)の具体的なフィールド構成は着手時に実機で確認する
 
 ## 依存
 

@@ -24,10 +24,15 @@
 
 - **Google Calendar/Gmail**: Googleが**公式のリモートMCPサーバー**を提供している(`calendarmcp.googleapis.com`/`gmailmcp.googleapis.com`)。自分のGoogle Cloudプロジェクトで有効化してOAuth接続する方式で、サードパーティのリレーを経由しない。Calendar MCPはlist/get/create/update/delete + 空き時間確認、Gmail MCPは検索・スレッド取得・ラベル一覧・下書き作成・ラベル付けまで(送信そのものは含まれない、安全側の設計に見える)。個人開発ならまずこちらを優先candidate。より広く(Docs/Sheets/Drive等12サービス)触りたくなったら`taylorwilsdon/google_workspace_mcp`(MIT、OAuth 2.1、自前ホスト、SaaS依存なし)が最も網羅的
 - **NotebookLM**: 個人向けの公開APIは現状無い。2025年9月にEnterprise向けAPIが出たが、Gemini Enterprise/Education Premiumのアドオンライセンスが要る有償構成で、個人用途には見合わない。非公式のリバースエンジニアリング実装(`nblm-rs`)もあるがToSリスクがあるため採用は見送り。将来コンシューマー向けAPIが出たら再検討
-- **SearXNG**: 自前ホスト済みなので、既存のMCPラッパーを繋ぐだけでよい。`SecretiveShell/MCP-searxng`が基本形、並列マルチクエリ検索が欲しければ`jae-jae/searxng-mul-mcp`も候補(017の想起や007の現況調査で複数クエリを同時に投げたい場合に相性が良い)
+- ~~**SearXNG**~~ → `018-web-search-tool`で自前adapter方式に決定(2026-08-23訂正。当初MCPラッパー想定だったが、APIが`GET /search?format=json`1本と単純なため、サードパーティMCPサブプロセスを挟むより自前adapterの方がシンプルと判断)
 - **pydantic-aiとの繋ぎ方**: サブプロセス起動のMCPサーバーは`MCPServerStdio`、常駐サービスとして立てる場合は`MCPServerStreamableHTTP`(SSEより現行の推奨トランスポート)。あとpydantic-aiはMCPの**sampling**(MCPサーバー側がPolarisのモデル設定を借りてLLM呼び出しできる、サーバー側に個別APIキーが不要になる)と**elicitation**(tool実行中に人間へ構造化入力を求める、「送信前に確認」のような用途)にも対応している。ただしelicitationの下位プロトコルは2026-07-28のMCP仕様改定で仕組みが変わった(旧back-channel方式が廃止され、request/resubmit方式に)ばかりなので、使う際はpydantic-ai側の対応状況を都度確認する
 - **参考**: Cowork(Claude)自身が今使っているCalendar/Gmail/Drive MCPのtool粒度(list/search/get + create/update/delete + ドメイン固有動詞)は、Polaris側で新しいtool群を設計する際の参考になる
 
-### MCP vs 自前adapter、どちらで実装するか
+### MCP vs 自前adapter、どちらで実装するか(2026-08-23改訂)
 
-pydantic-aiはMCP client(toolset)に対応しているため、「良質な既存MCPサーバーがあるもの」(Web検索・カレンダー・メール等の汎用インフラ系)は自前でadapterを書かず、既存MCPサーバーをtoolsetとして繋ぐ方がコスパがいい(個人開発で管理対象を増やしたくない、というSQLite一本化などこれまでの判断と同じ考え方)。一方EDINET/arXivのようにPolaris独自のデータモデル(Hub/Satellite、冪等性chekc等)に深く結びつく取り込みロジックは、既存MCPがあっても結局自前adapter(`adapters/edinet/client.py`等)に落ち着きそう。tool追加時にどちらのパターンかを都度判断する。
+当初「汎用インフラ系はMCP、独自データモデルに紐づくものは自前adapter」という軸で考えていたが、SearXNGの検討(`018-web-search-tool`)で見直した。「汎用か独自データモデルに紐づくか」ではなく、**APIそのものの複雑さ**と**信頼できる実装の有無**で判断する方が正確。
+
+- **MCPが向く条件**: (a) OAuth・複数エンドポイント・複雑なデータ構造など、自前実装が本当に面倒なAPIである、(b) 信頼できる(理想は公式の)実装がある。Google Calendar/Gmail/Driveがこれに該当
+- **自前adapterが向く条件**: (a) 単一エンドポイント・認証なし/簡単なAPIキー程度のシンプルなAPIである。SearXNGの検索エンドポイント(`GET /search?format=json`1本)がこれに該当。サードパーティMCPサブプロセス(単一メンテナのお守りリスク、パッケージ管理コスト)を挟むより、`httpx`呼び出し1つを自前で書く方が依存を増やさずシンプル
+
+EDINET/arXivのようにPolaris独自のデータモデル(Hub/Satellite、冪等性チェック等)に深く結びつく取り込みロジックは、上記のどちらであっても結局自前adapter(`adapters/edinet/client.py`等)に落ち着く(MCPで生データだけ取ってきても、その先の永続化ロジックは自前で書く必要があるため)。tool追加時にどちらのパターンかを都度判断する。
