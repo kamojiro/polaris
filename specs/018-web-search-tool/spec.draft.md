@@ -2,7 +2,7 @@
 
 ## ステータス
 
-✅ 実装開始可能
+✔️ 完了
 
 ## 概要
 
@@ -33,11 +33,37 @@ SearXNGはコンテナで運用中。`settings.searxng_url`は環境に応じて
 - `017-chat-memory`(想起・抽出の判断材料としての間接利用、将来拡張)
 - 論文ドメインのセレンディピティ的発見(具体spec未定)
 
+## 実装状況(2026-08-24)
+
+- `adapters/searxng/client.py`: `search(query, *, client, base_url, max_results, timeout_seconds) -> SearxngResponse`。`GET {base_url}/search?q=...&format=json`を叩き、`SearchResult`/`Answer`/`Infobox`をpydanticでパースする。HTTP失敗は`SearxngSearchError`に包んで送出
+- `chat_agent.py`: `_register_web_search_tools()`で`web_search(query)`を`@agent.tool_plain`として登録。`_format_search_results()`で「エンジンの回答→関連情報→検索結果一覧」の順に整形した文字列を返す(generative UI化はせず、`get_paper_full_text`と同じ「整形済み文字列を返すだけ」の方針)
+- `settings.py`: `SearxngSettings(base_url="http://localhost:8080", max_results=5, timeout_seconds=10.0)`を追加
+- `_INSTRUCTIONS`に、保存済みデータ(論文/TODO)についての質問にはweb_searchを使わずlist_papers/get_paper_full_text/list_todosを使うよう明記(ツールが9個になったための誤爆防止)
+- テストは`adapters/searxng/client.py`のみ(`tests/adapters/test_searxng_client.py`、respxでモック)。フィクスチャ`tests/adapters/fixture_searxng.json`は実機のSearXNG(`http://127.0.0.1:8080`)に実際にクエリを投げて取得した本物のレスポンス。chat_agent.py側のツールは既存方針どおりユニットテスト対象外(agent層は手動E2Eで担保)
+- E2E検証(実LLM、実SearXNG): (1) ブラウザから「SearXNGって何?最近の話題も含めて調べて」→ `web_search`が呼ばれ、出典URL付きの回答が返ることをブラウザ・バックエンドログの両方で確認。(2) 「保存した論文は?」で`web_search`ではなく`list_papers`が呼ばれる(誤爆しない)ことを、下記の既存バグの影響を受けない`agent.run()`直接呼び出しで確認(出力が`list_papers`成功時の定型文と一致)。(3) SearXNGコンテナを`docker pause`で一時停止した状態で`web_search`を呼び、`SearxngSearchError`が握りつぶされずに「検索に失敗しました」という日本語メッセージとしてユーザーに返ることを確認(`agent.run()`経由)
+
+### 実機調査で判明した事実(実装前の実測、`base_url=http://127.0.0.1:8080`)
+
+- `number_of_results`は常に`0`が返る(SearXNGでよくある挙動)。件数として信用できないため、レスポンスモデルに含めていない。件数は`len(results)`を使う
+- `results`は既に`score`降順でソート済み。1件あたりのスニペットは実測210〜399文字、10件合計で約3,200文字(≒1kトークン強)
+- `answers`(検索エンジンのinstant answer)・`infoboxes`(Wikipedia等の要約)は情報密度が高く、コストもほぼゼロなので出力に含めている
+- 日本語クエリも`language=ja`等のパラメータ無しで正常動作する(v1は`query`のみ使用)
+
+### E2E検証で見つかった、018とは無関係の既存バグ
+
+手動E2E中に、ブラウザから「保存した論文は?」(list_papers誘発)を送ると`/api/chat`のSSEストリームが応答を返さず無限にハングする現象を発見した。調査の結果:
+
+- `agent.run()`(非streaming)は毎回正常・高速(3秒程度)に完了する。ハングするのは`AGUIAdapter.dispatch_request`が内部で使う`agent.run_stream_events()`(streaming)経由のときだけ
+- ストリームイベントを直接覗くと、`list_papers`(引数無し)のツール呼び出しで`PartStartEvent(ToolCallPart(args=''))` → `PartDeltaEvent(args_delta='')`の直後に後続イベントが一切来ずハングする。**引数を1つ以上取るツール(`web_search`含む)では発生しない**
+- `git stash`で018の変更を完全に外したorigin/main(`0227e0f`)でも同じ手順(`agent.run_stream_events()`を直接呼ぶ)で再現した(4回中3回ハング)。よって**018が原因ではなく、`qwen/qwen3-30b-a3b:free`(OpenRouter無料枠)がツール呼び出しの空引数(`args=''`)をストリーミングで送ってきた際、pydantic-ai側がその完了を検知できず待ち続ける、既存の潜在バグ**と判断した(non-deterministicで、モデル側のストリーミング実装の揺れに起因すると見られる)
+- `list_papers`/`list_todos`/`exit_paper_mode`など、引数無し(または全省略可能)で呼ばれうる既存ツールすべてに影響しうる。018のE2E検証は、このバグの影響を受けない`agent.run()`(非streaming)経由での確認に切り替えて実施した(下記参照)
+- このバグ自体の修正(pydantic-ai側のツール呼び出し完了検知ロジックの調査、または全ツールに`ctx`等のダミー引数を持たせる回避策の検討)は018のスコープ外とし、別途対応が必要な既知の問題として記録するに留める
+
 ## 未決定事項
 
-- チャットエージェントに常時toolとして持たせるか、必要なドメインだけに持たせるか
-- 検索結果をそのままLLMコンテキストに渡すか、件数・文字数を絞る前処理を挟むか
-- SearXNGのレスポンス形式(`format=json`)の具体的なフィールド構成は着手時に実機で確認する
+- チャットエージェントに常時toolとして持たせる方針で実装した(v1では必要なドメインだけに絞る運用はしていない)。ツール数が増えて誤爆が目立つようになったら`filtered`等での絞り込みを検討する
+- 検索結果は`settings.searxng.max_results`(既定5件)で絞っている。実測では10件でも問題ないため、必要になれば増やせる
+- `answers`/`infoboxes`のURLが空の場合の表示(現状は出典表記を省略するだけ)
 
 ## 依存
 

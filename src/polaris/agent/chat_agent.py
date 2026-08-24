@@ -40,6 +40,8 @@ from pydantic_ai.ui import StateDeps
 # NameError になる)。そのため ruff の TC001(型チェック専用importへの移動提案)は
 # 意図的に無視する。
 from polaris.adapters.arxiv.parser import extract_arxiv_id
+from polaris.adapters.searxng.client import SearxngSearchError
+from polaris.adapters.searxng.client import search as searxng_search
 from polaris.domain.entities import TodoScale  # noqa: TC001
 from polaris.services.ingest_paper import ingest_paper_from_url
 from polaris.services.paper_full_text import load_full_text
@@ -51,6 +53,7 @@ from .model import build_model
 
 if TYPE_CHECKING:
     from polaris.adapters.embeddings import EmbeddingModel
+    from polaris.adapters.searxng.client import SearxngResponse
     from polaris.agent.extract_metadata import PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer
     from polaris.db.repository import PaperRepository
@@ -89,6 +92,11 @@ _INSTRUCTIONS = """\
   ついて続けて質問された場合、全文は既に会話履歴に残っているのでツールを
   再度呼ぶ必要はありません。複数の論文を比較する場合は、それぞれについて
   ツールを呼んでください。
+- 最新情報や、保存済みの論文・TODOには無い一般的な事柄を尋ねられたら web_search
+  ツールを使ってWebを検索してください。ただし「保存した論文は?」「TODO一覧」の
+  ように保存済みデータについて尋ねられた場合は web_search ではなく
+  list_papers/get_paper_full_text/list_todos を使ってください。
+  web_search の結果をもとに回答するときは、根拠にした出典のURLを必ず併記してください。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
@@ -287,6 +295,59 @@ def _register_paper_qa_tools(
         )
 
 
+def _format_search_results(query: str, response: SearxngResponse) -> str:
+    """web_search の戻り値を組み立てる(エンジンの回答→関連情報→検索結果一覧の順)."""
+    parts = [f"# Web検索結果: 「{query}」"]
+
+    parts.extend(
+        f"## 検索エンジンによる回答\n{answer.answer}{f'(出典: {answer.url})' if answer.url else ''}"
+        for answer in response.answers
+    )
+    parts.extend(f"## 関連情報: {infobox.infobox}\n{infobox.content}" for infobox in response.infoboxes)
+
+    if not response.results:
+        parts.append("検索結果は見つかりませんでした。")
+    else:
+        lines = [f"{i}. {r.title}\n   {r.url}\n   {r.content}" for i, r in enumerate(response.results, start=1)]
+        parts.append("## 検索結果\n" + "\n".join(lines))
+
+    return "\n\n".join(parts)
+
+
+def _register_web_search_tools(agent: Agent[StateDeps[PaperModeState], str], *, settings: Settings) -> None:
+    """web_search ツールを登録する(018-web-search-tool、自前ホスト済みSearXNG連携)."""
+    http_client = httpx.AsyncClient()
+
+    @agent.tool_plain
+    async def web_search(query: str) -> str:
+        """Webを検索する(最新情報や、保存済みデータには無い一般的な事柄を調べる).
+
+        Args:
+            query: 検索クエリ。
+
+        Returns:
+            検索エンジンの回答・関連情報・上位の検索結果をまとめた文字列
+            (失敗時はその旨の日本語メッセージ)。
+
+        """
+        logger.info("tool call: web_search(query=%s)", query)
+        set_progress("stage", "Webを検索中…")
+        try:
+            response = await searxng_search(
+                query,
+                client=http_client,
+                base_url=settings.searxng.base_url,
+                max_results=settings.searxng.max_results,
+                timeout_seconds=settings.searxng.timeout_seconds,
+            )
+        except SearxngSearchError:
+            logger.exception("web_search failed: query=%s", query)
+            return f"'{query}' の検索に失敗しました。SearXNGに接続できないか、一時的な問題が発生しています。"
+        finally:
+            set_progress("stage", None)
+        return _format_search_results(query, response)
+
+
 def _register_todo_read_tools(agent: Agent[StateDeps[PaperModeState], str], todo_repo: TodoRepository) -> None:
     """add_todo/list_todos ツールを登録する(007-todo-domain)."""
 
@@ -423,4 +484,5 @@ def build_chat_agent(
     _register_todo_read_tools(agent, todo_repo)
     _register_todo_write_tools(agent, todo_repo)
     _register_paper_qa_tools(agent, repo, settings=settings)
+    _register_web_search_tools(agent, settings=settings)
     return agent

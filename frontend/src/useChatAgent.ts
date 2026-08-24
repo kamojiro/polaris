@@ -24,6 +24,7 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   list_papers: "論文一覧を取得中…",
   get_paper_full_text: "論文の全文を読み込み中…",
   exit_paper_mode: "論文モードを終了中…",
+  web_search: "Webを検索中…",
 };
 
 function toolStatusLabel(toolCallName: string): string {

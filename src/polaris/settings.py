@@ -48,6 +48,18 @@ class ChatSettings(BaseModel):
     usd_jpy_rate: float = 159.0
 
 
+class SearxngSettings(BaseModel):
+    """自前ホスト済み SearXNG インスタンスへの接続設定(018-web-search-tool)."""
+
+    # Polarisと同じdocker-composeネットワーク内ならサービス名解決(例: http://searxng:8080)、
+    # そうでなければポートマッピング済みのlocalhostを指す想定。
+    base_url: str = "http://localhost:8080"
+    # 実測: results 1件あたり210〜399文字。10件でも3.2k文字程度だが、他のツールと
+    # 共存するチャットのコンテキストを無駄に膨らませないため既定は5件に絞る。
+    max_results: int = 5
+    timeout_seconds: float = 10.0
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -64,6 +76,7 @@ class Settings(BaseSettings):
     llm: LLMSettings = LLMSettings()
     ingest: IngestSettings = IngestSettings()
     chat: ChatSettings = ChatSettings()
+    searxng: SearxngSettings = SearxngSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",
