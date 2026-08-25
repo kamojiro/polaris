@@ -6,15 +6,19 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・018は完了済みのため対象外。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。007・014・018は完了済みのため対象外。003・015はコア部分は完了済みだが、後から追加した「追加提案」(未実装)が残っているため下記に別途記載。
 
+0. **003/015内の追加提案(3件、未実装)** — いずれもLayer4のみの小粒な変更でバックエンド変更不要、着手可能。詳細は各specの「追加提案」節参照
+   - `003-chat-ui-polish`: メッセージのコピーボタン(2026-08-23追加)
+   - `003-chat-ui-polish`: 入力欄の「論文一覧」クイックアクションボタン(2026-08-23追加)
+   - `015-paper-qa-chat`: 論文モードへの手動エントリー(`PaperList`からのクリック、2026-08-23追加)
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
 2. **017 (chat-memory)** — 依存なし、spec詳細化済みで着手可能。013と並行でも順不同でもよい
 3. ~~004 (citation-relations)~~ — 見送り
 4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
 5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
 6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-7. 008 (daily-digest-domain) — 参照元(wishlist-design.md 3-2節)未発見のため詳細化できていない
+7. 008 (daily-digest-domain) — Phase A(Ingest/Structure)は詳細化済みで着手可能。Phase B(関係グラフ表示)は009待ち
 8. 009 (dashboard)
 9. 010 (mobile-pwa) — 009に依存
 10. 011 (agent-registry)
@@ -34,19 +38,19 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 |---|---|---|---|---|
 | 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | 1 | ✔️ 完了 | AG-UI+FastAPI+pydantic-ai+Reactの一往復が動作確認済み |
 | 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み |
-| 003 | [chat-ui-polish](003-chat-ui-polish/spec.draft.md) | 1 | ✔️ 完了 | react-markdown導入・list_papersのgenerative UI化(専用テーブル)・レイアウト調整を実装。ブラウザでの見た目の最終確認済み |
+| 003 | [chat-ui-polish](003-chat-ui-polish/spec.draft.md) | 1 | ✔️ 完了(追加提案あり・未実装) | react-markdown導入・list_papersのgenerative UI化(専用テーブル)・レイアウト調整を実装済み。**未実装**: メッセージのコピーボタン、入力欄の「論文一覧」クイックアクションボタン(いずれも2026-08-23追加、実装順の0番参照) |
 | 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | 🚫 やらない | 見送り決定。設計(スタブは作らない方針)は記録として残す |
 | 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | 🗓 いつか | spec自体は完成済み(対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化)。直近では実装しない、いつかやるリスト行き |
 | 006 | [chatlog-backfill](006-chatlog-backfill/spec.draft.md) | 1 | 💤 スケルトンのみ | 005の後。Eval harnessの検証データとしても使う |
 | 007 | [todo-domain](007-todo-domain/spec.draft.md) | 2 | ✔️ 完了 | v1はCRUD+3バケット(day/month/life)分類のみ。新規エージェント/レジストリは作らず既存の単一チャットエージェントにtool追加。バケット分類はLLMがadd_todoのscale引数を自然文から直接選ぶ。優先度は最終更新日からの経過時間(熟成度)のみ、Interest依存は008以降に持ち越し。リマインド・現況調査エージェントは対象外(将来spec) |
-| 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | 💤 スケルトンのみ | エコーチェンバー可視化。セレンディピティ機能の再検討を含む |
+| 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | ⏸ 待機中 | エコーチェンバー可視化。対立軸は静的ソースラベル方式(LLM自動スタンス推定はしない)に決定。Phase A(Ingest/Structure)は着手可能、Phase B(Relate/Surface、関係グラフ表示)は`009-dashboard`待ち。`Relation`/`Event`テーブルを新規実装、`Interest`はv1で作らない |
 | 009 | [dashboard](009-dashboard/spec.draft.md) | 3 | 💤 スケルトンのみ | 複数ドメインが揃ってから。003のgenerative UIの限界がトリガー |
 | 010 | [mobile-pwa](010-mobile-pwa/spec.draft.md) | 3 | 💤 スケルトンのみ | 009である程度画面が固まってから |
 | 011 | [agent-registry](011-agent-registry/spec.draft.md) | 4 | 💤 スケルトンのみ | 複数ドメインのエージェントが実在する状態で強化 |
 | 012 | [local-llm-cutover](012-local-llm-cutover/spec.draft.md) | 4 | 💤 スケルトンのみ | Layer0のモデル抽象を活かす想定。005の実績があると判断しやすい |
 | 013 | [ir-analysis-domain](013-ir-analysis-domain/spec.draft.md) | 5 | ✅ 実装開始可能 | EDINET API v2(無料、要APIキー)の書類取得(`type=2`)はPDFをそのまま返すため、015と同じPDF→pypdf→全文チャット方式を流用する。企業名検索はAPI側に無いためv1はdocID直接入力のみ。ニュース関連付け・SEC EDGAR・XBRL構造化解析は範囲外 |
 | 014 | [paper-url-pdf-ingest](014-paper-url-pdf-ingest/spec.draft.md) | 1 | ✔️ 完了 | 002で当初スコープから外したurl/local_pdf対応。URL直リンクは`adapters/pdf/downloader.py`でダウンロード、local_pdfは`POST /api/papers/upload`+`save_paper`ツール経由(ADR-0002、AG-UI添付は不採用)。非arXivのメタデータは`agent/extract_metadata.py`で本文冒頭から抽出、重複判定は`source_url`を流用 |
-| 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了 | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした |
+| 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了(追加提案あり・未実装) | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした。**未実装**: 論文モードへの手動エントリー(`PaperList`からのクリック、2026-08-23追加、実装順の0番参照) |
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
 | 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✅ 実装開始可能 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(追記のみ)+現在状態層(`memory/<theme>.md`、書き直し)の二層構造。抽出はターンごとバックグラウンド、テーマ分類は自動+明示指示での見直し可 |
 | 018 | [web-search-tool](018-web-search-tool/spec.draft.md) | - | ✔️ 完了 | 自前ホスト済みのSearXNGに`adapters/searxng/client.py`から直接HTTPで問い合わせる自前adapter方式(MCPは見送り、詳細はspec参照)。`web_search`ツールを常時登録。007/013/017など複数specから使われる横断インフラ |

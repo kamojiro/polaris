@@ -40,3 +40,83 @@
 - 検索・フィルタ付きの独立したダッシュボード画面(Phase 3で扱う)
 - モバイル対応(PWA化)
 - 論文一覧以外のtool(例: 保存確認)のgenerative UI化(必要になったら別specで)
+
+## 追加提案: メッセージのコピーボタン(未実装、2026-08-23)
+
+Claude.aiのように、各メッセージにhoverするとコピーボタンが出る機能。バックエンド・データモデルの変更は不要でLayer4のみの変更。
+
+- `App.tsx`のメッセージ描画(現状154〜159行目、`bubble`のdiv)に、hoverで出る`message-actions`を追加し、そこに`CopyButton`コンポーネントを置く
+- `CopyButton`は`navigator.clipboard.writeText()`でレンダリング後のHTMLではなく**markdownソーステキスト**(`messageText(message)`の戻り値)をコピーする。他のmarkdown対応先に貼りやすくするため
+- コピー後は1.5秒程度アイコンをチェックマークに切り替えてフィードバックする
+- アイコンは新規パッケージを入れずインラインSVGで済ませる(1個のアイコンのために依存を増やさない)
+- user/assistant両方のbubbleに出すか、assistantのみにするかは実装時に判断してよい(Claudeは両方に出す)
+
+実装イメージ(そのまま貼れる想定):
+
+```tsx
+// App.tsx: TEXTAREA_MAX_HEIGHT_PX の手前あたりに追加
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      className="copy-button"
+      onClick={() => void handleCopy()}
+      aria-label={copied ? "コピーしました" : "メッセージをコピー"}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
+  );
+}
+```
+
+呼び出し側(既存のbubble描画のすぐ下に追加):
+
+```tsx
+{messageText(message) !== "" && (
+  <div className={`message-actions message-actions-${message.role}`}>
+    <CopyButton text={messageText(message)} />
+  </div>
+)}
+```
+
+`styles.css`には`.message-actions`(`.message-group:hover`で`opacity: 1`)と`.copy-button`のスタイルを追加する。`.bubble-pending`定義の直後あたりが自然。
+
+## 追加提案: 入力欄の「論文一覧」クイックアクションボタン(未実装、2026-08-23)
+
+Claude.aiの入力欄下部にある+ボタン/プロジェクトボタンのように、毎回「論文一覧ちょうだい」と打たなくても、composerのツールバーから一発で論文一覧を呼び出せるボタンを追加する。
+
+- `App.tsx`の`.composer`内、既存の📎(attach)ボタンの隣に追加する
+- クリックしたら`void sendMessage("論文一覧ちょうだい")`を呼ぶだけ。新しいtool・エンドポイントは不要で、既存の`list_papers`フローがそのまま動く(`015-paper-qa-chat`の「クリックで裏からメッセージを送る」パターンと同じ考え方)
+- アイコンは既存の📎ボタンがSVGではなく絵文字を使っている(`{isUploading ? "…" : "📎"}`)のに合わせて、絵文字(例: 📚)で統一する
+
+```tsx
+<button
+  type="button"
+  className="quick-action"
+  disabled={isRunning}
+  onClick={() => void sendMessage("論文一覧ちょうだい")}
+  title="論文一覧を表示"
+>
+  📚
+</button>
+```
+
+`019-diary-domain`で提案した日記モードのトグルボタンも同じcomposerツールバーに置く想定なので、並び順は「📎 添付 → 📚 論文一覧 → 📔 日記モード → (送信)」のように、既存のattachボタンと見た目(サイズ・余白)を揃えて追加するのが自然。
+
