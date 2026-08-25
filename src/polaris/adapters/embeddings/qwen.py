@@ -40,10 +40,17 @@ class QwenEmbedder:
         (`local_files_only=True`)、未キャッシュの初回のみ通常ロードでダウンロードする。
         """
         self._model_id = model_id
+        # fp16でロードする(2026-08-25、実運用でOOM発生を受けて変更)。fp32だと
+        # モデル重みだけでVRAMを2.8GB常駐させ、8GBのGPU上ではencode()のバッチ処理用の
+        # 活動メモリの余白が5GB程度しか残らず、チャンクのトークン長次第でOOMになりうる
+        # ことを実機再現で確認した。fp16なら常駐は約1.1GBまで下がる。GPU(Turing世代、
+        # RTX 2060 SUPER)はfp16 Tensor Coreに対応しているため速度面でも不利にならない
+        # (bf16はTuring未対応でハードウェアアクセラレーションが効かないため選ばない)。
+        model_kwargs = {"torch_dtype": torch.float16}
         try:
-            self._model = SentenceTransformer(model_id, local_files_only=True)
+            self._model = SentenceTransformer(model_id, local_files_only=True, model_kwargs=model_kwargs)
         except OSError:
-            self._model = SentenceTransformer(model_id)
+            self._model = SentenceTransformer(model_id, model_kwargs=model_kwargs)
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """テキストのバッチを正規化済みベクトルへ変換する.

@@ -4,7 +4,8 @@
 
 ## 既知の不具合(未対応)
 
-- **引数無しtoolのstreaming時ハング**: `AGUIAdapter`のstreaming経路(`agent.run_stream_events()`)で、`list_papers`/`list_todos`/`exit_paper_mode`のような引数無し(または全省略可能)のtoolを呼ぶと、モデルが`ToolCallPart(args='')`を送った直後に後続イベントが来ずSSEが無限にハングすることがある(非streamingの`agent.run()`では発生しない)。`018-web-search-tool`のE2E検証中に発見、origin/main(018の変更を含まない状態)でも4回中3回再現したため018固有の問題ではない。おそらく`qwen/qwen3-30b-a3b:free`のツール呼び出しストリーミングのゆらぎにpydantic-ai側の完了検知が追随できていない。原因調査(pydantic-ai側のツール呼び出し完了判定ロジック)または回避策(引数無しtoolを無くす等)の検討が必要。影響範囲は広い(既存の007/015のtoolも対象)ため、気になったタイミングで専用に調査する(2026-08-24)
+- **toolのstreaming時ハング**: `AGUIAdapter`のstreaming経路(`agent.run_stream_events()`)で、tool呼び出しの引数をモデルがストリーミングし終えた(はずの)直後に後続イベントが来ずSSEが無限にハングすることがある(非streamingの`agent.run()`では発生しない)。`018-web-search-tool`のE2E検証中に`list_papers`(引数無し)で発見し、origin/main(018の変更を含まない状態)でも4回中3回再現したため018固有の問題ではないと確認していたが、2026-08-25に実運用中`save_paper(url=...)`(引数**あり**)でも同じ症状(openrouterからの応答は届いているのに`tool call: save_paper(...)`のログが出ないまま数分単位で無反応)を確認した。**引数の有無に限定された問題ではなく**、tool呼び出しの完了検知全般に関わる可能性が高い。おそらく`qwen/qwen3-30b-a3b:free`のツール呼び出しストリーミングのゆらぎにpydantic-ai側の完了検知が追随できていない。原因調査(pydantic-ai側のツール呼び出し完了判定ロジック)が必要。回避策は今のところ「フロントをリロードして再送する」のみ(toolの多くは冪等なので再送は安全)。影響範囲が広い(既存のtool全般が対象になりうる)ため優先度を上げて専用に調査する(2026-08-24発見、2026-08-25再発)
+- **Ingestの冪等性チェックがembeddingの有無を見ていない**: `services/ingest_paper.py`の「既にIngest済みなのでスキップ」判定は`repo.list_chunks(item.id)`が非空かどうかだけで判断しており、embedding(sqlite-vecの`embeddings`テーブル)が実際に生成済みかは見ていない。上記のGPU OOM(fp16化で対応済み、`adapters/embeddings/qwen.py`参照)でchunk分割まで終わった直後にEmbedding生成が失敗した場合、chunkだけがDBに残り、以後同じURLを再送しても「既に取り込み済み」として無条件にスキップされ続け、embeddingが永久に欠けたまま(要約も、その失敗した回に生成された古い内容のまま)になる。今回は手動でItem/PaperRecord/Chunkを削除して再送することで復旧した。判定条件をchunk数ではなくembedding数(またはchunk数とembedding数の一致)に変えるのが本来の直し方(2026-08-25)
 
 ## 未整理
 
