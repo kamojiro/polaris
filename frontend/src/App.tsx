@@ -60,6 +60,36 @@ function formatUsageLine(usage: TurnUsage): string {
   return `${parts.join(" / ")}${costPart}`;
 }
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      className="copy-button"
+      onClick={() => void handleCopy()}
+      aria-label={copied ? "コピーしました" : "メッセージをコピー"}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="9" y="9" width="13" height="13" rx="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 const TEXTAREA_MAX_HEIGHT_PX = 200;
 
 function autoResize(el: HTMLTextAreaElement) {
@@ -153,14 +183,24 @@ export default function App() {
           .map((message) => (
             <div key={message.id} className="message-group">
               {messageText(message) !== "" && (
-                <div className={`bubble bubble-${message.role}`}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageText(message)}</ReactMarkdown>
-                </div>
+                <>
+                  <div className={`bubble bubble-${message.role}`}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageText(message)}</ReactMarkdown>
+                  </div>
+                  <div className={`message-actions message-actions-${message.role}`}>
+                    <CopyButton text={messageText(message)} />
+                  </div>
+                </>
               )}
               {findToolResults<PaperListResult>(LIST_PAPERS_TOOL_NAME, message, messages).map((result, i) => (
                 // 同一メッセージ内で同じツールを複数回呼ぶことは想定していないが、
                 // 念のため index も key に含めて一意にしておく。
-                <PaperList key={`${message.id}-papers-${i}`} papers={result.papers} total_count={result.total_count} />
+                <PaperList
+                  key={`${message.id}-papers-${i}`}
+                  papers={result.papers}
+                  total_count={result.total_count}
+                  onSelectPaper={(title) => void sendMessage(`『${title}』について教えて`)}
+                />
               ))}
               {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
                 <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
@@ -207,6 +247,15 @@ export default function App() {
           title="PDFをアップロードして保存"
         >
           {isUploading ? "…" : "📎"}
+        </button>
+        <button
+          type="button"
+          className="quick-action"
+          disabled={isRunning}
+          onClick={() => void sendMessage("論文一覧ちょうだい")}
+          title="論文一覧を表示"
+        >
+          📚
         </button>
         <textarea
           ref={textareaRef}

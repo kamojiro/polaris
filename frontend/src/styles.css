@@ -136,6 +136,37 @@ header p {
   opacity: 0.6;
 }
 
+/* 003-chat-ui-polish 追加提案: メッセージのコピーボタン(hoverで表示) */
+.message-actions {
+  align-self: flex-start;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.message-actions-user {
+  align-self: flex-end;
+}
+
+.message-group:hover .message-actions {
+  opacity: 1;
+}
+
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: gray;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.4rem;
+}
+
+.copy-button:hover {
+  background: rgb(0 0 0 / 8%);
+}
+
 /* 論文一覧の専用テーブル(generative UI) */
 .paper-list-wrapper {
   align-self: flex-start;
@@ -165,6 +196,21 @@ header p {
   margin: 0.4em 0 0;
   color: gray;
   font-size: 0.85rem;
+}
+
+/* 015-paper-qa-chat 追加提案: 一覧からのクリックで論文モードに入るためのタイトルボタン */
+.paper-list-title {
+  border: none;
+  background: none;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  padding: 0;
+}
+
+.paper-list-title:hover {
+  text-decoration: underline;
 }
 
 .paper-list-empty {
@@ -297,6 +343,13 @@ header p {
 
 /* PDFアップロード用の📎ボタン(送信ボタンと見た目のトーンは揃え、控えめな色にする) */
 .composer button.attach {
+  background: #e5e7eb;
+  color: #111827;
+  padding: 0.65rem 0.9rem;
+}
+
+/* 003-chat-ui-polish 追加提案: 論文一覧クイックアクションボタン。📎と見た目のトーンを揃える */
+.composer button.quick-action {
   background: #e5e7eb;
   color: #111827;
   padding: 0.65rem 0.9rem;
