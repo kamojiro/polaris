@@ -40,7 +40,12 @@
   - ニュースレター: Ahead of AI(Sebastian Raschka、論文解説が強い)、Latent Space(swyx、AIエンジニアリング寄り)。いずれもSubstack系で`/feed`形式のRSSがある想定(着手時に確認)。Import AI(Jack Clark)は2026年3月頃からAIリスク・政策寄りに軸足を移しており、論文カバレッジの比重は下がっている点に留意
   - Hugging Face Papers(毎日の注目論文キュレーション)は公式RSSが存在せず、非公式ミラー(例: `huangboming/huggingface-daily-paper-feed`)頼みになる点に注意(下記リスク参照)
   - Anthropic公式ブログも公式RSSが存在せず、非公式ミラー(例: `conoro/anthropic-engineering-rss-feed`)頼みになる(同上)
-- **`swe_general`**: arXiv cs.SEカテゴリ(`https://rss.arxiv.org/rss/cs.SE`、ユーザーの関心領域として確認済み)。Martin Fowler等の個別エンジニアブログも候補だが、具体的なフィードURLは着手時に個別確認する
+- **`swe_general`**: arXiv cs.SEカテゴリ(`https://rss.arxiv.org/rss/cs.SE`、ユーザーの関心領域として確認済み)に加えて、以下の個別ブログ・メディアを候補にする(2026-08-26、いずれも実機で200応答・パース可能・直近記事ありを確認済み)
+  - Martin Fowlerのブログ(`https://martinfowler.com/feed.atom`、公式・安定、設計・アーキテクチャ論)
+  - InfoQ(`https://www.infoq.com/feed/`、公式、ソフトウェア工学全般のニュース・カンファレンス講演)
+  - The Pragmatic Engineer(`https://newsletter.pragmaticengineer.com/feed`、Gergely Oroszのニュースレター、Substack系、エンジニアリング組織論寄り)
+  - Julia Evansのブログ(`https://jvns.ca/atom.xml`、公式・安定、実務寄りの深掘り記事)
+  - the morning paper(`https://blog.acolyer.org/feed/`、Adrian Colyerによる論文解説ブログ。`ai_llm`ではなくCS全般の論文を扱うため`swe_general`側に分類)
 - **`jp_tech_blog`**: Zennトレンド(`https://zenn.dev/feed`)、Qiitaトレンド(`https://qiita.com/popular-items/feed`)、はてなブックマーク テクノロジー人気エントリー(`http://b.hatena.ne.jp/hotentry/it.rss`)。いずれも公式・安定
 - **`tech_industry_news`**: Hacker News。公式(`https://news.ycombinator.com/rss`)より`https://hnrss.org/frontpage`の方がポイント数・コメント数等のメタデータやキーワードフィルタが使え、こちらを優先候補にする
 
@@ -105,7 +110,6 @@ class Event(SQLModel, table=True):
 
 ## 未決定事項
 
-- `swe_general`(ソフトウェア工学一般)の具体的なフィードURL選定(候補調査は着手時)
 - 上記4分類(`ai_llm`/`swe_general`/`jp_tech_blog`/`tech_industry_news`)を初期タクソノミーとして固定するか、着手時にユーザーが自由に見直せる余地を残すか(017のテーマ再編と同様の考え方が使えるかもしれない)
 - `Relation`のエッジ判定基準(embedding類似度の閾値、上位N件のみ繋ぐか等)
 - `009-dashboard`が無い間、Phase Bをどう暫定的に見せるか(専用の簡易ページを先に作るか、009自体を前倒しするか)
