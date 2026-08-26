@@ -40,15 +40,32 @@ class NewsRepository:
             session.add(record)
             session.commit()
 
-    def list_news(self, *, limit: int | None = None) -> list[tuple[Item, NewsRecord]]:
-        """保存済みのニュース記事を公開日時の降順で返す(limitでSQL LIMIT絞り込み)."""
+    def list_news(self, *, limit_per_label: int | None = None) -> list[tuple[Item, NewsRecord]]:
+        """保存済みのニュース記事を公開日時の降順で返す.
+
+        `limit_per_label`はsource_labelごとの絞り込み件数(全体への単一LIMITではない)。
+        情報源によって更新頻度が大きく異なる(例: Hacker Newsは1日に何度も更新される一方、
+        arXivのタイムスタンプは投稿日単位)ため、全体にLIMITをかけると更新頻度の低い情報源が
+        一覧から丸ごと消えてしまう。実際にarXivの取り込み件数を増やした際にこの問題が発生し、
+        修正した(2026-08-27)。
+        """
         with Session(self._engine, expire_on_commit=False) as session:
             query = (
                 select(Item, NewsRecord)
                 .join(NewsRecord, NewsRecord.item_id == Item.id)  # type: ignore[arg-type]
                 .order_by(NewsRecord.published_at.desc())  # type: ignore[union-attr]
             )
-            if limit is not None:
-                query = query.limit(limit)
-            rows = session.exec(query).all()
-            return list(rows)
+            rows = list(session.exec(query).all())
+
+        if limit_per_label is None:
+            return rows
+
+        counts: dict[str, int] = {}
+        result: list[tuple[Item, NewsRecord]] = []
+        for item, record in rows:
+            count = counts.get(record.source_label, 0)
+            if count >= limit_per_label:
+                continue
+            counts[record.source_label] = count + 1
+            result.append((item, record))
+        return result

@@ -79,6 +79,18 @@ class NewsFeed(BaseModel):
     name: str
     url: str
     label: str  # source_label(対立軸の定義方針、spec参照)。フィード単位で静的に決まる
+    # True の場合、LLM要約(structure_news)を呼ばずタイトルのみで表示する。
+    # arXiv系フィードは1日あたりの流量がRSSの実効上限(20件)の数十倍に達する
+    # (2026-08-26実機調査: cs.LG+cs.AI+cs.MA+cs.IRで565件/日、cs.SEで62件/日)ため、
+    # 全件を要約付きフルエントリとして扱うのはLLM呼び出し回数・表示量ともに破綻する。
+    # 「興味判定はabstractで十分、arXiv自体は1行(タイトル)で十分」という判断
+    # (2026-08-27)により、arXiv系フィードは要約生成をスキップしてタイトルのみの
+    # カタログ的な一覧として扱う。他記事から個別に参照されている論文をちゃんと
+    # 読んで説明を付け加える案は specs/IDEAS.md に記録済み(将来の別実装)。
+    skip_summary: bool = False
+    # Noneの場合は NewsSettings.max_entries_per_feed を使う。skip_summary=Trueの
+    # フィードはLLM呼び出しコストが無いため個別に上限を引き上げられる。
+    max_entries: int | None = None
 
 
 class NewsSettings(BaseModel):
@@ -96,10 +108,18 @@ class NewsSettings(BaseModel):
             name="arXiv (cs.LG+cs.AI+cs.MA+cs.IR)",
             url="https://rss.arxiv.org/rss/cs.LG+cs.AI+cs.MA+cs.IR",
             label="ai_llm",
+            skip_summary=True,
+            max_entries=100,
         ),
         NewsFeed(name="Simon Willison", url="https://simonwillison.net/atom/everything/", label="ai_llm"),
         # swe_general
-        NewsFeed(name="arXiv (cs.SE)", url="https://rss.arxiv.org/rss/cs.SE", label="swe_general"),
+        NewsFeed(
+            name="arXiv (cs.SE)",
+            url="https://rss.arxiv.org/rss/cs.SE",
+            label="swe_general",
+            skip_summary=True,
+            max_entries=70,
+        ),
         NewsFeed(name="Martin Fowler", url="https://martinfowler.com/feed.atom", label="swe_general"),
         NewsFeed(name="InfoQ", url="https://www.infoq.com/feed/", label="swe_general"),
         NewsFeed(

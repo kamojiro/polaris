@@ -66,16 +66,24 @@ def test_list_news_orders_by_published_at_descending(tmp_path: Path) -> None:
     assert [item.id for item, _ in news] == ["item-news-2", "item-news-1", "item-news-0"]
 
 
-def test_list_news_respects_limit(tmp_path: Path) -> None:
-    """limitを指定するとSQL LIMITで件数が絞られる."""
+def test_list_news_respects_limit_per_label(tmp_path: Path) -> None:
+    """limit_per_labelを指定するとsource_labelごとに件数が絞られる(全体への単一LIMITではない)."""
     repo = NewsRepository(create_db_engine(str(tmp_path / "test.db")))
     for i in range(5):
-        item, record = _make_news(f"news-{i}", source_url=f"https://example.com/news-{i}")
+        item, record = _make_news(
+            f"news-a-{i}", source_url=f"https://example.com/news-a-{i}", source_label="ai_llm"
+        )
+        repo.save_news(item, record)
+    for i in range(2):
+        item, record = _make_news(
+            f"news-b-{i}", source_url=f"https://example.com/news-b-{i}", source_label="swe_general"
+        )
         repo.save_news(item, record)
 
-    news = repo.list_news(limit=2)
+    news = repo.list_news(limit_per_label=2)
 
-    assert len(news) == 2  # noqa: PLR2004
+    assert len(news) == 4  # noqa: PLR2004 (ai_llmは5件中2件、swe_generalは2件中2件)
+    assert sum(1 for _, r in news if r.source_label == "ai_llm") == 2  # noqa: PLR2004
 
 
 def test_find_by_source_url_returns_none_when_missing(tmp_path: Path) -> None:

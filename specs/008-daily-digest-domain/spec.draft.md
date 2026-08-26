@@ -133,6 +133,15 @@ class Event(SQLModel, table=True):
 - チャット: `list_news`ツール(`agent/chat_agent.py`)、`NewsList.tsx`(source_labelごとにバケット分けするgenerative UI、`TodoList.tsx`と同型)
 - E2E検証(実機・実LLM): `uv run python -m polaris.cli.ingest_news`を実際に実行し、既定の12フィードから記事を取得・要約生成・DB保存できることを確認。同じコマンドを再実行すると`skipped`が増え重複保存されないこと(冪等性)も確認
 
+### arXivフィードの流量対応(2026-08-27)
+
+実機検証で、arXivの2フィード(cs.LG+cs.AI+cs.MA+cs.IR/cs.SE)だけ1日あたりの実際の流量が既定の`max_entries_per_feed=20`を大幅に超える(前者565件/日、後者62件/日、いずれも実機調査時点)ことが判明した一方、他の10フィードは20件以内にほぼ収まっていた。以下の方針で対応した:
+
+- 「興味があるかどうかはabstractで十分、arXiv自体は1行(タイトル)で十分」という判断により、`NewsFeed.skip_summary`(既定`False`)を追加し、arXivの2フィードのみ`True`にした。`skip_summary=True`のフィードは`structure_news`のLLM要約呼び出し自体をスキップし、`Item.summary`を空文字のまま保存する(`services/ingest_news.py`)。LLM呼び出しコストが無くなったため、`NewsFeed.max_entries`(フィード単位の上限、既定は`None`で`NewsSettings.max_entries_per_feed`にフォールバック)をarXivの2フィードだけ100/70に引き上げた
+- `NewsList.tsx`は`summary`が空文字の場合、要約行(`.news-summary`)自体を描画しない(タイトル+情報源名のみの1行表示になる)
+- `NewsRepository.list_news()`は`limit`(全体への単一SQL LIMIT)から`limit_per_label`(source_labelごとの上限)に変更した。理由: 全体に単一LIMITをかけると、更新頻度の高いソース(Hacker News等)が更新頻度の低いソース(arXiv、投稿日単位のタイムスタンプ)を一覧から完全に押し出してしまうことが実機で確認できた(arXivの取り込み件数を増やした直後、`list_news`の結果に一件もarXiv記事が含まれなくなった)。`chat_agent.py`の`_RECENT_NEWS_LIMIT_PER_LABEL`(既定15)で呼び出す
+- 「他の記事(ブログ等)から実際に参照されているarXiv論文だけ、通常より踏み込んで全文を読んで説明を加える」という発展的な着想は本Phase Aの範囲外とし、`specs/IDEAS.md`に記録した(相互参照ロジックが必要で、単純な「1フィードずつ処理」というPhase Aの構造とは別設計が要るため)
+
 ## 未決定事項
 
 - `Relation`のエッジ判定基準(embedding類似度の閾値、上位N件のみ繋ぐか等)

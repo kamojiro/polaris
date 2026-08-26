@@ -75,7 +75,8 @@ logger = logging.getLogger(__name__)
 # 一覧表示の上限。件数が増えるほど DB 負荷・LLM に渡すトークン量が際限なく
 # 増えないよう、フロントではなくここ(list_papers/list_news の SQL LIMIT)で絞る。
 _RECENT_PAPERS_LIMIT = 20
-_RECENT_NEWS_LIMIT = 30
+# source_labelごとの上限(全体への単一LIMITではない。NewsRepository.list_news参照)。
+_RECENT_NEWS_LIMIT_PER_LABEL = 15
 
 _INSTRUCTIONS = """\
 あなたは個人用の論文管理・TODO管理アシスタントです。次のルールに従ってください。
@@ -523,7 +524,7 @@ def _register_news_tools(agent: Agent[ChatDeps, str], news_repo: NewsRepository)
                 published_at=record.published_at,
                 source_url=record.source_url,
             )
-            for item, record in news_repo.list_news(limit=_RECENT_NEWS_LIMIT)
+            for item, record in news_repo.list_news(limit_per_label=_RECENT_NEWS_LIMIT_PER_LABEL)
         ]
         return NewsListResult(news=news)
 

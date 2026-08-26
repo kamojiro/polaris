@@ -44,6 +44,8 @@ async def _ingest_feed(
     feed_url: str,
     feed_label: str,
     *,
+    skip_summary: bool,
+    max_entries: int,
     repo: NewsRepository,
     structurer: NewsStructurer,
     http_client: httpx.AsyncClient,
@@ -54,7 +56,7 @@ async def _ingest_feed(
         feed_url,
         client=http_client,
         timeout_seconds=settings.news.timeout_seconds,
-        max_entries=settings.news.max_entries_per_feed,
+        max_entries=max_entries,
     )
 
     created = 0
@@ -64,7 +66,12 @@ async def _ingest_feed(
             skipped += 1
             continue
 
-        structured = await structurer.structure(title=entry.title, summary=entry.summary)
+        # skip_summary=True(arXiv系)はLLM要約を呼ばずタイトルのみで表示する
+        # (settings.py の NewsFeed.skip_summary docstring参照)。
+        summary = ""
+        if not skip_summary:
+            structured = await structurer.structure(title=entry.title, summary=entry.summary)
+            summary = structured.summary
         now = datetime.now(UTC)
         record = NewsRecord(
             id=uuid.uuid4().hex,
@@ -78,7 +85,7 @@ async def _ingest_feed(
             id=uuid.uuid4().hex,
             item_type=ItemType.news_article,
             title=entry.title,
-            summary=structured.summary,
+            summary=summary,
             created_at=now,
             source_ref=f"news:{record.id}",
         )
@@ -110,6 +117,8 @@ async def ingest_all_feeds(
                 feed.name,
                 feed.url,
                 feed.label,
+                skip_summary=feed.skip_summary,
+                max_entries=feed.max_entries or settings.news.max_entries_per_feed,
                 repo=repo,
                 structurer=structurer,
                 http_client=http_client,

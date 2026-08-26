@@ -50,7 +50,7 @@ export function NewsList({ news }: NewsListResult) {
                     {n.title}
                   </a>
                   <span className="news-source-name">{n.source_name}</span>
-                  <span className="news-summary">{n.summary}</span>
+                  {n.summary && <span className="news-summary">{n.summary}</span>}
                 </li>
               ))}
             </ul>
