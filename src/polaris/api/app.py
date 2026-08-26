@@ -11,19 +11,27 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ag_ui.core import BaseEvent, CustomEvent, StateSnapshotEvent
+from ag_ui.core import BaseEvent, CustomEvent, RunAgentInput, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
-from pydantic_ai.ui import StateDeps
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
-from polaris.agent.chat_agent import PaperModeState, build_chat_agent
+from polaris.agent.chat_agent import ChatDeps, PaperModeState, build_chat_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
+from polaris.agent.memory_extract import (
+    AgentMemoryExtractor,
+    AgentMemoryRewriter,
+    build_memory_extract_agent,
+    build_memory_rewrite_agent,
+)
+from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
+from polaris.db.memory_repository import MemoryRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.services.memory import extract_and_store_memory, recall_memory
 from polaris.services.progress import get_progress_lines
 from polaris.settings import Settings
 
@@ -85,10 +93,14 @@ for _logger_name in ("polaris.services.ingest_paper", "polaris.adapters.embeddin
 _engine = create_db_engine(settings.DB_PATH, embedding_dim=settings.ingest.embedding_dim)
 _repo = PaperRepository(_engine)
 _todo_repo = TodoRepository(_engine)  # 007-todo-domain: Paperと同じSQLiteファイルを使う
+_memory_repo = MemoryRepository(_engine)  # 017-chat-memory: 同上
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
+_memory_recaller = AgentMemoryRecaller(build_memory_recall_agent(settings))
+_memory_extractor = AgentMemoryExtractor(build_memory_extract_agent(settings))
+_memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
 _agent = build_chat_agent(
     settings,
     _repo,
@@ -100,6 +112,11 @@ _agent = build_chat_agent(
 
 _upload_dir = Path(settings.ingest.upload_dir)
 _upload_dir.mkdir(parents=True, exist_ok=True)
+
+# 017-chat-memory: バックグラウンドで走らせる記憶抽出タスクへの強参照。asyncio.create_task が
+# 返す Task はどこからも参照されないとGCされ、タスクの途中で実行が打ち切られることがある
+# (Python公式ドキュメントで明記されている既知の落とし穴)ため、完了まで参照を保持する。
+_background_tasks: set[asyncio.Task[None]] = set()
 
 app = FastAPI(title="Polaris")
 
@@ -198,20 +215,75 @@ async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEv
     )
 
 
+def _latest_user_text(run_input: RunAgentInput) -> tuple[str, str] | None:
+    """直近のユーザー発言を (message id, テキスト) として返す(無ければ None).
+
+    017-chat-memory の前処理・後処理どちらの入力にもなる。マルチモーダル内容
+    (`UserMessage.content` が `list[InputContent]` の場合)は対象外(v1は素の
+    フロントエンドから常に文字列が来る前提、`useChatAgent.ts`参照)。
+    """
+    for message in reversed(run_input.messages):
+        if message.role == "user" and isinstance(message.content, str):
+            return message.id, message.content
+    return None
+
+
+async def _extract_memory_task(user_text: str, assistant_text: str, *, turn_id: str) -> None:
+    """017-chat-memory の後処理本体(fire-and-forgetで呼ばれる想定).
+
+    `asyncio.create_task` から参照を持たずに呼ばれるため、ここで例外を捕まえて
+    ログに残す(拾わなければ `Task exception was never retrieved` になるだけで
+    チャット応答自体には影響しないが、原因調査ができなくなる)。
+    """
+    try:
+        await extract_and_store_memory(
+            user_text,
+            assistant_text,
+            turn_id=turn_id,
+            extractor=_memory_extractor,
+            rewriter=_memory_rewriter,
+            repo=_memory_repo,
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("chat memory extraction failed")
+
+
 @app.post("/api/chat")
 async def chat(request: Request) -> Response:
-    """AG-UI プロトコルでチャットエージェントを実行する.
+    """AG-UI プロトコルでチャットエージェントを実行する(ADR-0003の3段パイプライン).
 
-    論文モード(015拡張)の state は AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent
-    で毎ターン同期する。`deps` はリクエストごとに新しく作り、`on_complete` の
-    クロージャで同じオブジェクトを参照することで、run 中にツール(get_paper_full_text/
-    exit_paper_mode)が `ctx.deps.state` に加えた変更を読み出して返せる。
+    前処理(同期): 直近のユーザー発言から関連する記憶(017-chat-memory)を想起し、
+    `deps.recalled_memory` に詰める。`AGUIAdapter.dispatch_request` は Request から
+    自前でボディを読むが、`Request.body()` はキャッシュされるため、ここで先に
+    読んでも問題ない。
+
+    メイン処理: 既存の `_agent` をそのまま使う(変更なし)。
+
+    後処理(非同期): 論文モード(015拡張)の state 同期・使用量イベントに加えて、
+    017-chat-memory の記憶抽出を `asyncio.create_task` でバックグラウンド実行する
+    (チャット応答をブロックしない)。
     """
-    deps = StateDeps(state=PaperModeState())
+    body = await request.body()
+    run_input = AGUIAdapter.build_run_input(body)
+    latest = _latest_user_text(run_input)
+
+    deps = ChatDeps(state=PaperModeState())
+    if latest is not None:
+        _, user_text = latest
+        deps.recalled_memory = await recall_memory(
+            user_text, recaller=_memory_recaller, repo=_memory_repo, settings=settings
+        )
 
     async def on_complete(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
         async for event in _emit_usage_event(result):
             yield event
         yield StateSnapshotEvent(snapshot=deps.state.model_dump(mode="json"))
+        if latest is not None:
+            turn_id, user_text = latest
+            # build_chat_agent は Agent[ChatDeps, str] なので result.output は常に str。
+            task = asyncio.create_task(_extract_memory_task(user_text, result.output, turn_id=turn_id))
+            _background_tasks.add(task)
+            task.add_done_callback(_background_tasks.discard)
 
     return await AGUIAdapter.dispatch_request(request, agent=_agent, deps=deps, on_complete=on_complete)

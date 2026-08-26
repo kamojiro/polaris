@@ -60,6 +60,14 @@ class SearxngSettings(BaseModel):
     timeout_seconds: float = 10.0
 
 
+class MemorySettings(BaseModel):
+    """チャットの長期記憶(017-chat-memory)の設定."""
+
+    # テーマごとの現在状態ファイル(<slug>.md)の保存先。ログ層(MemoryEvent)はDBだが、
+    # 会話に読み込ませる実体はこちら(ingest.pdf_dirと同じ「ディレクトリ設定+都度読み書き」パターン)。
+    dir: str = "data/memory"
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -77,6 +85,7 @@ class Settings(BaseSettings):
     ingest: IngestSettings = IngestSettings()
     chat: ChatSettings = ChatSettings()
     searxng: SearxngSettings = SearxngSettings()
+    memory: MemorySettings = MemorySettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -83,6 +83,36 @@ class TodoScale(StrEnum):
     life = "life"
 
 
+class MemoryTheme(SQLModel, table=True):
+    """チャット長期記憶(017-chat-memory)のテーマ索引.
+
+    想起・抽出それぞれのLLM呼び出しに毎回渡す軽量な一覧(slug + 一行説明)。
+    現在状態ファイル本体は`memory/<slug>.md`にあり、ここはその索引のみ持つ。
+    """
+
+    __tablename__ = "memory_themes"  # pyright: ignore[reportAssignmentType]
+
+    slug: str = Field(primary_key=True)
+    description: str
+    updated_at: datetime
+
+
+class MemoryEvent(SQLModel, table=True):
+    """チャット長期記憶のログ層(017-chat-memory). 追記のみ、削除・編集しない.
+
+    現在状態ファイル(`memory/<theme>.md`)はこのログをもとにLLMが都度書き直す
+    materialized viewで、ログ自体が真実の記録(event sourcing)。
+    """
+
+    __tablename__ = "memory_events"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    theme: str = Field(index=True)
+    extracted_at: datetime
+    source_conversation_turn: str  # 抽出元になったユーザー発言のAG-UI message id(トレーサビリティ用)
+    raw_text: str  # 抽出された記憶内容(このターンで学んだことの短い記述)
+
+
 class TodoRecord(SQLModel, table=True):
     """TODOドメイン固有のサテライトテーブル(007-todo-domain).
 

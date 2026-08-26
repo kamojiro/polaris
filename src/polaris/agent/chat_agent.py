@@ -21,18 +21,25 @@ LLMが add_todo の scale 引数をユーザーの自然文から直接選ぶ。
 (_register_paper_qa_tools 内で登録)がそれを見て「曖昧な質問もこの論文への
 質問として解釈してよい」という指示を追加する。会話履歴だけに頼るのではなく、
 明示的な state を LLM への指示とフロントのバッジ表示の両方に使う。
+
+チャットの長期記憶(017-chat-memory)は、メインのチャットエージェントに
+「記憶を検索するtool」を持たせない(応答生成モデルに能動的なtool呼び出しを
+期待するのは信頼性が低いため)。代わりに `api/app.py` の前処理段が想起した
+内容を `ChatDeps.recalled_memory` に詰めて渡し、`_memory_instructions` が
+それを動的instructionsとして注入する。抽出(後処理)は完全にこのエージェントの
+外側(`services/memory.py`)で行われ、チャットの応答自体には一切関与しない。
 """
 
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import httpx
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.ui import StateDeps
 
 # TodoScale は tool 関数の引数の型注釈として使われ、pydantic-ai が実行時に
 # シグネチャからスキーマを組み立てる(`from __future__ import annotations` で
@@ -141,6 +148,21 @@ class PaperModeState(BaseModel):
     active_paper: ActivePaper | None = None
 
 
+@dataclass
+class ChatDeps:
+    """メインのチャットエージェントの deps(`StateHandler` プロトコルを満たす自前dataclass).
+
+    `state` は AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent でクライアントと
+    同期される(`StateHandler` は「dataclassであること」と「state属性を持つこと」しか
+    要求しないため、`pydantic_ai.ui.StateDeps` を使わずこの形で足りる)。`recalled_memory`
+    は017-chat-memoryの前処理(`api/app.py`)がサーバー側だけで設定する値で、
+    `state` ではないため AG-UI 側には一切公開されない(StateSnapshotEventにも乗らない)。
+    """
+
+    state: PaperModeState
+    recalled_memory: str | None = None
+
+
 class TodoSummary(BaseModel):
     """一覧表示用のTODOサマリ."""
 
@@ -172,7 +194,7 @@ def _todo_summary(item: Item, record: TodoRecord) -> TodoSummary:
 
 
 def _register_paper_tools(
-    agent: Agent[StateDeps[PaperModeState], str],
+    agent: Agent[ChatDeps, str],
     repo: PaperRepository,
     *,
     settings: Settings,
@@ -240,12 +262,12 @@ def _format_full_text(item: Item, record: PaperRecord, full_text: PaperFullText)
 
 
 def _register_paper_qa_tools(
-    agent: Agent[StateDeps[PaperModeState], str], repo: PaperRepository, *, settings: Settings
+    agent: Agent[ChatDeps, str], repo: PaperRepository, *, settings: Settings
 ) -> None:
     """get_paper_full_text/exit_paper_mode ツールと論文モードの動的instructionsを登録する(015-paper-qa-chat)."""
 
     @agent.tool
-    async def get_paper_full_text(ctx: RunContext[StateDeps[PaperModeState]], paper: str) -> str:
+    async def get_paper_full_text(ctx: RunContext[ChatDeps], paper: str) -> str:
         """保存済み論文の本文全文を取得し、会話に取り込む(論文モードに入る).
 
         Args:
@@ -275,14 +297,14 @@ def _register_paper_qa_tools(
         return _format_full_text(item, record, full_text)
 
     @agent.tool
-    def exit_paper_mode(ctx: RunContext[StateDeps[PaperModeState]]) -> str:
+    def exit_paper_mode(ctx: RunContext[ChatDeps]) -> str:
         """論文モードを終了する(ユーザーが別の話題に移った、または明示的に終了を求めた場合に呼ぶ)."""
         logger.info("tool call: exit_paper_mode()")
         ctx.deps.state.active_paper = None
         return "論文モードを終了しました。"
 
     @agent.instructions
-    def _paper_mode_instructions(ctx: RunContext[StateDeps[PaperModeState]]) -> str | None:
+    def _paper_mode_instructions(ctx: RunContext[ChatDeps]) -> str | None:
         active = ctx.deps.state.active_paper
         if active is None:
             return None
@@ -314,7 +336,7 @@ def _format_search_results(query: str, response: SearxngResponse) -> str:
     return "\n\n".join(parts)
 
 
-def _register_web_search_tools(agent: Agent[StateDeps[PaperModeState], str], *, settings: Settings) -> None:
+def _register_web_search_tools(agent: Agent[ChatDeps, str], *, settings: Settings) -> None:
     """web_search ツールを登録する(018-web-search-tool、自前ホスト済みSearXNG連携)."""
     http_client = httpx.AsyncClient()
 
@@ -348,7 +370,7 @@ def _register_web_search_tools(agent: Agent[StateDeps[PaperModeState], str], *, 
         return _format_search_results(query, response)
 
 
-def _register_todo_read_tools(agent: Agent[StateDeps[PaperModeState], str], todo_repo: TodoRepository) -> None:
+def _register_todo_read_tools(agent: Agent[ChatDeps, str], todo_repo: TodoRepository) -> None:
     """add_todo/list_todos ツールを登録する(007-todo-domain)."""
 
     @agent.tool_plain
@@ -380,7 +402,7 @@ def _register_todo_read_tools(agent: Agent[StateDeps[PaperModeState], str], todo
         return TodoListResult(todos=todos)
 
 
-def _register_todo_write_tools(agent: Agent[StateDeps[PaperModeState], str], todo_repo: TodoRepository) -> None:
+def _register_todo_write_tools(agent: Agent[ChatDeps, str], todo_repo: TodoRepository) -> None:
     """update_todo/complete_todo/delete_todo ツールを登録する(007-todo-domain)."""
 
     @agent.tool_plain
@@ -461,6 +483,24 @@ def _register_todo_write_tools(agent: Agent[StateDeps[PaperModeState], str], tod
         return f"削除しました: 『{item.title}』"
 
 
+def _register_memory_instructions(agent: Agent[ChatDeps, str]) -> None:
+    """想起した長期記憶(017-chat-memory)を動的instructionsとして注入する.
+
+    `api/app.py` の前処理段が `ctx.deps.recalled_memory` を設定済みの前提で、
+    それが None でなければ会話の前提知識としてinstructionsに足す。tool は登録しない
+    (記憶の想起・抽出はどちらもメインのチャットエージェントの外側で完結する)。
+    """
+
+    @agent.instructions
+    def _memory_instructions(ctx: RunContext[ChatDeps]) -> str | None:
+        if ctx.deps.recalled_memory is None:
+            return None
+        return (
+            "以下は過去の会話から蓄積した、関連するテーマについての記憶です。"
+            "踏まえた上で回答してください。\n\n" + ctx.deps.recalled_memory
+        )
+
+
 def build_chat_agent(
     settings: Settings,
     repo: PaperRepository,
@@ -469,10 +509,11 @@ def build_chat_agent(
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
     todo_repo: TodoRepository,
-) -> Agent[StateDeps[PaperModeState], str]:
+) -> Agent[ChatDeps, str]:
     """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODOリポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
-    agent = Agent(model, deps_type=StateDeps[PaperModeState], instructions=_INSTRUCTIONS)
+    agent = Agent(model, deps_type=ChatDeps, instructions=_INSTRUCTIONS)
+    _register_memory_instructions(agent)
     _register_paper_tools(
         agent,
         repo,

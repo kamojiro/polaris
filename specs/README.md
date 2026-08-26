@@ -6,23 +6,22 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。
 
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
-2. **017 (chat-memory)** — 依存なし、spec詳細化済みで着手可能。013と並行でも順不同でもよい
-3. ~~004 (citation-relations)~~ — 見送り
-4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-7. 008 (daily-digest-domain) — Phase A(Ingest/Structure)は詳細化済みで着手可能。Phase B(関係グラフ表示)は009待ち
-8. 009 (dashboard)
-9. 010 (mobile-pwa) — 009に依存
-10. 011 (agent-registry)
-11. 012 (local-llm-cutover)
-12. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-15. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+2. ~~004 (citation-relations)~~ — 見送り
+3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+5. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+6. 008 (daily-digest-domain) — Phase A(Ingest/Structure)は詳細化済みで着手可能。Phase B(関係グラフ表示)は009待ち
+7. 009 (dashboard)
+8. 010 (mobile-pwa) — 009に依存
+9. 011 (agent-registry)
+10. 012 (local-llm-cutover)
+11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
 
 ## いつかやるリスト
 
@@ -48,7 +47,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 014 | [paper-url-pdf-ingest](014-paper-url-pdf-ingest/spec.draft.md) | 1 | ✔️ 完了 | 002で当初スコープから外したurl/local_pdf対応。URL直リンクは`adapters/pdf/downloader.py`でダウンロード、local_pdfは`POST /api/papers/upload`+`save_paper`ツール経由(ADR-0002、AG-UI添付は不採用)。非arXivのメタデータは`agent/extract_metadata.py`で本文冒頭から抽出、重複判定は`source_url`を流用 |
 | 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了 | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした。追加提案(2026-08-23、2026-08-26実装): 論文モードへの手動エントリー(`PaperList`からのクリック) |
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
-| 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✅ 実装開始可能 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(追記のみ)+現在状態層(`memory/<theme>.md`、書き直し)の二層構造。抽出はターンごとバックグラウンド、テーマ分類は自動+明示指示での見直し可 |
+| 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✔️ 完了 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(`MemoryEvent`、追記のみ)+現在状態層(`memory/<slug>.md`、書き直し)の二層構造。ADR-0003の3段パイプライン(前処理=想起/メイン/後処理=抽出)を`/api/chat`に実装、`agent.deps_type`を自前の`ChatDeps`(dataclass)に差し替えて論文モードのstateと分離した。テーマ統合・分割・改名(明示指示での見直し)はv1未実装 |
 | 018 | [web-search-tool](018-web-search-tool/spec.draft.md) | - | ✔️ 完了 | 自前ホスト済みのSearXNGに`adapters/searxng/client.py`から直接HTTPで問い合わせる自前adapter方式(MCPは見送り、詳細はspec参照)。`web_search`ツールを常時登録。007/013/017など複数specから使われる横断インフラ |
 | 019 | [diary-domain](019-diary-domain/spec.draft.md) | - | 💤 スケルトンのみ | チャットで会話すると日記がつけられる。017と同じログ層+現在状態層の仕組みをキーが「テーマ」ではなく「日付」の場合として再利用できそうという着想。保存先ディレクトリは`memory/`と分けて`diary/`にする。入力欄のモードチップUI(paper/diary併存、日記はセッション単位トグル)はモックアップで確認済み |
 | 020 | [google-workspace-integration](020-google-workspace-integration/spec.draft.md) | - | 💤 スケルトンのみ | Google Calendar/Driveとの連携。用途未確定(Calendarは007のリマインド、Driveは文書取り込み元/バックアップ先候補)。公式MCP(Calendar)とコミュニティMCP(Drive候補)が混在しうる |
