@@ -55,9 +55,14 @@ class MemoryRecaller(Protocol):
 
 
 def build_memory_recall_agent(settings: Settings) -> Agent[None, RecallResult]:
-    """設定値から想起用の pydantic-ai エージェントを組み立てる(reasoningは無効化)."""
+    """設定値から想起用の pydantic-ai エージェントを組み立てる(reasoningは無効化).
+
+    メインのチャットモデルではなく `settings.memory.recall_model_id`(既定は軽量な
+    Qwen3-8B)を使う。短い発言をテーマ索引の一行説明と照合するだけの単純な分類タスクで、
+    毎ターン同期呼び出しになる(ADR-0003の前処理段)ためレイテンシへの影響を抑えたい。
+    """
     return Agent(
-        build_model(settings),
+        build_model(settings, model_id=settings.memory.recall_model_id),
         output_type=RecallResult,
         instructions=_INSTRUCTIONS,
         model_settings=_RECALL_MODEL_SETTINGS,

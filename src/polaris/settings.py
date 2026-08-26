@@ -66,6 +66,11 @@ class MemorySettings(BaseModel):
     # テーマごとの現在状態ファイル(<slug>.md)の保存先。ログ層(MemoryEvent)はDBだが、
     # 会話に読み込ませる実体はこちら(ingest.pdf_dirと同じ「ディレクトリ設定+都度読み書き」パターン)。
     dir: str = "data/memory"
+    # 想起(前処理、毎ターン同期呼び出し)専用のモデル。短いユーザー発言をテーマ索引の
+    # 短い説明文と照合するだけの単純な分類タスクのため、メインのチャットモデル
+    # (llm.model_id)より軽量なモデルで十分と判断し、明示的に分離できるようにした
+    # (2026-08-26)。Qwen3-8B は131Kコンテキストで低コスト、この用途には過剰なほど軽い。
+    recall_model_id: str = "qwen/qwen3-8b"
 
 
 class Settings(BaseSettings):

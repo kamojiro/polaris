@@ -64,7 +64,7 @@
 
 - データモデル: `domain/entities.py`に`MemoryTheme`(索引: slug + 一行説明)/`MemoryEvent`(ログ層: 追記のみ)を追加。`db/memory_repository.py::MemoryRepository`が両方のCRUDを担う
 - 現在状態ファイル: `settings.memory.dir`(既定`data/memory`)配下に`<slug>.md`。読み書きは`services/memory.py`の純粋関数
-- 想起(前処理): `agent/memory_recall.py`(reasoning無効化した狭いタスク用エージェント)。テーマ索引が空ならLLM呼び出し自体を省略する
+- 想起(前処理): `agent/memory_recall.py`(reasoning無効化した狭いタスク用エージェント)。テーマ索引が空ならLLM呼び出し自体を省略する。メインのチャットモデルとは別に`settings.memory.recall_model_id`(既定`qwen/qwen3-8b`)で動く軽量モデルを使う(2026-08-26、毎ターン同期呼び出しになるためレイテンシを抑えたいという要望を受けて分離)。`agent/model.py::build_model()`に`model_id`の上書きオプションを追加して対応した
 - 抽出+書き直し(後処理): `agent/memory_extract.py`に分類・抽出エージェントと書き直しエージェントの2つ。`services/memory.py::extract_and_store_memory`がオーケストレーションする
 - ADR-0003の3段パイプラインを`api/app.py`の`/api/chat`に実装。前処理は`AGUIAdapter.dispatch_request`呼び出し前に`await request.body()`→`AGUIAdapter.build_run_input()`で直近のユーザー発言を取り出して同期的に想起、後処理(記憶抽出)は`asyncio.create_task`でfire-and-forgetし応答をブロックしない(タスクへの強参照は`_background_tasks`セットで保持、GCによる打ち切りを防ぐ)
 - メインのチャットエージェント(`agent/chat_agent.py`)の`deps_type`を`pydantic_ai.ui.StateDeps[PaperModeState]`から自前の`ChatDeps`(dataclass、`StateHandler`プロトコルを満たす)に変更。`state`(論文モード、AG-UIとクライアント間で同期)と`recalled_memory`(017の想起結果、サーバー内部専用でクライアントには一切公開しない)を分離した。想起結果は新規の動的instructions関数(`_memory_instructions`)で注入する
@@ -75,7 +75,7 @@
 
 - 現在状態ファイルの書き直しをターンごとに毎回行うか、ログ追記は毎ターンでも現在状態への反映は間引くか(コストとのバランス)
 - 複数テーマにまたがる内容の扱い(1つのMemoryEventが複数テーマに紐づくことを許すか。想起側の複数テーマ同時ヒットの扱いとも関連。v1は該当テーマのファイルを単純に連結するだけ)
-- 想起の軽量LLM呼び出しによる追加レイテンシが本番フェーズで許容範囲か(実測: 想起単体で1〜2秒程度。開発フェーズでは許容範囲と判断)
+- 想起の軽量LLM呼び出しによる追加レイテンシが本番フェーズで許容範囲か(実測: Qwen3-8Bで想起単体2〜3秒程度。開発フェーズでは許容範囲と判断)
 - テーマ一覧が増えてきたときの表示・管理UI(v1はチャット経由の操作のみで、専用画面は`009-dashboard`待ちでよいか)
 - テーマの統合・分割・改名(ユーザーの明示指示による整理)はv1では未実装。将来必要になったら追加する
 
