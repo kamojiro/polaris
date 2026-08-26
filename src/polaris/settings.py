@@ -73,6 +73,54 @@ class MemorySettings(BaseModel):
     recall_model_id: str = "qwen/qwen3-8b"
 
 
+class NewsFeed(BaseModel):
+    """1件のRSS/Atomフィード設定(008-daily-digest-domain Phase A)."""
+
+    name: str
+    url: str
+    label: str  # source_label(対立軸の定義方針、spec参照)。フィード単位で静的に決まる
+
+
+class NewsSettings(BaseModel):
+    """RSS Ingest(008-daily-digest-domain Phase A)の設定.
+
+    既定のフィード一覧はspecで実機確認済みのもの(2026-08-26)。ニュースレター系
+    (Ahead of AI等)・非公式ミラー系(HF Papers等)はspecが明記した運用リスク
+    (ミラー停止で静かに壊れる)により既定からは除外している。必要になれば
+    ここに追加するだけでよい。
+    """
+
+    feeds: list[NewsFeed] = [
+        # ai_llm
+        NewsFeed(
+            name="arXiv (cs.LG+cs.AI+cs.MA+cs.IR)",
+            url="https://rss.arxiv.org/rss/cs.LG+cs.AI+cs.MA+cs.IR",
+            label="ai_llm",
+        ),
+        NewsFeed(name="Simon Willison", url="https://simonwillison.net/atom/everything/", label="ai_llm"),
+        # swe_general
+        NewsFeed(name="arXiv (cs.SE)", url="https://rss.arxiv.org/rss/cs.SE", label="swe_general"),
+        NewsFeed(name="Martin Fowler", url="https://martinfowler.com/feed.atom", label="swe_general"),
+        NewsFeed(name="InfoQ", url="https://www.infoq.com/feed/", label="swe_general"),
+        NewsFeed(
+            name="The Pragmatic Engineer", url="https://newsletter.pragmaticengineer.com/feed", label="swe_general"
+        ),
+        NewsFeed(name="Julia Evans", url="https://jvns.ca/atom.xml", label="swe_general"),
+        NewsFeed(name="the morning paper", url="https://blog.acolyer.org/feed/", label="swe_general"),
+        # jp_tech_blog
+        NewsFeed(name="Zenn トレンド", url="https://zenn.dev/feed", label="jp_tech_blog"),
+        NewsFeed(name="Qiita トレンド", url="https://qiita.com/popular-items/feed", label="jp_tech_blog"),
+        NewsFeed(
+            name="はてなブックマーク テクノロジー", url="http://b.hatena.ne.jp/hotentry/it.rss", label="jp_tech_blog"
+        ),
+        # tech_industry_news
+        NewsFeed(name="Hacker News (hnrss)", url="https://hnrss.org/frontpage", label="tech_industry_news"),
+    ]
+    # 1フィードあたりの取り込み上限(暴走防止。はてブ等は大量に流れてくるため)。
+    max_entries_per_feed: int = 20
+    timeout_seconds: float = 15.0
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -91,6 +139,7 @@ class Settings(BaseSettings):
     chat: ChatSettings = ChatSettings()
     searxng: SearxngSettings = SearxngSettings()
     memory: MemorySettings = MemorySettings()
+    news: NewsSettings = NewsSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

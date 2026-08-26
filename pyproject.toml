@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.121.3",
+    "feedparser>=6.0.14",
     "httpx>=0.28.1",
     "pydantic>=2.12.4",
     "pydantic-ai-slim[ag-ui,openrouter]>=2.30.0",

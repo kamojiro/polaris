@@ -2,7 +2,7 @@
 
 ## ステータス
 
-⏸ 待機中(Phase Aは着手可能、Phase Bは`009-dashboard`待ち。詳細は下記)
+⏸ 待機中(Phase Aは完了、Phase Bは`009-dashboard`待ち。詳細は下記)
 
 ## 概要
 
@@ -121,6 +121,17 @@ class Event(SQLModel, table=True):
 - FastAPIサーバーが起動していない時間帯でも確実に巡回できる(サーバー常駐に依存しない)
 - 既存のIngestパイプライン(`services/ingest_paper.py`と同じ形)をCLIから直接呼ぶだけで済み、Web層を経由する必要がない
 - `uv run uvicorn ... --reload`を開発中に何度も再起動する運用と、スケジュールされたバッチ処理は生存期間の性質が違うため、同じプロセスに同居させない方が事故りにくい
+
+## Phase A 実装状況(2026-08-26)
+
+- 依存: `feedparser`を新規追加(RSS 2.0/Atomの差異吸収を自前実装せず既存ライブラリに任せる)
+- データモデル: `domain/entities.py`に`ItemType.news_article`/`NewsRecord`を追加(`Relation`/`Event`はPhase B、未実装)
+- adapter: `adapters/rss/client.py::fetch_feed()`。HTTP取得はhttpx、パースはfeedparserを`asyncio.to_thread`で呼ぶ。`published_parsed`が無いAtomフィード(実機確認: Martin Fowlerのブログ)は`updated_parsed`にフォールバックする。`follow_redirects=True`が必須(実機確認: InfoQ/はてなブックマークは301リダイレクトを返し、これが無いと`httpx`の`raise_for_status()`自体がエラー扱いにする。`adapters/pdf/downloader.py`と同じ対応)
+- Structure: `agent/structure_news.py`(`structure_paper.py`と同型、reasoning無効化)。記事単位のトピック分類はしない(source_labelはフィード単位で静的に決まるため)
+- Ingest: `services/ingest_news.py::ingest_all_feeds()`。`source_url`で重複防止(冪等)、1フィードのHTTP失敗が他フィードを止めない
+- CLI: `cli/ingest_news.py`(`uv run python -m polaris.cli.ingest_news`)。OS cronから叩く想定、FastAPIサーバーの生存に依存しない
+- チャット: `list_news`ツール(`agent/chat_agent.py`)、`NewsList.tsx`(source_labelごとにバケット分けするgenerative UI、`TodoList.tsx`と同型)
+- E2E検証(実機・実LLM): `uv run python -m polaris.cli.ingest_news`を実際に実行し、既定の12フィードから記事を取得・要約生成・DB保存できることを確認。同じコマンドを再実行すると`skipped`が増え重複保存されないこと(冪等性)も確認
 
 ## 未決定事項
 

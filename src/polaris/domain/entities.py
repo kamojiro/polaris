@@ -22,6 +22,7 @@ class ItemType(StrEnum):
 
     paper = "paper"
     todo = "todo"
+    news_article = "news_article"
 
 
 class Item(SQLModel, table=True):
@@ -111,6 +112,23 @@ class MemoryEvent(SQLModel, table=True):
     extracted_at: datetime
     source_conversation_turn: str  # 抽出元になったユーザー発言のAG-UI message id(トレーサビリティ用)
     raw_text: str  # 抽出された記憶内容(このターンで学んだことの短い記述)
+
+
+class NewsRecord(SQLModel, table=True):
+    """ニュース記事ドメイン固有のサテライトテーブル(008-daily-digest-domain Phase A).
+
+    `source_label`は対立軸の定義方針(spec参照)によりフィード単位で静的に決まる
+    (ai_llm/swe_general/jp_tech_blog/tech_industry_news)。記事単位のLLM自動分類はしない。
+    """
+
+    __tablename__ = "news_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True)
+    source_name: str
+    source_label: str
+    published_at: datetime
+    source_url: str = Field(index=True, unique=True)  # 重複防止キー(PaperRecord.source_urlと同じ役割)
 
 
 class TodoRecord(SQLModel, table=True):

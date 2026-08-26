@@ -2,12 +2,14 @@ import { useRef, useState } from "react";
 import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { NewsList, type NewsListResult } from "./NewsList";
 import { PaperList, type PaperListResult } from "./PaperList";
 import { TodoList, type TodoListResult } from "./TodoList";
 import { type TurnUsage, useChatAgent } from "./useChatAgent";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
+const LIST_NEWS_TOOL_NAME = "list_news";
 
 function messageText(message: Message): string {
   if (typeof message.content === "string") {
@@ -204,6 +206,9 @@ export default function App() {
               ))}
               {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
                 <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
+              ))}
+              {findToolResults<NewsListResult>(LIST_NEWS_TOOL_NAME, message, messages).map((result, i) => (
+                <NewsList key={`${message.id}-news-${i}`} news={result.news} />
               ))}
               {message.role === "assistant" && usageByMessageId[message.id] && (
                 <p className="usage-line">{formatUsageLine(usageByMessageId[message.id])}</p>

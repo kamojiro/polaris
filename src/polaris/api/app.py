@@ -28,6 +28,7 @@ from polaris.agent.memory_extract import (
 from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.memory_repository import MemoryRepository
+from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
@@ -94,6 +95,7 @@ _engine = create_db_engine(settings.DB_PATH, embedding_dim=settings.ingest.embed
 _repo = PaperRepository(_engine)
 _todo_repo = TodoRepository(_engine)  # 007-todo-domain: Paperと同じSQLiteファイルを使う
 _memory_repo = MemoryRepository(_engine)  # 017-chat-memory: 同上
+_news_repo = NewsRepository(_engine)  # 008-daily-digest-domain Phase A: 同上
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
@@ -108,6 +110,7 @@ _agent = build_chat_agent(
     structurer=_structurer,
     extractor=_extractor,
     todo_repo=_todo_repo,
+    news_repo=_news_repo,
 )
 
 _upload_dir = Path(settings.ingest.upload_dir)

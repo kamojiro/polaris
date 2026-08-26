@@ -6,22 +6,21 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。
 
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
 2. ~~004 (citation-relations)~~ — 見送り
 3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
 4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
 5. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-6. 008 (daily-digest-domain) — Phase A(Ingest/Structure)は詳細化済みで着手可能。Phase B(関係グラフ表示)は009待ち
-7. 009 (dashboard)
-8. 010 (mobile-pwa) — 009に依存
-9. 011 (agent-registry)
-10. 012 (local-llm-cutover)
-11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+6. 009 (dashboard) — 008 Phase B・010の依存元
+7. 010 (mobile-pwa) — 009に依存
+8. 011 (agent-registry)
+9. 012 (local-llm-cutover)
+10. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+11. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
 
 ## いつかやるリスト
 
@@ -38,7 +37,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | 🗓 いつか | spec自体は完成済み(対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化)。直近では実装しない、いつかやるリスト行き |
 | 006 | [chatlog-backfill](006-chatlog-backfill/spec.draft.md) | 1 | 💤 スケルトンのみ | 005の後。Eval harnessの検証データとしても使う |
 | 007 | [todo-domain](007-todo-domain/spec.draft.md) | 2 | ✔️ 完了 | v1はCRUD+3バケット(day/month/life)分類のみ。新規エージェント/レジストリは作らず既存の単一チャットエージェントにtool追加。バケット分類はLLMがadd_todoのscale引数を自然文から直接選ぶ。優先度は最終更新日からの経過時間(熟成度)のみ、Interest依存は008以降に持ち越し。リマインド・現況調査エージェントは対象外(将来spec) |
-| 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | ⏸ 待機中 | エコーチェンバー可視化。対立軸は静的ソースラベル方式(LLM自動スタンス推定はしない)に決定。Phase A(Ingest/Structure)は着手可能、Phase B(Relate/Surface、関係グラフ表示)は`009-dashboard`待ち。`Relation`/`Event`テーブルを新規実装、`Interest`はv1で作らない |
+| 008 | [daily-digest-domain](008-daily-digest-domain/spec.draft.md) | 2 | ⏸ 待機中(Phase Aは✔️完了) | エコーチェンバー可視化。対立軸は静的ソースラベル方式(LLM自動スタンス推定はしない)、4分類はv1固定。Phase A(Ingest/Structure)実装済み: `feedparser`でRSS/Atom取得、`agent/structure_news.py`で要約生成、`cli/ingest_news.py`をOS cronから1日1回叩く方式、`list_news`ツール+`NewsList.tsx`で一覧表示。Phase B(Relate/Surface、関係グラフ表示)は`009-dashboard`待ち。`Relation`/`Event`テーブルは未実装、`Interest`はv1で作らない |
 | 009 | [dashboard](009-dashboard/spec.draft.md) | 3 | 💤 スケルトンのみ | 複数ドメインが揃ってから。003のgenerative UIの限界がトリガー |
 | 010 | [mobile-pwa](010-mobile-pwa/spec.draft.md) | 3 | 💤 スケルトンのみ | 009である程度画面が固まってから |
 | 011 | [agent-registry](011-agent-registry/spec.draft.md) | 4 | 💤 スケルトンのみ | 複数ドメインのエージェントが実在する状態で強化 |

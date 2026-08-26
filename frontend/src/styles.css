@@ -270,6 +270,68 @@ header p {
   font-size: 0.9rem;
 }
 
+/* ニュース一覧(008-daily-digest-domain Phase A、generative UI)。
+   情報源のラベル(対立軸の定義方針)ごとに見出し+リストで表示する。todo-bucket と同型。 */
+.news-list-wrapper {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.news-bucket {
+  margin-bottom: 0.75em;
+}
+
+.news-bucket:last-child {
+  margin-bottom: 0;
+}
+
+.news-bucket h4 {
+  margin: 0 0 0.3em;
+  font-size: 0.85rem;
+  color: gray;
+  font-weight: 600;
+}
+
+.news-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.9rem;
+}
+
+.news-list li {
+  margin: 0.3em 0;
+}
+
+.news-title {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.news-title:hover {
+  text-decoration: underline;
+}
+
+.news-source-name {
+  color: gray;
+  font-size: 0.85em;
+}
+
+.news-source-name::before {
+  content: " · ";
+}
+
+.news-summary {
+  display: block;
+  color: gray;
+  font-size: 0.85em;
+}
+
+.news-list-empty {
+  align-self: flex-start;
+  color: gray;
+  font-size: 0.9rem;
+}
+
 /* 015-paper-qa-chat: 各ターンのトークン使用量・コスト(assistantバブルの下に小さく表示) */
 .usage-line {
   align-self: flex-start;

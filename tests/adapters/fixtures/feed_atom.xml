@@ -1,0 +1,1882 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <link href="https://martinfowler.com/feed.atom" rel="self"/>
+  <link href="https://martinfowler.com"/>
+  <id>https://martinfowler.com/feed.atom</id>
+  <title>Martin Fowler</title>
+  <subtitle>Master feed of news and updates from martinfowler.com</subtitle>
+  <author>
+    <name>Martin Fowler</name>
+    <email>martin@martinfowler.com</email>
+    <uri>https://martinfowler.com</uri>
+  </author>
+  <updated>2026-08-24T11:29:00-04:00</updated>
+<entry>
+    <title>Fragments: August 24</title>
+    <link href="https://martinfowler.com/fragments/2026-08-24.html"/>
+    <updated>2026-08-24T11:29:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-08-24.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;I was listening to &lt;a href="https://www.nytimes.com/2026/08/18/opinion/ezra-klein-podcast-helen-toner.html"&gt;Ezra Klein’s interview with Helen Toner&lt;/a&gt; about the recent OpenAI hack of Hugging Face and the subsequent discovery that there were swarms of agents inside OpenAI doing unsanctioned activities. One of the points Klein made was that at no point did any of these (thousands of?) agents ever try to check in with a human&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;[Klein:] So these message boards — you have however many A.I. agents posting hundreds of thousands of messages. At no point do they say: Hey, researchers, programmers, parents at OpenAI, Anthropic — do you want us coordinating with each other on this message board we have created in the innards of your systems?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;[Toner:] Or even F.Y.I., we have a message board we’re coordinating on in the innards of your system.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Listening to that, another thing occurred to me - &lt;em&gt;none of these agents thought to rat the others out&lt;/em&gt;. No “hey, some of the agents in here are doing sketchy things”, no sign of an AI whistleblower.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Is the AI bubble so big that the frontier companies like OpenAI and Anthropic have no way of becoming a viable business? If that’s the case, Bruce Schneier and Nathan Sanders &lt;a href="https://www.schneier.com/blog/archives/2026/08/if-the-markets-reject-openai-and-anthropic-the-us-should-nationalize-them.html"&gt;have a possible path:&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Evidence suggests the market itself could reassess that these companies offer nothing of financial value. In that case, perhaps we can return them both to their original purposes. If these AI companies should fail in the financial markets, the US should nationalize them and convert them into national labs operated under democratic control that preserve their benefit to the public interest.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Such an idea may strike many people, used to the laissez-faire free enterprise world of Silicon Valley, as sacrilege, disaster, even socialism. But the United States made world-beating technological progress through such institutions in the recent past. AT&amp;amp;T was a quasi-government entity that led the world in telecommunications and electronics after the second world war.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The US has a long, successful history of these kinds of institutions, which have produced world-shaping innovations in spaceflight, telecommunications, nuclear power and more. Congress currently manages a $200bn R&amp;amp;D portfolio, within which frontier AI development is, arguably, a glaring gap.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Here’s a message for those readers who live in Massachusetts, just to the north of me, specifically in congressional district MA-06. I don’t usually endorse political candidates, but I’ve made an exception for &lt;a href="https://bethfordemocracy.com/"&gt;Beth Anders-Beck&lt;/a&gt;, who is running for that house district. I’ve known Beth for many years and have a high opinion of her smarts, wisdom, and compassion. They would make an excellent member of congress.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Kevlin Henney posts “one weird trick” for &lt;a href="https://kevlinhenney.medium.com/streamline-your-linkedin-experience-with-this-one-weird-trick-041daa16777a"&gt;deciding when to skip reading LinkedIn posts&lt;/a&gt;, essentially by identifying a common pattern for skippable posts:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Post is too long&lt;/li&gt;
+  &lt;li&gt;Contains a (crummy) info-graphic&lt;/li&gt;
+  &lt;li&gt;No voice of poster (instead “aspiring anodyne anonymity”&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;It seems like a good approach. I, however, have a simpler one - skip all LinkedIn posts.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Bartosz Ocytko has detailed and thoughtful post about the usage of &lt;a href="https://engineering.zalando.com/posts/2026/08/agentic-engineering-at-zalando-a-snapshot.html"&gt;agentic programming at Zalando&lt;/a&gt;. Like most companies I hear from, they are convinced of the value of agentic programming but still exploring how best to do it. One notable step they’ve taken is building platforms to act as a clear portal for API access and tools to support chat UI and CLI. This allows them better support good security practices and to monitor usage of models.&lt;/p&gt;
+
+&lt;p&gt;They have seen signs of agentic programming increasing the complexity of codebases, including leading to larger commit messages.&lt;/p&gt;
+
+&lt;p&gt;The write-up spends a lot of time on knowledge sharing, how to pass on skills, and the support of experiments.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;With &amp;gt;200 teams innovating and broadly exploring the ecosystem, the question arises whether and when to converge. We believe it’s way too early for this. While agentic engineering practices are still in their early stages, our key objective is transparency and exchange across teams.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I was struck by their use of an LLM to assess the risk of pull-requests. Those with  a low risk of rollout can be auto-approved, reducing lead time by 20-40%. An interesting consequence of this is that it encouraged folks to split pull-requests so low risk portions can take advantage of the fast approval. Any changes to configurations are automatically made high-risk, which they feel protects them from common outage traps.&lt;/p&gt;
+
+&lt;p&gt;They repeat the common thread that the value of AI depends greatly on underlying skills.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Like anyone in the industry we observe how AI amplifies the good and bad practices across our organization. Teams that get carried away with agentic engineering end up with large PRs that discourage reviewers and slow down delivery until a team adjusts their practices.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Julia Curlee was a senior intelligence official in the White House. She had served under administrations of both parties, been the briefer for Vice President Pence, and on the National Security Council under Biden. She writes an absorbing account of her relationship with Pence and shares observations about the changes to the intelligence community under the current administration, including &lt;a href="https://www.theatlantic.com/magazine/2026/10/trump-white-house-transgender-mike-pence/688284/?gift=zGsHlQiVhVhk3cFVqv--gzIqOYZAxuFeY4CtPlqqfx4&amp;amp;utm_source=copy-link&amp;amp;utm_medium=social&amp;amp;utm_campaign=share"&gt;recent events at the CIA&lt;/a&gt; (gift link)&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The agency has been gutted as part of a deliberate plan, the director of the Office of Management and Budget once boasted, to put the people who defend our country “in trauma.” Analysts have been fired in public or questioned by the FBI; decade-old assessments have been denounced by the CIA director in the press. The president calls analysis “virtual treason” when it contradicts his preferred reality, and uses the CIA to undermine public confidence in American elections.&lt;/p&gt;
+
+  &lt;p&gt;Fear has done its work. Irreplaceable officers with crucial language and technical skills, and decades of experience, have walked out the door. Those who remain within an agency built to deliver hard truths are being muzzled.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;For a worthwhile sample of her analysis, read this evaluation of the &lt;a href="https://www.lawfaremedia.org/article/fighting-while-talking--the-iran-war-enters-its-bargaining-phase"&gt;current bargaining between the US and Iran&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Most wars do not end in “unconditional surrender.” They end when both sides accept terms. Paul Pillar’s classic study of war termination, “Negotiating Peace,” treats combat and diplomacy as a single process: Each side fights to improve the terms it can demand at the table, and talks to lock in what the fighting has won.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;She continued to serve the second Trump administration even though they knew she was trans, until her position was made public.&lt;/p&gt;
+
+&lt;p&gt;Autocrats seem appealing, with the promise to get things done without the ponderous constraints of rule of law or bureaucratic procedure. There are occasional “Good Emperors” who raise people based on merit, but more often such power attracts corruption, nepotism, and toadies.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Flailing regimes dehumanize minorities to distract from their failures. When the economy collapses or a war goes badly, they find a tiny group of people, make them the enemy within, and rally the country against them. This is how it’s gone in Iran. Hungary. Russia. I wrote PDBs about it. This will not stop with trans people. It never has.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>Citizens Build, Agents Execute, Experts Govern</title>
+    <link href="https://martinfowler.com/rachels-ramblings/citizens-agents-experts.html"/>
+    <updated>2026-08-19T14:30:00-04:00</updated>
+    <id>https://martinfowler.com/rachels-ramblings/citizens-agents-experts.html</id>
+    <category term="rachels-ramblings"/>
+    <author>
+      <name>Rachel Laycock</name>
+      <email>rlaycock@thoughtworks.com</email>
+      <uri>https://www.linkedin.com/in/rachellaycock/</uri>
+    </author>
+    <content type="html">
+&lt;p class = 'precis'&gt;&lt;b&gt;TL;DR&lt;/b&gt;&lt;br/&gt;&lt;i&gt;Why building an app over the weekend isn't the same as building enterprise software&lt;/i&gt;&lt;/p&gt;
+&lt;img src = 'https://martinfowler.com/rachels-ramblings/card.png'&gt;&lt;/img&gt;&lt;p&gt;I’ve noticed an interesting gap opening up over the last six months. It isn’t really a gap in technology. It’s a gap in what different people think software engineering actually is.&lt;/p&gt;
+
+&lt;p&gt;The conversation usually starts the same way. A non-techie, maybe an executive, tells me about something they’ve built over the weekend. Sometimes it’s a chatbot. Sometimes it’s an internal workflow. Sometimes it’s a surprisingly polished application that solves a real business problem. They’re excited, and they should be. Twelve months ago they probably couldn’t have built it at all. Then comes the question.&lt;/p&gt;
+
+&lt;p&gt;“If AI can do this now, why aren’t our engineering teams delivering ten times faster?”&lt;/p&gt;
+
+&lt;p&gt;It’s a perfectly reasonable question, after all we’ve all seen the demos. The first thing that would come to my head is “you don’t know what it takes to build enterprise grade software”. But then I think about what I mean and how to explain it to a non-technical person without sounding super patronising. And then it hit me, we did this to ourselves. We’ve spent so many years banging on about how to write good software that everyone has assumed writing software is the same as software engineering.&lt;/p&gt;
+
+&lt;p&gt;The application someone builds over the weekend is real software. It likely solves a real problem or demonstrates an idea. Sometimes it’s genuinely impressive. I don’t want to diminish that because I think one of the most exciting things AI has done is dramatically increase the number of people who can turn ideas into working software. That’s cool, I totally get it. The first apps and “hello worlds” I ever built excited me enough to choose this as an actual career so the excitement is real and I don’t want to temper it too much.&lt;/p&gt;
+
+&lt;p&gt;But your first hello world, which these days can be an entire app with all kinds of features, is very, very (extra very on purpose) different from introducing software into a production environment in a highly regulated enterprise, as an example. But why?&lt;/p&gt;
+
+&lt;p&gt;The moment that application becomes something the business depends on, the questions change completely. Is customer data protected? What happens when a dependency fails? Can someone else understand this system in two years’ time? Will it survive an audit? Can it cope with a thousand times more users than it has today, what about millions in one day? How will we know something is wrong before our customers do? Those questions don’t show up in a demo or in the build phase at all unless an experienced engineer is in the room. I certainly wasn’t asking them when I was building my first apps. I only cared about features!&lt;/p&gt;
+
+&lt;p&gt;This is where experienced engineers become more important, not less. Not because they’re the only people who can build the software anymore, but because they have the judgement to know whether we can trust it: whether the design is good, the risks are understood, and the thing that works today won’t become somebody else’s nightmare six months from now.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;At FOSE&lt;/a&gt; a few weeks ago, we spent surprisingly little time talking about coding. We talked about whether code was still the source of truth, and occasionally about how much we missed writing it, but mostly we talked about design, architecture, governance, learning and judgement. One team described spending the day designing a specification, letting agents work overnight and reviewing the results the next morning. The interesting bit for me wasn’t the overnight pipeline, cool as that was. It was what the humans were doing: deciding what good looked like, making trade-offs and judging whether what came back was actually what they wanted. We also kept coming back to good design, because it turns out that when agents can generate lots of code very quickly, good design matters more, not less.&lt;/p&gt;
+
+&lt;p&gt;That made me wonder whether we’ve been thinking about scarcity in the wrong way. We’ve spent decades optimising around people who can write code because they were scarce and expensive. I’m not convinced that was ever the real scarcity, but that’s probably another ramble. What feels scarce now is good engineering judgement: knowing what good looks like, understanding the risks and knowing when something that works is actually safe to trust in production. Because software doesn’t exist to be built. It exists to run in production and safely solve the problem it was created for. &lt;strong&gt;Organisations don’t run on code. They run on trust.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;A few months ago I found myself saying something in a conversation almost without thinking.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Citizens build. Agents execute. Experts govern.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;It sounded cool and I thought marketing would like it, so I wrote it down. Then I left it alone for a while. The funny thing about writing these ramblings is that I don’t know whether I believe something until I’ve let it bounce around in my head for a while and also said it to other people I trust like senior engineers at Thoughtworks. Sometimes I come back convinced I was talking nonsense. Occasionally I realise there was something more interesting hiding underneath. This was one of those occasions where the latter was true.&lt;/p&gt;
+
+&lt;p&gt;At first I thought I was talking about roles. Citizens build software (essentially non-engineers). Agents write the code. Engineers become governors. But I don’t actually think that’s what I meant. I think I was talking about where value is moving. AI has given everyone a new way to express their ideas. The execution is increasingly handled by agents. They write the code, refactor it, generate tests, fix bugs and iterate at a speed that simply wasn’t possible before. But neither of those things reduces the need for expertise.&lt;/p&gt;
+
+&lt;p&gt;In fact, I think it does exactly the opposite. When everyone can create software, somebody still has to decide whether that software deserves to exist inside an enterprise system in PRODUCTION. Somebody still has to think about architecture. Security. Resilience. Operability. Compliance. Cost. The boring stuff that nobody gets excited about in a demo but that becomes painfully important the first time a customer can’t log in or an auditor comes knocking.&lt;/p&gt;
+
+&lt;p&gt;That’s why I don’t think experienced engineers become less important. I think they become dramatically more leveraged. Their job shifts from building every feature themselves to creating the environment in which thousands of features can be built safely by other people and by agents. They become the people who design the guardrails, the platforms, the engineering practices and the feedback loops that allow everyone else to move quickly without creating chaos.&lt;/p&gt;
+
+&lt;p&gt;Perhaps that’s the future software organisation. Not one where everyone becomes a software engineer. Not one where software engineers disappear. One where almost anyone can create software, agents increasingly execute it, and engineering expertise becomes the thing that allows all of that creativity to scale safely. And to be clear I do not mean people build stuff and throw it to engineers to fix, that is a total antipattern for another ramble.&lt;/p&gt;
+
+&lt;p&gt;Perhaps that’s why the executives and engineers I’ve been speaking to sometimes sound as though they’re describing completely different futures. The executive sees that anyone can now build software. The engineer sees that somebody still has to live with it. Both are right. They’re simply looking at different parts of the same system we have to solve to create whatever the future actually ends up being.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>Practitioner Voice: The Writing Category Nobody has Named Yet</title>
+    <link href="https://martinfowler.com/articles/practitioner-voice.html"/>
+    <updated>2026-08-19T14:15:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-08-19:Practitioner-Voice--The-Writing-Category-Nobody-has-Named-Yet</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;&lt;b class = 'author'&gt;Jim Highsmith&lt;/b&gt; recognizes that effective writing from a practitioner is
+      a style distinct from academic writing or thought-leadership content. It's
+      a style that I advocate, and my contributors mostly follow. Jim decided it
+      was important to give it a name, and identify what makes it distinctive.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/practitioner-voice.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: August 18</title>
+    <link href="https://martinfowler.com/fragments/2026-08-18.html"/>
+    <updated>2026-08-18T11:04:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-08-18.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;Part of the reason why I’m at Thoughtworks is because I’d like to see a software development organization founded on technical excellence as an example for the rest of the industry. The trouble is that I have little aptitude or inclination for the hard work of building such an organization. So I rely on working with people who are prepared to actually put the effort in. A key partner in all of this is &lt;a href="https://www.linkedin.com/in/rachellaycock/"&gt;Rachel Laycock&lt;/a&gt;, who is the global CTO of Thoughtworks.&lt;/p&gt;
+
+&lt;p&gt;Not just is she far better than me at running a technology organization, she’s also a keen observer and connector of ideas. I’ve been urging her to write these down, even if her busy schedule makes it difficult for her to compose them into something substantial.&lt;/p&gt;
+
+&lt;p&gt;Happily &lt;a href="https://martinfowler.com/rachels-ramblings/"&gt;she’s starting writing “Rachel’s Ramblings”&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Fast, imperfect, thinking out loud. Naming ideas early rather than waiting until they’re fully formed. Because the reality is, most of what I do day to day isn’t answering known questions. It’s spotting patterns and asking questions we haven’t quite figured out yet.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;My colleagues in Europe are organizing &lt;a href="https://www.eventbrite.co.uk/e/xconf-europe-2026-london-tickets-1989895694589?aff=MF"&gt;XConf Europe in London on September 11th&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The sessions examine what happens when agentic systems meet compliance, how to run sovereign models, performance patterns in data migrations and how to safely navigate legacy codebases.  Lu Wilson will give a keynote on ‘Jam-oriented programming’.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Noah Smith recognizes the high usage of AI, and its impressive feats - but also that &lt;a href="https://www.noahpinion.blog/p/what-will-more-intelligence-actually"&gt;there aren’t signs of massive productivity growth or job losses&lt;/a&gt;. This may be the calm before the storm, but Smith thinks there may something else in play. He quotes a &lt;a href="https://x.com/fchollet/status/2038069289643806957"&gt;metaphor from François Chollet&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;One of the biggest misconceptions people have about intelligence is seeing it as some kind of unbounded scalar stat, like height. “Future AI will have 10,000 IQ”, that sort of thing. Intelligence is a conversion ratio, with an optimality bound. Increasing intelligence is not so much like “making the tower taller”, it’s more like “making the ball rounder”. At some point it’s already pretty damn spherical and any improvement is marginal.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The thought here is that intelligence in the sense that we know it, isn’t something where there’s a lot of room for massive improvement. That doesn’t mean AI won’t be “smarter” than us in other respects, after all even without AI my computer is better at me than remembering what I’ve agreed to do over the next six months.&lt;/p&gt;
+
+&lt;p&gt;But even if AI doesn’t get smarter than humans, it can gain by being more replicable. Not just does this make it cheaper to use, perhaps more importantly it makes it more responsive. While I might harrumph at how slowly The Genie responds to my queries, it’s still far faster than contacting a human.&lt;/p&gt;
+
+&lt;p&gt;Smith continues by surmising that AI may be able to make sense of phenomena that can’t be reduced to simple laws, but can only be understood by something able to comprehend a multitude of details:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;there may be laws of the universe that humans can’t understand but AI can. I call these “cloud laws” — causal regularities that can be exploited by technology, but which are too diffuse and complex for an individual human being to either intuit or communicate.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;His thought is that even if there isn’t any space for AI to get more intelligent than humans along the lines we are used to, that they can open up new directions. As well as these cloud laws he also thinks that AI can understand human systems that rely on the kind of tacit, distributed knowledge that human organizations build up over time.&lt;/p&gt;
+
+&lt;p&gt;My take-away here is that AI won’t seem more intelligent in the way that we typically frame intelligent, but more intelligent in different ways. The converse of which is that the human value comes in artfully combining our human nature with these new spells that The Genie can cast.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Especially in our profession, we’ve seen increasing emphasis on the importance of data. However I’ve observed that most people still struggle to understand the message data is telling us. One of the reasons I’m interested in election forecasting is in how they communicate their insights, especially since so many people have difficulty with probabilistic forecasts. (I often wonder how much being a board-gamer has helped me be comfortable with this, all that time interacting with Combat Results Tables in my youth must have benefited me somehow.)&lt;/p&gt;
+
+&lt;p&gt;50+1 (one of the successors of 538) have published a little explainer on &lt;a href="https://blog.fiftyplusone.news/p/how-501-designed-our-2026-election?r=a9pj&amp;amp;utm_medium=ios&amp;amp;triedRedirect=true"&gt;how they designed their 2026 election forecast page&lt;/a&gt;. There’s a good discussion of the logic behind their simulation histogram, I like how they use a text annotation to explain one point, giving the reader enough guidance to understand the rest of the graphic. They also tackle the knotty problem of visualizing geographical data on the house races. There’s a common visualization error in the U.S. using &lt;a href="https://datavizcatalogue.com/methods/choropleth.html"&gt;choropleth maps&lt;/a&gt; that leads to large areas of the landmass shown red, implying dirt votes rather than humans. Their approach to this, using dots on the map, helps visualize both the politics and the population density. They also explain how to deal with this kind of data on small screens. Lastly they describe their approach to tabular data, and how this is the right place for lots of details, together with affordances to help both casual and power-users navigate those tables.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I’ve kept an eye on Alex Stamos for a while now, as he’s a sensible voice on security and safety. He’s posted a newsletter on substack that casts an intelligent eye over &lt;a href="https://alexstamos.com/p/moving-forward-from-hot-fable-summer"&gt;recent safety issues with AI&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;He makes a clear critique of recent US government actions around LLM models&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;On a Friday afternoon at around 5pm PT, Anthropic was forced to shut down a system that had been plumbed into coding agents, SOCs, customer service bots, and countless products. […]&lt;/p&gt;
+
+  &lt;p&gt;This had the immediate effect of injecting political risk into the US AI ecosystem for both American and non-American customers. It signaled that you cannot depend on American AI infrastructure because, at any moment, an unwritten, capricious, and legally dubious justification could be used to yank that infrastructure from underneath your feet.&lt;/p&gt;
+
+  &lt;p&gt;When Fable was turned back on, it was much dumber and less useful to cyber defenders&lt;/p&gt;
+
+  &lt;p&gt;[…]&lt;/p&gt;
+
+  &lt;p&gt;While Fable was down, Z.ai was taking advantage of the free market and permissionless innovation culture provided by the (checks notes) General Secretary, Politburo, and Communist Party of the People’s Republic of China, and released GLM 5.2. With 753B parameters, it falls a bit short of Opus 4.8 in most tasks but is extremely efficient and is small enough to be trained and hosted in many enterprise contexts. With an MIT license it can be fine-tuned with a wide range of techniques and used by any customer in any context. Since then, Kimi K3 has rocked the industry by providing Fable-like performance&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;As he highlights, one of the biggest dangers with the danger of shutting down a frontier model is that it can cripple an organization’s defenses:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Hugging Face tried to use an Anthropic model to defend itself during an active incident, got blocked by the classifier, and moved to GLM 5.2 on an emergency basis. Their advice to everyone else was to keep an open-weight model on the shelf for defensive cyber.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;On the whole, he sees it as a Good Thing that these model escapes have happened:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The OpenAI attack against Hugging Face, and Hugging Face’s excellent write-up has given us a preview of what a standard AI-enabled attack might look like in a matter of months.&lt;/p&gt;
+
+  &lt;p&gt;It’s good that we got this warning shot. Nobody got hurt, the target was a sophisticated actor with the ability to defend themselves and the ability to give us a detailed write-up, and OpenAI turned the model off.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He follows up by saying that all of this is signal that we should “stop talking about AI finding bugs, focus on fixing them”. These modern LLMs can do much to fix bugs and improve security, and people need to work on that rapidly to fix holes before less reputable folks than OpenAI find them. Then figure out how to harness LLMs to introduce this kind of checking into the everyday build process, so that this kind of analysis just a step in the continuous delivery build pipeline.&lt;/p&gt;
+
+&lt;p&gt;I agree with him both that open-weight models should be legal, have their upsides, but will also be used for many bad things by bad actors. Both the industry and government agencies need put serious effort into figuring out how to mitigate these risks.&lt;/p&gt;
+
+&lt;p&gt;Where I would go further is to say the same is true of the closed-weight models too. Although closed weight models are subject to greater controls, the same fundamental issues apply. He rightly takes the foundation model companies to task:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;There is an old saying I pass down to my students when I give them career advice - if you are a jerk to people on your way up, don’t expect them to catch you when you are on your way down&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;There’s a lot of sound advice for model companies, the government, defenders, and venture capitalists.&lt;/p&gt;
+
+&lt;p&gt;We will go through some rough changes, I just hope that we will indeed come through it with a better society. On the whole, that’s happened with previous technological changes like this, but past performance does not guarantee future results.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;The Economist has a good article on the &lt;a href="https://www.economist.com/briefing/2026/08/06/chinas-ai-drive-threatens-the-worlds-largest-workforce"&gt;impact of AI in China&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;China has made an all-out push in ai, under the conviction that, in its competition with America and the rest of the world, dominance of the technology is an almost existential necessity. […] But the party is increasingly concerned about how ai will displace workers.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Robots and AI are appearing in an economy that’s struggling after the recent property crisis. The Chinese government is opposing firms using AI to cut jobs. China will need robots:  its population will shrink by 25% by 2050. But with less working people, there’s less financial support for pensions. Many countries have to deal with shrinking population, but China’s challenge is particularly acute.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://bsky.app/profile/robbowley.net/post/3mte4kkiaoc2z"&gt;Rob Bowley:&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;I go on holiday for a few weeks and we’ve already moved on from Loop Engineering to Graph Engineering&lt;/p&gt;
+
+  &lt;p&gt;The half-life of a paradigm is getting shorter than my annual leave&lt;/p&gt;
+
+  &lt;p&gt;My prediction: neuro-symbolic engineering by the end of August, at which point we’ll have gone full circle and reinvented Prolog&lt;/p&gt;
+&lt;/blockquote&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>TDD inside the agent loop - theater or actual value?</title>
+    <link href="https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html"/>
+    <updated>2026-08-11T07:39:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-08-11:TDD-inside-the-agent-loop---theater-or-actual-value-</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html'&gt;&lt;img src = 'https://martinfowler.com/articles/exploring-gen-ai/donkey-card.png' width = ''&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;My colleagues at Thoughtworks tend to be big fans of Test-Driven
+      Development, and many people in the industry advocate telling LLM agents
+      to use TDD when building software. &lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; was
+      curious if this really makes a difference, so conducted &lt;a href = 'https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html'&gt;a few experiments&lt;/a&gt;.
+      &lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/exploring-gen-ai/tdd-in-the-agent-loop.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: August  4</title>
+    <link href="https://martinfowler.com/fragments/2026-08-04.html"/>
+    <updated>2026-08-04T08:08:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-08-04.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;There’s been a fair bit of publicity of the &lt;a href="https://www.theguardian.com/technology/2026/jul/22/openai-says-its-models-went-rogue-and-hacked-startup-in-unprecedented-incident"&gt;Open AI “rogue agent” that hacked into Hugging Face&lt;/a&gt;. This prompted Anthropic to check what their models were up to and, to my complete lack of surprise, &lt;a href="https://www.anthropic.com/news/investigating-incidents-cybersecurity-evals"&gt;discovered three incidents where models had gained unauthorized access&lt;/a&gt; to data in other organizations. &lt;a href="https://simonwillison.net/2026/Jul/30/three-real-world-incidents/#atom-everything"&gt;Simon Wilison concluded&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It’s abundantly clear now that running evals of cyberattack potential in models is a spectacularly risky business. Every AI lab needs to pay attention to this. Keeping a close eye on what’s happening in those sandboxes is crucial&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It strikes me that this is akin to a virus escaping from a laboratory. It makes clear that the model builders are not putting sufficient controls in place to prevent these lab escapes. They are morally responsible for any consequences of this, and that should extend to legal liability too. The bigger concern however is that this same kind of thing can happen with any organization running open-weight models. Lots of labs playing around with dangerous tools and little idea how to contain them.&lt;/p&gt;
+
+&lt;p&gt;We are sitting in state that Johann Rehberger describes as &lt;a href="https://embracethered.com/blog/posts/2025/the-normalization-of-deviance-in-ai/"&gt;the Normalization of Deviance in AI&lt;/a&gt;. No big disasters have occurred yet, despite all of these worrying signs. But when does our Challenger-moment appear?&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;If the sense that we’re in the calm before a storm of rogue AIs worming their way into sensitive software systems isn’t enough, there’s also knowledge that AI is also a financial bubble. Big advances in technology, whether it be railways or the internet, come with bubbles, and those of us old enough to remember the dotcom bubble see all the signs of that now - only bigger. The problem is that bubbles may be obvious, but the way they grow and pop, particularly &lt;em&gt;when&lt;/em&gt; they pop, isn’t as clear. The dotcom bubble was widely understood to be one, indeed the chairman of US Federal Reserve talked of &lt;a href="https://en.wikipedia.org/wiki/Irrational_exuberance"&gt;irrational exuberance&lt;/a&gt;. The trouble is that he said this in 1996, and the bubble took years to grow and burst. Even after the bubble popped, an investor would have experienced an excellent 10% per year gain since 1995.&lt;/p&gt;
+
+&lt;p&gt;So with that in mind, what to make of the warning signs of this bubble? There are various folks calling out flashing red lights, but I confess I’m not enough into financial and economic analysis to gauge how reasonable these warning signs are, or how seriously to treat the sources pointing to them. Those caveats aside, I’ll mention a couple&lt;/p&gt;
+
+&lt;p&gt;A substack called “Groundbreaker” calls out &lt;a href="https://substack.com/home/post/p-203509919"&gt;a parallel to mortgage crisis of 2008/9&lt;/a&gt;. They say the key indicator of that event was “the second derivative” - that is the point when the rate of increase of prices started going down. The point being that the fuel for this bubble, like many bubbles, was that people believed prices were going to keep increasing, and thus it was good to invest. Once the rate of price increases started slowing, then that was a sign that this confidence was starting to ebb, and an early signal of the crash to come. They see the AI bubble as similar, a credit driven asset cycle, where the assets are data centers rather than houses. The article’s argument seems sensible, but the problem with an argument like this is that it’s all very well to say this flashing red light flashed before the last financial crisis, but it doesn’t talk about how often the light has flashed without a following disaster.&lt;/p&gt;
+
+&lt;p&gt;Another anonymous Cassandra-wannaby is “Hedgie” a financial X-poster pretending to be an intelligent hedgehog. They noted that &lt;a href="https://x.com/HedgieMarkets/status/2080035162906390756"&gt;Alphabet’s revenue is up, but they are spending even more on capital investments&lt;/a&gt;. Much of their gains came from paper increases in the value of their stock in Anthropic, which is highly dependent on the bubble’s continuing expansion. Is this a sign that Google is resting on increasingly shaky financial foundations?&lt;/p&gt;
+
+&lt;p&gt;Chatting to some of my friends closer to all this, they don’t think Google or Anthropic are the weakest link. They think OpenAI and Oracle are the companies most exposed. We’ll need powerful magnifying glasses to find a suitably sized violin for those companies should they collapse. But is this motivated reasoning?&lt;/p&gt;
+
+&lt;p&gt;After dodgy sounding anonymous people on the internet, here’s a story from a more trustworthy source giving &lt;a href="https://www.nytimes.com/2026/07/31/magazine/larry-ellison-ai-oracle.html"&gt;lots of details on Oracle’s investments in AI&lt;/a&gt;, much of it for building data centers that power China and Middle East efforts. “Well-respected A.I. analysts” indicate that Oracle provides over 20% of China’s known A.I. computing power. Doing all of this has created a mountain of debt:  Oracle’s debt-to-equity ratio is 500%, compared to 15% for Alphabet.&lt;/p&gt;
+
+&lt;p&gt;Also on more concrete and less anonymous grounds, there’s been a &lt;a href="https://www.noahpinion.blog/p/why-did-south-korean-stocks-just"&gt;crash in South Korean memory stocks&lt;/a&gt;. Is this a leading sign of a wider collapse? Or should we remember that the late 90s saw five stock market corrections of over 10%, each time recovering, before the bubble finally popped.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;All this talk of rogue AIs and popping bubbles sounds rather dreadful, and John Prideaux made perceptive analysis of this &lt;a href="https://www.economist.com/united-states/2026/07/26/checks-and-balance-newsletter-ai-has-become-the-ultimate-dread-risk"&gt;dread risk&lt;/a&gt;. Pundits like to point out risks of disaster:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A good way to sound smart is to predict that there is a 20 or 30% chance of something awful happening. A p(doom) of 20% is big enough to avoid charges of complacency, but small enough so that you probably won’t be called on it. This is what came to mind when &lt;a href="https://www.economist.com/insider/the-insider/an-interview-with-elon-musk?utm_campaign=r.checks-and-balance&amp;amp;utm_medium=email.internal-newsletter.np&amp;amp;utm_source=salesforce-marketing-cloud&amp;amp;utm_term=7%2F24%2F2026&amp;amp;utm_id=2219814"&gt;Mr Musk told our editor-in-chief&lt;/a&gt; that the probability of ai wiping out humankind was 20%. These are worse odds than Russian roulette with a typical revolver. Anyone who truly believes that should be doing everything they can to prevent the construction of data centres. If they are not, that’s an indication that on some level they do not really believe what they are saying.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I grew up with a steady dread of nuclear war, thinking our chances of making it to the end of the 20th Century weren’t terribly good. That fear seems quaint now. Here’s hoping that I’ll feel that way about AI in thirty years time.&lt;/p&gt;
+
+&lt;p&gt;But meantime, as Eric Evans said in a recent talk: “be nice to your AI, just in case”.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;It’s common to disparage government services, including those on the internet. So I feel compelled to mention an efficient interaction with the government. In this case the credit goes to &lt;a href="https://www.gov.uk/"&gt;gov.uk&lt;/a&gt;, where I just filled in an online form to renew my electoral registration. The process was quick, and everything was explained clearly. (Gov.uk publishes their &lt;a href="https://design-system.service.gov.uk/"&gt;Design System&lt;/a&gt;, which is worth reading for anyone who is gathering information like this.)&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I had a conversation with a colleague who had used AI to get data out of an otherwise closed package system. The system contained product data for a client, some 6 million SKUs with hundreds of attributes on each SKU. It was our client’s data, but was locked in the package, and the vendor was increasing their prices and made it hard to support new features. The client could copy the database, but the database structure was so complex, they couldn’t make sense of it, and had been working for ten months with limited progress. My colleague’s idea was to use an AI to build JavaScript scripts that scraped the UI. Since the data was presented from the UI, it was in a form that we could understand. It took him a week to extract all the data.&lt;/p&gt;
+
+&lt;p&gt;I’m hoping we can get a proper description of this story, I think this approach is one that could be used elsewhere. I know lots of people are very frustrated with package vendors locking up their data.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Any seller faces fraud, and a little industry has sprung up to get &lt;a href="https://vectoral.com/blog/token-relay-market"&gt;fraudulent access to tokens&lt;/a&gt;. The idea is to abuse free-trial schemes, play games with chargebacks, and find places that have any kind of open access to inference. The tokens go through a couple of layers and are then sold on to users - commonly done in China. Matt Lenhard’s post includes some tips to limit the abuse, but “the truth is that there’s no clean fix”&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I’ve never had any desire to live in Clacton, but I now find it temporarily appealing. Here’s hoping its residents do the right thing and elect &lt;a href="https://www.theguardian.com/politics/2026/jul/08/clacton-byelection-likely-to-be-two-man-race-between-reform-leader-and-binface"&gt;Britain’s first recyclon MP&lt;/a&gt;.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>The Conductor Developer</title>
+    <link href="https://martinfowler.com/rachels-ramblings/conductor-developer.html"/>
+    <updated>2026-07-31T09:48:00-04:00</updated>
+    <id>https://martinfowler.com/rachels-ramblings/conductor-developer.html</id>
+    <category term="rachels-ramblings"/>
+    <author>
+      <name>Rachel Laycock</name>
+      <email>rlaycock@thoughtworks.com</email>
+      <uri>https://www.linkedin.com/in/rachellaycock/</uri>
+    </author>
+    <content type="html">
+&lt;p class = 'precis'&gt;&lt;b&gt;TL;DR&lt;/b&gt;&lt;br/&gt;&lt;i&gt;Why I think software development is starting to feel a little more like conducting an orchestra.&lt;/i&gt;&lt;/p&gt;
+&lt;img src = 'https://martinfowler.com/rachels-ramblings/card.png'&gt;&lt;/img&gt;
+&lt;p&gt;There’s a shift happening in software development that I don’t think we’re talking about clearly enough.&lt;/p&gt;
+
+&lt;p&gt;For the last couple of years we’ve framed AI as a productivity tool. How much faster can it write code? How many more features can we ship? How much cheaper can we build software? I think that’s the wrong question, but I understand why.&lt;/p&gt;
+
+&lt;p&gt;The first thing AI became good at was writing code, so naturally that’s where we focused. As AI got better at coding, I expected the bottlenecks to move through the software delivery lifecycle: from coding to design and specification, architecture, then verification. And they have. We spent a lot of time at the most recent &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;FOSE&lt;/a&gt;  event discussing how we ensure good design, quality and resilience while agents increasingly write the code.&lt;/p&gt;
+
+&lt;p&gt;That’s a topic for another ramble.&lt;/p&gt;
+
+&lt;p&gt;A few months ago, though, I realised I was looking at the wrong bottleneck. I kept assuming it would simply move to the next phase of software delivery.&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;I was wrong.&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt; AI didn’t change what great software looks like. It changed what’s scarce. Human attention is now the bottleneck.&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;The next bottleneck isn’t design. It isn’t verification. It’s us. More specifically, it’s our attention. Developers have always protected long periods of uninterrupted focus because that’s where good software gets built. Pair programming. Quiet afternoons. Deep work. We optimized around flow because flow mattered. When we didn’t get that time, very little got done.&lt;/p&gt;
+
+&lt;p&gt;But when I watch developers using AI today, I see something different. The best developers I know aren’t spending all day in flow anymore. They’re orchestrating agents.&lt;/p&gt;
+
+&lt;p&gt;Great developers are starting to look less like programmers and more like conductors.&lt;/p&gt;
+
+&lt;p&gt;I was watching  &lt;a href="https://en.wikipedia.org/wiki/Jacob_Collier"&gt;Jacob Collier&lt;/a&gt; on YouTube recently because I’m hoping to see him in concert soon. Watching him conduct is fascinating. He’s not trying to play every instrument himself. He’s listening to the whole piece, hearing what doesn’t quite fit, bringing different voices in at the right moment, changing the energy, changing the tempo and shaping the performance as it unfolds. Increasingly, that’s what great software developers look like.&lt;/p&gt;
+
+&lt;p&gt;A great conductor is first and foremost a great musician. They could play the instruments themselves. That’s not why they’re standing on the podium. Their value comes from understanding the whole score. The orchestra doesn’t need the conductor because the musicians aren’t talented enough. It needs the conductor because someone has to hold the whole system in their head. Increasingly, I think that’s what great software developers are doing.&lt;/p&gt;
+
+&lt;p&gt;The AI agents are the musicians.&lt;/p&gt;
+
+&lt;p&gt;The developer is the conductor.&lt;/p&gt;
+
+&lt;p&gt;They’re deciding which agent should tackle which problem. They’re providing context. They’re evaluating what comes back. They’re spotting subtle mistakes. They’re deciding what deserves another iteration and what is ready to move on.
+I was talking to an engineer recently who told me they regularly have eight AI agents running in parallel. I’ve heard similar numbers from others. Ten. Twelve. Beyond that, they become the bottleneck.&lt;/p&gt;
+
+&lt;p&gt;Eight.&lt;/p&gt;
+
+&lt;p&gt;That number stuck with me because it sounded remarkably familiar. It sounded like my job.&lt;/p&gt;
+
+&lt;p&gt;As CTO, I rarely produce the work myself anymore. Instead, I have lots of streams of work progressing at once. A strategy document comes back for feedback. A client opportunity needs a decision. Someone wants guidance on a technical trade-off. Another team needs context before they can move.&lt;/p&gt;
+
+&lt;p&gt;None of it arrives neatly packaged. It comes as conversations, emails, documents, chat messages and half-formed ideas. My job is to decide where my attention belongs, make sense of incomplete information, provide context and help other people make progress.&lt;/p&gt;
+
+&lt;p&gt;When I first became CTO, I thought I needed to get better at managing my time. I was wrong.&lt;/p&gt;
+
+&lt;p&gt;What I really needed to learn was how to manage my energy. The challenge wasn’t the hours. It was the constant context switching. The endless stream of decisions. The feeling that nothing was ever completely finished.&lt;/p&gt;
+
+&lt;p&gt;An executive coach taught me some things I’ve never forgotten.&lt;/p&gt;
+
+&lt;p&gt;Protect your attention.&lt;/p&gt;
+
+&lt;p&gt;Manage your energy.&lt;/p&gt;
+
+&lt;p&gt;Reduce unnecessary decisions.&lt;/p&gt;
+
+&lt;p&gt;Create systems that help your brain, not just your calendar.&lt;/p&gt;
+
+&lt;p&gt;Lately I’ve been wondering whether developers are about to need exactly the same capabilities. A few weeks ago I shared this thought with our Chief People and Leadership Officer. His response surprised me. “I knew something fundamental was changing,” he said. “I just didn’t know how to help. Now I do.”&lt;/p&gt;
+
+&lt;p&gt;That conversation stuck with me because we’ve spent decades helping executives succeed in this kind of environment. We coach them to make decisions with incomplete information, manage cognitive load, prioritize relentlessly and protect their energy. Yet we’re still preparing developers for a world of individual execution. We’re redesigning the tools, but we haven’t started redesigning the job.&lt;/p&gt;
+
+&lt;p&gt;I don’t think software developers are becoming managers. I don’t think AI is replacing engineering. I think engineering expertise is simply being applied in a different place, and much more often, because execution has become so much faster.&lt;/p&gt;
+
+&lt;p&gt;(I suspect software developers are simply the first knowledge workers to experience it, but I’ll save that thought for another rambling.)&lt;/p&gt;
+
+&lt;p&gt;The question I’m most interested in now is this:&lt;/p&gt;
+
+&lt;p&gt;&lt;b&gt;How do we redesign engineering careers when human attention becomes the scarce resource?&lt;/b&gt;&lt;/p&gt;
+
+&lt;p&gt;When I became an executive, learning to manage my own energy was one of the hardest things I’ve ever done. Even today, if I stop paying attention to it, I pay the price.&lt;/p&gt;
+
+&lt;p&gt;I have a feeling software development is about to demand those same capabilities from many more people.&lt;/p&gt;
+
+&lt;p&gt;And I don’t think we’ve quite realised how profound that change is.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>The Economic Benefit of Refactoring</title>
+    <link href="https://martinfowler.com/articles/exploring-gen-ai/refactoring-economic-benefit.html"/>
+    <updated>2026-07-30T09:04:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-30:The-Economic-Benefit-of-Refactoring</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/exploring-gen-ai/refactoring-economic-benefit.html'&gt;&lt;img src = 'https://martinfowler.com/articles/exploring-gen-ai/donkey-card.png' width = ''&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;b class = 'author'&gt;Giles Edwards-Alexander&lt;/b&gt; does an experiment to see if decomposing a
+      large function helps reduce token costs, suggesting that is may now be
+      possible to measure the economic benefit of refactoring&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/exploring-gen-ai/refactoring-economic-benefit.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>The Orchestrator's Tax</title>
+    <link href="https://martinfowler.com/articles/orchestrator-tax.html"/>
+    <updated>2026-07-28T09:10:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-28:The-Orchestrator-s-Tax</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;Subagents get justified by time saved and parallel execution, but
+      &lt;b class = 'author'&gt;Rahul Garg&lt;/b&gt; explains that's not what matters most. Every
+      token in the orchestrator's context is competing for its attention, and
+      the real value of a subagent is what it keeps out of that context.
+      Subagents should be treated as a tool for protecting the orchestrator's
+      working memory, offloading reasoning it doesn't need to hold onto. Doing
+      this well means giving the orchestrator explicit ground rules for when and
+      how to delegate. &lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/orchestrator-tax.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Why I’m Writing Rachel’s Ramblings</title>
+    <link href="https://martinfowler.com/rachels-ramblings/intro.html"/>
+    <updated>2026-07-28T08:32:00-04:00</updated>
+    <id>https://martinfowler.com/rachels-ramblings/intro.html</id>
+    <category term="rachels-ramblings"/>
+    <author>
+      <name>Rachel Laycock</name>
+      <email>rlaycock@thoughtworks.com</email>
+      <uri>https://www.linkedin.com/in/rachellaycock/</uri>
+    </author>
+    <content type="html">
+&lt;p class = 'precis'&gt;&lt;b&gt;TL;DR&lt;/b&gt;&lt;br/&gt;&lt;i&gt;I have ideas. I haven’t been writing them. That’s about to change. I promise… myself.&lt;/i&gt;&lt;/p&gt;
+&lt;img src = 'https://martinfowler.com/rachels-ramblings/card.png'&gt;&lt;/img&gt;
+&lt;p&gt;I’ve been thinking a lot about talent. Actually, I’ve been thinking a lot about thinking. And writing. Or more specifically, not writing. This really hit me earlier this year at the Future of Software conference. I was surrounded by people sharing their latest ideas and I had a slightly uncomfortable realization:&lt;/p&gt;
+
+&lt;p&gt;I have my own.&lt;/p&gt;
+
+&lt;p&gt;Not just opinions. Actual patterns. Hypotheses. Things I’m seeing across clients, across teams, across the industry that feel new or at least not well articulated yet in a way that a leader can think about and act upon in some way that can influence how they strategise and plan for the future. Because helping clients and other leaders internal and external to thoughtworks do this is actually a big part of what I do and without letting my northern humbleness get in my own way, I’m actually pretty good at it. If I wasn’t I wouldn’t be the global CTO of a future thinking tech org, you know the kind that has Martin Fowler as its Chief Scientist. A title I know he loves… Martin, by the way, is one of the people pushing me to do this, which is weird because on paper I’m his boss but I don’t believe in the traditional idea of a boss anyway. I’m a strong believer in the servant leadership type but I’ll save that for when I write about that.&lt;/p&gt;
+
+&lt;p&gt;Anyway the point is for all the ideas I have and discussion I have I don’t do a good job of writing it down. At best I’ll stick it in a presentation deck when I’m forced to communicate with them in some forum or another. I hate decks and love writing so I’m obviously doing something wrong.&lt;/p&gt;
+
+&lt;p&gt;So why haven’t I been writing? It’s easy to say I’ve been too busy. I don’t have an easy job. It’s a fun one but not easy. I also have two small children, 5 and 8. In case you are interested, I attempt to give as much time as possible to this busy job. And then I try to have a life. I’m also writing an epic world building sci-fi fantasy book which is a huge passion project I may also share more about so I am definitely busy. But that’s not actually the real reason I haven’t been writing this down and pushing it out publicly. The real reasons…&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;I overthink it.&lt;/li&gt;
+  &lt;li&gt;I move too fast to the next idea.&lt;/li&gt;
+  &lt;li&gt;I’ve convinced myself it needs to be more polished than it does.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;So this is an experiment.&lt;/p&gt;
+
+&lt;p&gt;Rachel’s Ramblings is exactly what it sounds like. Fast, imperfect, thinking out loud. Naming ideas early rather than waiting until they’re fully formed. Because the reality is, most of what I do day to day isn’t answering known questions. It’s spotting patterns and asking questions we haven’t quite figured out yet.&lt;/p&gt;
+
+&lt;p&gt;My brain works a bit like a knowledge graph. Constant associations, constant pattern matching. That’s useful in conversations, in client work, in strategy.&lt;/p&gt;
+
+&lt;p&gt;It’s less useful if it never gets written down.&lt;/p&gt;
+
+&lt;p&gt;So this is me fixing that.&lt;/p&gt;
+
+&lt;p&gt;I’ll write about:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;what is the future of software&lt;/li&gt;
+  &lt;li&gt;how software development is changing in the age of AI and what that means for engineers, leaders, and organizations&lt;/li&gt;
+  &lt;li&gt;how platforms, agents, and people actually work together&lt;/li&gt;
+  &lt;li&gt;and occasionally, how I manage the reality of doing this job with all the other things I have going on&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Some of it will be wrong. Some of it will evolve. That’s the point.&lt;/p&gt;
+
+&lt;p&gt;If nothing else, this is a forcing function to turn thinking into something that exists outside my head.&lt;/p&gt;
+
+&lt;p&gt;Let’s see where it goes.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>Fragments: July 21</title>
+    <link href="https://martinfowler.com/fragments/2026-07-21.html"/>
+    <updated>2026-07-21T06:13:00-07:00</updated>
+    <id>https://martinfowler.com/fragments/2026-07-21.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;With this post, I’ll wrap up my notes from  the second &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;Future of Software Development Retreat&lt;/a&gt;. But before I do, I should note that the &lt;a href="https://www.thoughtworks.com/content/dam/thoughtworks/documents/report/tw_future_of_software_engineering_europe_2026.pdf"&gt;full Thoughtworks report on the retreat is now available&lt;/a&gt;. They have five headline findings:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Code generation is no longer the bottleneck — verification is.&lt;/li&gt;
+    &lt;li&gt;‘Harness engineering’ is emerging as a distinct, ownable discipline.&lt;/li&gt;
+    &lt;li&gt;Organizations are colliding with a real apprenticeship crisis.&lt;/li&gt;
+    &lt;li&gt;The executive/engineer expectation gap is a bigger risk than any technical
+limitation.&lt;/li&gt;
+    &lt;li&gt;Legacy modernization is the clearest, most defensible near-term value pool.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;A session convened around the mismatch of views about using LLMs between engineers using it and the C-suite and boards that were calling for it. The concern is that boards are looking at promised productivity gains, and not concerned enough about the risks, particularly about security.&lt;/p&gt;
+
+&lt;p&gt;This was illustrated by one tale of a company that used ML-trained software to optimize the replacement of air filters on their field equipment. They were pleased to see that they were able to change the air filters less frequently, saving them $50 million. But the problem was the ML models were trained on equipment used in the desert, while their equipment was used in the arctic. Air filters in the desert deal with dust, but in the arctic the thing to remove is mosquitoes. There’s an important difference here, mosquitoes rot, and enough decaying mosquitoes is a serious fire risk. Fires from such dead mosquitoes around infrequently replaced air filters cost the company $100 &lt;em&gt;billion&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now such a tale could told of many situations without AI in the mix. Plenty of human situations have gone wrong when solutions are applied in a new context (which is why context is such a key word among pattern-writers). But the tale does remind us to be wary of an AI’s suggestions, and to always think of how to build sensors to provide rapid feedback.&lt;/p&gt;
+
+&lt;p&gt;Engineers particularly worry about the risks when citizen developers start &lt;a href="https://martinfowler.com/bliki/VibeCoding.html"&gt;vibe coding&lt;/a&gt;. In many ways, of course, this isn’t new. I.T. folks often worry about how many important business decisions are based on spreadsheets, that are built with little control, testing, or assessment of data quality. Vibe-coding amplifies these concerns, so companies need &lt;a href="https://martinfowler.com/articles/vibesec-reckoning.html"&gt;a range of controls to guard against security breaches&lt;/a&gt;. Some folks have made a point of raising issues at board level, running threat modeling session with board members to introduce them to the risks. Vibe-coded applications need to be put in separate infrastructure, which deterministic controls over data access to tame the &lt;a href="https://martinfowler.com/articles/agentic-ai-security.html#lethal-trifecta"&gt;lethal trifecta&lt;/a&gt;. One company encouraged widespread vibe-coding from citizen developers but recoiled from the problems of the huge shadow IT that emerged - they are now looking to build a platform to help control this work without stifling the useful tools that were produced.&lt;/p&gt;
+
+&lt;p&gt;Part of the problem here may be simple experience with LLMs. Many in management find LLMs do a decent job of preparing management reports. Or summarizing management reports prepared by other LLMs. Given this they naturally think LLMs must do a decent job of programming too. My anti-management self has to mention &lt;a href="https://bsky.app/profile/kelseyhightower.com/post/3mptigbdzjk2k"&gt;Kelsey Hightower’s observation:&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The less busy work you have the less appealing these Al tools are&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;One possible antidote to this: get the legal department involved. They see LLMs doing a poor job, and appreciate the risks involved.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Most folks I talk to, both at the retreat and outside, recognize we are in some form of bubble. Technological advances like this almost always come with economic bubbles, and in the future we will all look back at this, and shake our heads saying we knew there was so much froth. But while it’s easy to see that there is a bubble, it’s hard to see how long it will run or what will emerge after the pop. After all the dotcom bubble was clearly recognized as such… in 1995. We can happily point at those companies that failed (Webvan, pets.com) but need to then acknowledge those that survived (Amazon).&lt;/p&gt;
+
+&lt;p&gt;Most of those at the retreat were old enough to have lived through the dotcom bubble and crash, but one such grey-hair pointed out an interesting difference. Back then we were excited about what the future would bring, and we saw lots of new things being built. There’s much less of that, this time around. &lt;a href="https://poll.qu.edu/poll-release?releaseid=3955"&gt;Most people are wary&lt;/a&gt; of what the AI bubble is creating. Partly this may stem from the reality that followed the dotcom hope. Social media may be everywhere, but do we think it’s actually improved our lives that much, even if (especially if?) we use so much of it?&lt;/p&gt;
+
+&lt;p&gt;We hear so much about the incredibly productive things we can do with &lt;a href="https://martinfowler.com/bliki/AgenticProgramming.html"&gt;agentic programming&lt;/a&gt;, but has anyone noticed a flood of wonderful applications built with it? Or have we noticed a significant improvement in common applications from the big AI boosters such as Google or Microsoft?&lt;/p&gt;
+
+&lt;p&gt;This may be another factor in the board-vs-engineer divide. Most of what’s driving adoption of AI at the moment is cost-cutting, and it mostly the boards that get excited by cost-cutting. Perhaps the &lt;a href="https://martinfowler.com/fragments/2026-07-06.html#token-costs"&gt;increasing concerns about token costs&lt;/a&gt; will temper the eagerness.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Folks are finding LLMs helpful in operations: with a good event stream from observability tools, an agent finds anomalies much faster. One of the problems with citizen-developer apps, is that they often don’t provide good observability, since the citizen-developers don’t think to ask for it. The agents ability to look at the event stream does pose governance questions, as often such event streams contain a lot of sensitive information.&lt;/p&gt;
+
+&lt;p&gt;Reinforcing what I’d heard in Utah, more people agreed that LLMs are valuable for operations folks to help them understand what the code does. Cross matching code and event traces helps them assist humans to find what happened when things go wrong. Agents are particularly handy with repeated incidents, as they can collate lots of information from different cases and present it to the human teams.&lt;/p&gt;
+
+&lt;p&gt;Getting agents to auto-remediate moves us to the next level of capabilities and concerns. It’s vital that agents carefully document all their actions when they do fixes. We also need to ensure there is feedback to the development team so they can learn. Agents don’t learn, the best they can do is update the context.&lt;/p&gt;
+
+&lt;p&gt;There was a sense that many people over-estimate the capability of agents to deal with incidents. Such people think of incident resolution as a simple, linear process. But it’s rarely that, instead there’s a lot of surprises and adaptation needed. Humans are good with that, but LLMs are not.&lt;/p&gt;
+
+&lt;p&gt;One of the perils of agent-developed code is their habit of inserting features that were never asked for. One team spent three days trying to figure out such an unrequested feature, trying to figure out who had requested it and if anyone wanted to keep it.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;A group of law professors carried an interesting experiment to judge &lt;a href="https://law.stanford.edu/publications/law-professors-prefer-ai-over-peer-answers/"&gt;how well an LLM can provide short answers to student questions&lt;/a&gt;. They created a batch of forty questions in contract law and asked the professors, plus a couple of LLMs, to provide answers. To evaluate the LLM answers they showed professors pairs of answers - one human, one LLM - and asked them which response they would prefer to deliver to a student.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Professors rated LLMs far higher than their peers (average win rate = 75.33%), with models performing similarly to the best instructor. LLM responses were also rarely flagged as harmful (3.53%, vs 12.06% for professors).&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This reminds me of the distinction I mentioned in a recent fragment between &lt;a href="https://backofmind.substack.com/p/faking-versus-making"&gt;interactional and contributory expertise&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;A few days ago Unmesh Joshi published an article here about his experiences &lt;a href="https://martinfowler.com/articles/llm-and-dsls.html"&gt;using DSLs to enable more reliable use of LLMs&lt;/a&gt;. Responses to this included a pointer to an article by Spender Nelson that &lt;a href="https://blog.firetiger.com/custom-programming-languages-make-agents-really-really-smart/"&gt;related similar impressions&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;DSLs like this hit a lot of sweet spots for LLMs. You can make them extremely token efficient, and enforce hard security boundaries. You can translate high-level LLM intent into a ton of deterministic code, ensuring good behavior and guardrails at the (custom) compiler level.&lt;/p&gt;
+
+  &lt;p&gt;And Large Language Models are very good at learning and working with DSLs. Maybe this shouldn’t come as a surprise; they are language models after all. A small bit of documentation generally is enough to set them off and running, and reasonable error messages let them course-correct even when they go wrong.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He describes a couple of examples from their use: a query language for data lakes that takes into account security and authorization issues, and a little expression language to make it easier to create safe SQL where clauses.&lt;/p&gt;
+
+&lt;p&gt;One of the biggest barriers to using DSLs, particularly &lt;a href="https://martinfowler.com/dsl.html"&gt;external DSLs&lt;/a&gt;, is building a parser and tooling. LLMs make this much easier. That said, my sense is that it’s the semantic model that underpins the DSL is what really matters, and the DSL is one projection of that model. LLMs may help us explore other ways to project that model in interesting ways.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;In recent weeks I’ve been noticing the stench of LLM-speak more and more. It’s not just the common tells, it’s a sense of LLM miasma that pervades the prose. I’ve noticed it’s increasingly eliciting a visceral reaction, after a couple of paragraphs I just want to dismiss the entire article out of hand. For some of these, it was necessary for me to hold my nose and wade through the whole text, but it was with an intellectual nausea which obscured the content, even increasing my desire to indulge in such an awful distraction as checking social media.&lt;/p&gt;
+
+&lt;p&gt;I wonder - is this just me that’s reacting so negatively to LLM-speak? Or do other people have a reaction that leads them to toss aside any prose that sets off their LLM-alarm?&lt;/p&gt;
+
+&lt;p&gt;One indicator that it’s not just me is this post from Jason Koebler that I highlighted a couple of months ago, where he &lt;a href="https://www.404media.co/your-ai-use-is-breaking-my-brain/"&gt;observed how AI was breaking his brain&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;People think things that are fake are real, things that are real are fake. Much has been written about “AI psychosis,” the nonspecific, nonscientific diagnosis given to people who have lost themselves to AI. Less has been said about the cognitive load of what other people’s AI use is doing to the rest of us, and the insidious nature of having to navigate an internet and a world where lazy AI has infiltrated everything. Our brains are now performing untold numbers of calculations per day: Is this AI? Do I care if it’s AI? Why does this sound or look or read so weird? Does this person just write like this? Is this a person at all?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;A while ago, I was thinking that it was reasonable for folks who aren’t as committed to writing as I am to use an AI to help polish their prose. Now I’m turning to encouraging writers to reject it. That pervasive LLM-voice is just so common now, my sense is that it discredits the writing even before the reader has a chance to try to understand what is being said. I don’t think it’s good enough to ask the LLM to write a first draft and then tweak it. I’m not sure writers can edit the LLM-ness out of prose once it’s in there. I even worry about asking an LLM to suggest improvements,
+I think it’s just too easy to accept an LLM’s suggestions, and in the process trigger your readers’ LLM-antibodies.&lt;/p&gt;
+
+&lt;p&gt;Of course like most problems, it’s also an opportunity. Those who can get a distinctive human voice will get more visibility and credibility. But the question remains of how we can coach people to let out their true personality into their writing. Academic and corporate writing both tended to stifle engaging prose, LLMs are good amplifiers, and they will amplify this stifling. This is an even greater challenge for those for whom English is their second language (or indeed for many of my colleagues, their third or fourth). It’s too easy for me to neglect to think about a difficulty that I’ve never been able to face.&lt;/p&gt;
+
+&lt;p&gt;The most immediate advice I can give something I learned many years ago and shared last year - &lt;a href="https://martinfowler.com/bliki/SayYourWriting.html"&gt;Say Your Writing&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Once you’ve got a reasonable draft, read it out loud. By doing this you’ll find bits that don’t sound right, and need to fix.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I always suggested this to help people get past sluggish prose, especially if they had spent too much time around academic or corporate writing. But now I think the need to Say Your Writing is even more important, in order to combat the insidious impact of AI. For most people, their speech patterns get closer to their real self, so verbalizing writing is the way to fight those forces that try to smooth away a writer’s individuality.&lt;/p&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>The Archaeologist’s Copilot</title>
+    <link href="https://martinfowler.com/articles/archaeologist-copilot.html"/>
+    <updated>2026-07-16T09:25:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-16:The-Archaeologist-s-Copilot</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/archaeologist-copilot.html'&gt;&lt;img src = 'https://martinfowler.com/articles/archaeologist-copilot/card.png' width = '350px'&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;When people think of legacy modernization, most folks aren't imagining
+      the target environment will be Java 8. But this was the challenge facing
+      &lt;b class = 'author'&gt;Nik Malykhin&lt;/b&gt; when he needed to run a Java 1.5 codebase on
+      today's hardware. His early use of LLMs gave plausible answers that did
+      not hold up in the codebase. Progress came when he grounded the process in
+      evidence, using AI to support analysis, validation in a stable Docker
+      environment, and gradual refactoring protected by tests. The main takeaway
+      is practical: AI was most useful when constrained by evidence, clear
+      roles, and a step-by-step modernization strategy.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/archaeologist-copilot.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>DSLs Enable Reliable Use of LLMs</title>
+    <link href="https://martinfowler.com/articles/llm-and-dsls.html"/>
+    <updated>2026-07-14T08:51:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-14:DSLs-Enable-Reliable-Use-of-LLMs</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt; LLMs generate code incredibly fast, but to ensure they generate
+      exactly what is intended, they need clear boundaries. Abstractions and
+      Domain-Specific Languages (DSLs) provide a strong harness that guides LLMs
+      right from the start. &lt;b class = 'author'&gt;Unmesh Joshi&lt;/b&gt; describes how the example
+      of Tickloom - a domain model and DSL for illustrating distributed system
+      behavior - &lt;a href = 'https://martinfowler.com/articles/llm-and-dsls.html'&gt;shows how we can use an LLM&lt;/a&gt; as a partner to iteratively build a
+      DSL and as a natural language interface to use it. Such a DSL can act as
+      the key source of truth for software systems in the world of LLMs. &lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/llm-and-dsls.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: July 13</title>
+    <link href="https://martinfowler.com/fragments/2026-07-13.html"/>
+    <updated>2026-07-13T08:51:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-07-13.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;Some more of my notes from &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;Thoughtworks Future of Software Development Retreat&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;When we had our first retreat in Utah early this year, nobody had heard of &lt;a href="https://martinfowler.com/articles/harness-engineering.html"&gt;Harness Engineering&lt;/a&gt;. This time we had a whole session on it.&lt;/p&gt;
+
+&lt;p&gt;When comes to the guide side of harnesses, most of the discussion is about context management. While context windows have increased is size as models get more sophisticated, that doesn’t mean that models will properly focus on the right bits. Models typically only focus attention on part of the context, and to get the best behavior, we need to manage that focus. One attendee keeps their context small, limiting the &lt;code&gt;agents.md&lt;/code&gt; file to less than 200 lines&lt;/p&gt;
+
+&lt;p&gt;On the sensor side, we see more attention on computational sensors. Two patterns from one participant was shifting to languages with greater controls, (eg Rust rather than Python) and “leveling up” validation approaches, using more property-based testing and techniques from formal methods. One commented that while they aren’t smart enough to write specifications in a formal specification language, they are smart enough to read it and check it makes sense for their domain.&lt;/p&gt;
+
+&lt;p&gt;Will our attention on harnesses last long enough for our next retreat? Will the models just get so good that harnesses become unnecessary? Those with some &lt;a href="https://martinfowler.com/bliki/MechanicalSympathy.html"&gt;mechanical sympathy&lt;/a&gt; for LLMs seem to think not - but are they overly coupled to the current state of technology? I find such speculation tends not to lead anywhere useful, I’ve not seen much success in guessing the future in the past, and with technology as radical as this, I don’t see it being any easier. So for the moment, attention to harnesses pays off. We find it reduces token usage, and also allows weaker models to be useful, supporting such things as local hosting of open-weight models.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Which naturally segues me to a session on self-hosted models. Increasing token costs have made hosting an open-weight model more attractive, particularly due to the &lt;a href="https://redmonk.com/sogrady/2026/05/15/open-ai-models/"&gt;decreasing time for open-weight models to catch up&lt;/a&gt; with frontier models. Cost isn’t the only factor, however, many folks find a desire to be independent of the frontier model firms to be the the driving force. After all we’ve seen the U.S. government intervene to deny access to models, increasing the desire for greater model sovereignty. Information security is also something to consider, some attendees just can’t give models necessary data for critical work. Even without that, if someone else hosts the model then their model learns rather than your model. And although recent events have increased interest, several participants worked with companies that had been self-hosting for up to a couple of years.&lt;/p&gt;
+
+&lt;p&gt;Is this trudging down the same path of self-hosted clouds, which led to lots of folks spending excessive funds on &lt;a href="https://martinfowler.com/articles/talk-about-platforms.html#TheHalf-arsedSuperficialPrivateCloud"&gt;half-arsed private clouds&lt;/a&gt;? The answer hinges upon whether it ends up being simpler to host a model than a cloud, perhaps due to a simpler interaction protocol. The hard part of this may be the talent required to efficiently use the GPUs, managing an inference data center currently isn’t a widely available skill. Even self-hosted models are a cost to operate, capital costs in GPUs, ongoing costs in electricity. The physical design of a data center can affect optimal usage. There’s an opportunity here for professional services firms to help companies manage this.&lt;/p&gt;
+
+&lt;p&gt;Cost control also involves teaching people to pick the right model for the job. Can we teach engineers, or indeed other users, to pick a less-powerful model? This, of course, could be a job for model itself, acting as a broker, deciding which model is the best choice to tackle certain jobs.&lt;/p&gt;
+
+&lt;p&gt;Self-hosting may lead to a greater use of fine-tuning. Currently that’s a niche activity, but over time we could well find that models that are fine-tuned to a particular domain need less reasoning, consume less tokens, and thus are cheaper to operate. We are seeing models trained specifically to support programming.&lt;/p&gt;
+
+&lt;p&gt;As with any topic with this degree of uncertainty, the big win isn’t finding the right answer, but coming up with a strategy that will cope with the inevitable and unpredictable changes.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;After an event like this, many people come up to me and ask me to make some grand summing up. I hate this, because I rarely leave these kinds of event with some grand narrative. Even after mulling on it afterwards (in writing the above notes) I still usually don’t have one, and distrust one that forms, as my skepticism includes attempts to make coherent narratives of an event that’s naturally rather jumbled.&lt;/p&gt;
+
+&lt;p&gt;However my failings are irrelevant this time, because Kief Morris has put together such a narrative, &lt;a href="https://infrastructure-as-code.com/posts/fose-july-2026.html"&gt;and it’s a convincing one&lt;/a&gt;, even to a narrative-denier like me.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The sessions had different titles and different casts, and on the surface they were about different problems.&lt;/p&gt;
+
+  &lt;p&gt;But they weren’t. Nearly every one of them was a different facet of the same argument. How much do we let an agent decide, and how do we stay confident in what it does?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He looks at code review, questions whether it matters, but sees that the rigor that many associate with code review shifts to other forms. He describes the disagreements about how much we should trust an agent to identify and fix production incidents. He sees that the contrast between how much leeway teams give to agents depends on the context they are operating&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Underneath all of these sessions, the operations debate, the wide-remit team, the dark-factory spectrum, the argument about who’s allowed to steer the model, people were making the same handful of choices over and over about a single thing: the unit of work they were prepared to hand to an agent. How big it is. How much of the job it covers. What you do to get it ready to hand over. How you check what comes back. What you put around the agent to keep it inside the lines. Different rooms set those differently, but they were setting the same controls.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Sam Ruby convened a session called “Bring me a Rock”. The name evokes a particular kind of management dysfunction. The manager tells his underlings to bring him a rock, and then starts rejecting the results without explaining why (“no not that one”, “no not that one”) until eventually one rock matches the unstated expectation.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It names a manager who substitutes serial rejection for the work of saying what they want, and makes you pay for their unfinished thinking one rock at a time.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Sam had already written why he thought with LLMs, &lt;a href="https://intertwingly.net/blog/2026/06/27/Bring-Me-a-Rock.html"&gt;this changed from a slur to a defensible way to work&lt;/a&gt;. When its a bunch of tireless machines with endless patience, that return new rocks in minutes rather than days, then an approach like this (using the &lt;a href="https://martinfowler.com/fragments/2026-06-16.html#registers"&gt;brainstorming register&lt;/a&gt; becomes a defensible way to work.&lt;/p&gt;
+
+&lt;p&gt;Sam &lt;a href="https://intertwingly.net/blog/2026/07/01/What-Survived-Contact.html"&gt;described the discussion&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The room pulled it somewhere narrower than I’d framed, and the narrower place was the more interesting one: not how to explore by elimination but who should even be allowed to. Product managers, increasingly people managers, are reaching for these models directly, and seasoned engineers get measurably better results from them than untrained people do — so the worry followed. If expertise is what separates a good outcome from slop, should non-engineers be steering the model at all?&lt;/p&gt;
+
+  &lt;p&gt;It’s a fair question, and I think it’s the wrong one, because it mistakes the act. When a manager reaches for an LLM instead of routing the work to the team that reports to them, they didn’t pick up a tool — they made a hire. And you don’t ask permission to manage your own team; a manager who decides a piece of work is better given to a new participant than to the existing one is doing the most ordinary thing a manager does. Framed that way, the permission question dissolves into an older, better-understood one — the one Drucker named in 1959: when the worker knows more about the specifics than the manager does, you manage by objective, not by method. The non-engineer steering an agent is exactly that manager, out-known by the thing they’re directing, and the slop the room feared is the old danger of managing by method when you should be managing by objective. The question isn’t may they hire? It’s do they know how to manage by objective? — which you can teach, hire for, and hold people to without anyone first becoming an engineer.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Sam’s article explores managing an LLM by objective, giving it a goal rather than a task. And Kief’s earlier point about the essence of the discussion still holds: how confident can we be that it’s done the right thing? We can outsource many things, but not the acceptance criteria, at some point there’s a human request and a human judgment on whether that request was properly executed. But the danger lies in important unstated objectives, unstated perhaps because they weren’t even imagined.&lt;/p&gt;
+
+&lt;p&gt;It’s easy to state objectives around desired functionality. Give me a an application that will examine my emails and form a todo list for today. But behind that simple statement is a thicket of unstated assumptions. We tend to  assume &lt;a href="https://martinfowler.com/articles/who-is-llm.html"&gt;The Genie&lt;/a&gt; won’t include any undesired functionality, perhaps deleting emails it thinks are unworthy of our attention. We assume it won’t let an email tell it to send private information to villain@evil.com. We have some hope here - we hear more experiences that suggest that recent models can do an excellent job of finding (and hopefully fixing) security holes. The careful precision of the machine outruns the sloppy if imaginative thinking in squishyware. Perhaps we can assume the genie can take care of some of our unstated objectives. Conformance tests (sensors) are more valuable than specifications (guides), but it’s hard to imagine all the conformance tests that are needed to say what shouldn’t happen.&lt;/p&gt;
+
+&lt;p&gt;Furthermore, building software is about exploration, finding out how a workflow can evolve as machines are embedded in the process. For a human to guide that process, we need some understanding of it. My sense is that model building is still important, and while I agree that the genie can take an active role in that construction, I don’t think the human can entirely outsource it. Even if the genie builds the model itself, it needs to teach us that model, because the model helps us imagine and communicate the goals, the objectives that we give to the machine.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;If you follow my feeds (which you probably do if you’re reading this), then you’ll know that Birgitta Böckeler has written a couple of memos on working with local models. She first looked the &lt;a href="https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-factors.html"&gt;factors that influence how viable they are for programming&lt;/a&gt;, and then related some of her &lt;a href="https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-experiences.html"&gt;recent experiences evaluating such models&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;As a nice, if accidental, complement to these, Sebastian Raschka wrote a &lt;a href="https://magazine.sebastianraschka.com/p/using-local-coding-agents"&gt;detailed guide to  his local model environment&lt;/a&gt;. Like Birgitta, he’s found the Qwen 3.6 model to be the current sweet spot for local agentic programming.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Simon Willison shares &lt;a href="https://simonwillison.net/2026/Jul/3/judgement/#atom-everything"&gt;a useful tip to save money&lt;/a&gt; while using the latest Anthropic Fable model&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Tell Fable to use other models for smaller tasks, applying its own judgement about which model to use.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Josh Comeau writes a blog and online courses for developer education, primarily front-end web material. His been successful for most of this decade but has found his online courses have had &lt;a href="https://bsky.app/profile/joshwcomeau.com/post/3mkxyqgrp2d2t"&gt;only ⅓ the sales this year&lt;/a&gt;. He attributes this to AI, partly as people worry if it’s worth spending money on a job that may not have a future, but also because AI can provide personalized tutoring.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;ideally, it shouldn’t cost any money to learn stuff.&lt;/p&gt;
+
+  &lt;p&gt;But I sorta worry about how this is supposed to work, going forwards, if there’s no incentive for people to make high-quality free content.&lt;/p&gt;
+
+  &lt;p&gt;I’ve spoken to a few course creators now, and we’re all seeing the same trend. Revenue down 50%+. Fewer people engaging with our content. People switching to LLMs, which slurp up all of our work and regurgitate it, without consent or compensation.&lt;/p&gt;
+
+  &lt;p&gt;It feels pretty bleak. 😅&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;John Gruber is &lt;a href="https://daringfireball.net/2026/07/claudes_criminally_bad_mac_app_is_an_inside_job"&gt;annoyed that Claude’s desktop app for MacOS in uses Electron&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Electron guarantees that an app feels just as wrong on all platforms.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He has some tasty invective for the folks at Anthropic with ties to the Electron platform.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Finding out that one guy — who is a senior Electron maintainer — has led the teams for the desktop clients for Slack, Notion, and now Claude is like discovering that it was one guy — whose family business was a distillery — who helmed the Titanic, piloted the Hindenburg, and then served as air traffic controller for Amelia Earhart.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The deeper question here is whether there should be a future for cross-platform front-ends in the world of agentic programming. There’s lots of evidence that coding agents do a great job of building the same thing in multiple languages and platform ecosystems. That should mean that the days of least-denominator cross-platform UIs are numbered - and that number is small.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Dan Davies tries to draw &lt;a href="https://backofmind.substack.com/p/faking-versus-making"&gt;a distinction between interactional and contributory expertise&lt;/a&gt;. Contributory expertise is that held by people who are doing the work to advance a field of study, interaction expertise is held by folks that spend time talking to contributory experts, building up a decent store of knowledge themselves, but not steeped in the day-to-day of the work.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;it seems to me that there is an important distinction here, which is not any less important because the dividing line might be difficult to establish empirically, or even if that line turns out to be in a different place from where we guessed it was. As well as difficult cases where it’s not clear, I think we could also come up with cases where the distinction between interactional and contributory expertise would suddenly become very clear and important indeed – the ones where someone who was faking it got “found out”.&lt;/p&gt;
+
+  &lt;p&gt;And so the question that I think is quite important is whether there is a similar kind of distinction between the kind of expertise that it’s possible for a machine to get by industralised consumption and interaction with a much larger corpus of literature than any human being could inhale, and genuine contributory expertise that could apply to entirely new situations outside that literature.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;As a human, I’d like to think I’m more of a contributor than an interactor (especially given my increasing introversion), and thus relatively safe from being forced into obsolescence by silicon. But I’m also aware that my career is devoid of any original ideas, my skill is only that of someone who is good at selecting and explaining the ideas of others. (As Brian Foote put it more memorably: “an intellectual jackal with good taste in carrion”.) But there’s skill in being a good jackal too - and we don’t really know yet where the real boundaries of the LLMs will lie.&lt;/p&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>Experiences with local models for coding</title>
+    <link href="https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-experiences.html"/>
+    <updated>2026-07-08T07:57:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-08:Experiences-with-local-models-for-coding</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-experiences.html'&gt;&lt;img src = 'https://martinfowler.com/articles/exploring-gen-ai/donkey-card.png' width = ''&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; now reports on her recent experiences
+      trying local LLMs for coding. She compares them using two standard
+      tasks, and tries out the most promising model for day-to-day use.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-experiences.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Viability of local models for coding</title>
+    <link href="https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-factors.html"/>
+    <updated>2026-07-07T08:34:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-07-07:Viability-of-local-models-for-coding</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-factors.html'&gt;&lt;img src = 'https://martinfowler.com/articles/exploring-gen-ai/donkey-card.png' width = ''&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; recently spent some time trying out
+      running local LLMs for some programming tasks. In this memo she outlines the factors that
+      influence how viable they are for the job.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/exploring-gen-ai/local-models-for-coding-factors.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: July  6</title>
+    <link href="https://martinfowler.com/fragments/2026-07-06.html"/>
+    <updated>2026-07-06T08:53:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-07-06.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;Last week, Thoughtworks ran a second &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;Future of Software Development Retreat&lt;/a&gt;, this time in Europe. As with the previous event, I’ll be sharing some fragmentary thoughts on this. There were five parallel streams, so I could, at best, only attend ⅕ of sessions. This isn’t an event that forms conclusions, rather one that allows those exploring to share what they’ve found, and their visions for the future. The &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;bliki post&lt;/a&gt; lists all the writing I’ve run into on this, by myself and others. I’ll be updating it as more posts appear.&lt;/p&gt;
+
+&lt;p&gt;Giles Edwards-Alexander &lt;a href="https://overwatering.org/blog/2026/07/notes-from-fose-europe/"&gt;“noticed a real difference between the retreats”&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Where Deer Valley had hesitancy and a belief that there was something here even if we weren’t yet sure what it was, Engelberg had confidence: the value is here. As I explained to a colleague today, this was not a conference for true believers: the evidence is in.&lt;/p&gt;
+
+  &lt;p&gt;What does the evidence say? Well, that was less clear. Some patterns and practices are emerging (one attendee had catalogued dozens of agentic engineering pattern libraries) but they are emerging. There is more work to do to truly establish what is effective, and when.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Greg Herlein &lt;a href="https://blog.herlein.com/post/retreat-observations/"&gt;felt similarly&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Reading the reports of the February event, when a lot of these same folks last got together, the conversation was about what agentic development might look like. Aspirational. More about what was coming.&lt;/p&gt;
+
+  &lt;p&gt;This time? Everybody in the room was doing it. Shipping it. Not slides - production. The whole debate about whether this changes software engineering is over. People have stopped arguing about whether a while ago. They’re arguing about how, and the how is getting real.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;On a more micro level, I noted two other things. Firstly, there was much talk now about &lt;a href="https://martinfowler.com/articles/harness-engineering.html"&gt;harness engineering&lt;/a&gt;, when that wasn’t even a term in Utah - an example of how rapidly things are moving. Secondly people are now worrying about the cost of tokens, where before folks were wanting to do almost anything to incentivize people to talk to &lt;a href="https://martinfowler.com/articles/who-is-llm.html"&gt;The Genie&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;A question that continued from Utah was whether architecture and design are still important. There seems to be two landmark hypotheses here, one is that The Genie has such a Galaxy Brain that we no longer need to care about such matters, it will handle as much spaghetti as we can throw at it. The other is, in Laura Tacho’s &lt;a href="https://martinfowler.com/fragments/2026-02-13.html"&gt;memorable phrase&lt;/a&gt;: “the Venn Diagram of Developer Experience and Agent Experience is a circle”. The point being that The Genie uses the same constructs to understand a code base that humans do, so things like good modularity and naming help it as much as it helps humans. Adam Tornhill’s writing is a &lt;a href="https://adamtornhill.substack.com/p/welcome-to-code-for-humans-and-machines"&gt;good example&lt;/a&gt; of this viewpoint.&lt;/p&gt;
+
+&lt;p&gt;Tidbits from our session on this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;to evaluate the value of architecture we need to focus on desirable outcomes. Internal design quality boils down to &lt;a href="https://martinfowler.com/articles/is-quality-worth-cost.html"&gt;ease of change&lt;/a&gt;. The question is whether the lessons we’ve learned so far will continue for agents.&lt;/li&gt;
+  &lt;li&gt;a way to measure design quality is to look at token costs. If the same change requires less tokens that indicates a better architecture.&lt;/li&gt;
+  &lt;li&gt;a good architecture only shows its quality over time, we can’t easily measure it in the short term&lt;/li&gt;
+  &lt;li&gt;why did 3GL languages continue when things like 4GLs, UML etc not take hold? It’s because these programming languages hit a sweet spot of human comprehension of computation&lt;/li&gt;
+  &lt;li&gt;we’re at the first time ever where the computers care about code quality&lt;/li&gt;
+  &lt;li&gt;will future models write machine code directly? If so what will humans review or specify?&lt;/li&gt;
+  &lt;li&gt;we should beware of speculating about what LLMs may do in the future. Instead we need &lt;a href="https://martinfowler.com/bliki/MechanicalSympathy.html"&gt;mechanical sympathy&lt;/a&gt; for our LLMs, so we can gain a sense of how they work and how best to use them.&lt;/li&gt;
+  &lt;li&gt;One workflow:
+    &lt;ul&gt;
+      &lt;li&gt;take story from backlog&lt;/li&gt;
+      &lt;li&gt;talk it over with an agent&lt;/li&gt;
+      &lt;li&gt;once get an agreement, make an ADR for persistent record of spec&lt;/li&gt;
+      &lt;li&gt;generate a task list&lt;/li&gt;
+      &lt;li&gt;get agent to complete it&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;we need abstractions to communicate with agents &lt;em&gt;(echoing Unmesh Joshi’s thoughts on &lt;a href="https://martinfowler.com/articles/what-is-code.html"&gt;building conceptual models&lt;/a&gt;)&lt;/em&gt;&lt;/li&gt;
+  &lt;li&gt;we often find duplication in LLM generated code, together with mixing of concerns (eg intermingled domain and display logic) - even with a good harness&lt;/li&gt;
+  &lt;li&gt;get agents to generate explanatory documentation at the end of a session&lt;/li&gt;
+  &lt;li&gt;overnight quality checks with a report for humans to act on in the morning&lt;/li&gt;
+  &lt;li&gt;LLMs look at existing code, so if that code has problems, the LLM will amplify them&lt;/li&gt;
+  &lt;li&gt;we should be wary of drawing too many conclusions comparing LLM code with human code - human code varies enormously from team to team.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;In his account of the retreat, Mathias Verraes goes into the details of &lt;a href="https://verraes.net/2026/07/software-design-in-the-agentic-age/"&gt;his perspective of these issues of software design&lt;/a&gt;. He adds another concern: we need good design as a hedge against the risk of dependence on AI. After all, we don’t know how high the costs may rise to. We see governments blocking access to models. We see popular opposition to AI campaigning against data centers and calling for regulation. How much can we rely on AI tools being available to maintain and extend our software in the future?&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Charity Majors has a post on &lt;a href="https://charitydotwtf.substack.com/p/make-ai-boring-again"&gt;the ethics of working with AI&lt;/a&gt; and does an excellent job of articulating how I feel about this topic. She outlines the harms inherent in AI, both in the creation of its models (training on stolen data) and in inference (slop, lack of accountability, skill atrophy). Her conclusion however, like mine, is that there’s no ethical gain from renouncing the use of AI and castigating those who use it. Such purity provides little practical help with a technology that is so powerful and so useful.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The way you show care is by showing up. The way you make the world a better place is by getting down in the muck and building it, using whatever skills and resources you have on hand. The way you drive change is you engage.&lt;/p&gt;
+
+  &lt;p&gt;Yes, we are all complicit. Yes, we are all compromised. No argument. But what are you going to do with that feeling of conviction? Will you channel your discomfort into solidarity and action, or try to ease your conscience by removing yourself from the system? Which does more to help those being harmed?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Her suggestions on how to engage aren’t striking, but that’s hardly unusual. At the &lt;a href="https://martinfowler.com/bliki/FutureOfSoftwareDevelopment.html"&gt;Future of Software Development Retreat&lt;/a&gt; I convened a session on this question, and nothing striking turned up there either. That said, I’ve never been much of an activist, so my imagination may be limited.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Gergely Orosz has run into a case where an article of his was &lt;a href="https://blog.pragmaticengineer.com/pollen-tried-to-remove-my-article-about-callum-negus-fancey-and-google-is-assisting-to-it/"&gt;erased from Google search&lt;/a&gt; by a clearly fraudulent DMCA claim.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;It seems that anyone can file a bogus copyright claim to get an article they don’t like removed from Google’s search index. This happened in this case. I have no information on who filed the copyright claim. Even less so on who claims to be the copyright owner? Because I am the only possible copyright owner!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He was able to find the DMCA complaint, it was made by “Ellie Piee” whose profile listed them as living on Bouvet Island, an uninhabited Norwegian dependent territory near Antarctica. It claimed Gergely’s article copied a New York Post article entitled “Band Leader Hits Winning Chord”. But Gergely’s article is “Inside Pollen’s Collapse: “$200M Raised” but Staff Unpaid”, and the two do not share a single sentence. There’s an obvious motivation for folks connected with Pollen to have done this, and I hope the resulting &lt;a href="https://en.wikipedia.org/wiki/Streisand_effect?ref=blog.pragmaticengineer.com"&gt;Streisand effect&lt;/a&gt; bites them where it hurts.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a id="token-costs"&gt;&lt;/a&gt; 404 media have a bunch of (paywalled) reports on the impact of companies realizing that &lt;strong&gt;token costs are getting out of control&lt;/strong&gt;. They’ve acquired &lt;a href="https://www.404media.co/companies-are-throttling-employees-ai-use-because-its-too-expensive/"&gt;leaked Slack chats, internal dashboards, emails and other material&lt;/a&gt; from companies including Citi and Amazon.&lt;/p&gt;
+
+&lt;p&gt;Companies are urging staff to use less powerful models, or cutting off frontier models entirely. A dashboard indicates that one company has seen its token bill rise from $5 million in August 2025 to $15 million in May 2026, on track to spend over $120 million in the fiscal year.&lt;/p&gt;
+
+&lt;p&gt;404 earlier reported about &lt;a href="https://www.404media.co/the-tokenpocalypse-is-here-companies-are-scrambling-to-stop-spending-so-much-on-ai/"&gt;Accenture taking steps to reduce token usage&lt;/a&gt;. The biggest problem wasn’t software engineering using &lt;a href="https://martinfowler.com/bliki/AgenticProgramming.html"&gt;agentic programming&lt;/a&gt;, but rather staff “chewing tokens” by using AI to do things like turning PDFs into presentation slides. They saw themselves, and their clients, grappling with exponential increases in token costs. Inevitably, after consulting firms spent time urging their clients to use AI heavily, they are now offering services to control these costs.&lt;/p&gt;
+
+&lt;p&gt;Another post says it appears that one way to reduce token costs is to get AI tools to &lt;a href="https://www.404media.co/companies-are-making-claude-and-codex-talk-like-cavemen-to-stop-ais-soaring-costs/"&gt;speak like cavemen&lt;/a&gt;, using a &lt;a href="https://github.com/JuliusBrussee/caveman?ref=404media.co"&gt;skill/plugin&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;There’s a good summary of all this on 404’s freely available podcast: &lt;a href="https://www.youtube.com/watch?v=Sia4LZGNkVs"&gt;The AI Tokenpocalypse Is Here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I share these thoughts just after the July 4th weekend here in America, indeed the Semiquincentennial. Historian Bret Devereaux celebrated this event with &lt;a href="https://acoup.blog/2026/07/04/collections-on-the-declaration-of-independence/"&gt;a careful reading of the Declaration of Independence&lt;/a&gt;, a document often talked about more than it’s read. Which is a shame since it is hardly very long, and its impact was remarkable, and not just in what is now the United States.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The Declaration of Independence was recognized as a radical, potentially explosive document at the time of its issuance, as we’ll see. And it was explosive: the world of 1775 was one dominated by monarchies with just a tiny handful of traditional republics (which we should not ignore!). It took a long time for the seeds of the declaration to spread, but the world it helped create is one where liberal democracies, while hardly universal (more people have always lived in unfree societies than free ones) represent the most economically and culturally dominant bloc in world affairs – something that had never happened before. The Declaration, in its way, remade not just the Thirteen Colonies, but slowly, surely, as water seeps through the cracks of rocks (or my floorboards, alas), it remade the whole world.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Devereaux shines a light onto the world of this text, illuminating its historic context, a world that is very different to the one anyone reading this grew up in. It’s assertions of a natural law that there is equality of rights among men and that governments ought to derive their powers from the consent of the governed would seem hardly worth stating now, yet were deeply radical in 1776. I’ve found that reading history like this has helped me understand how the world is, and gives me a broader perspective on the drama of current affairs.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>Building Reliable Agentic AI Systems</title>
+    <link href="https://martinfowler.com/articles/reliable-llm-bayer.html"/>
+    <updated>2026-06-16T13:11:00+01:00</updated>
+    <id>tag:martinfowler.com,2026-06-16:Building-Reliable-Agentic-AI-Systems</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/reliable-llm-bayer.html'&gt;&lt;img src = 'https://martinfowler.com/articles/reliable-llm-bayer/card.png' width = '350px'&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;One of the most interesting projects my colleagues have done with LLMs
+      has been building a system with Bayer to allow pharmaceutical researchers to query
+      decades of information about studies buried in PDF reports. &lt;b class = 'author'&gt;Sarang
+      Sanjay Kulkarni&lt;/b&gt; describes its evolution from keyword-based search
+      to an intelligent research assistant capable of answering complex
+      questions and drafting regulatory documents.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/reliable-llm-bayer.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: June 16</title>
+    <link href="https://martinfowler.com/fragments/2026-06-16.html"/>
+    <updated>2026-06-16T08:44:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-06-16.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;“Prag Dave” Thomas (co-author of the outstanding “Pragmatic Programmer”) &lt;a href="https://articles.pragdave.me/p/castles-in-the-air?triedRedirect=true"&gt;has loved programming&lt;/a&gt; since he was young.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Programming was how I could express myself. I wasn’t an artist. When I sing, dogs howl. When I draw, friends say, “Very nice. What is it?” I didn’t connect particularly well with people, even though I wanted to. And yet, when I wrote my first program, I discovered a medium which let me convert thought into action. All the ideas that were bottled up behind a wall of frustration suddenly had an outlet.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The LLM revolution worried him. Would they remove all that fun stuff? Happily he found it was the opposite. Like Kent Beck and others have told me, programming with LLMs is more fun than ever. His post lists reasons why: removing drudgery, speeding up feedback loops, reviving long abandoned projects, and exploring new technologies.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I’ve spent a few days at the &lt;a href="https://2026.dddeurope.com"&gt;DDD Europe&lt;/a&gt; conference, which was a very enjoyable event. With all the changes to programming due to LLMs, I suspect &lt;a href="https://martinfowler.com/bliki/DomainDrivenDesign.html"&gt;Domain-Driven Design&lt;/a&gt; is going to be one of those things that will continue to be useful, indeed may become even more important. The highlight of the conference was the opening keynote by Eric Evans, who gave a fascinating description of some of his experimentation with LLMs over the last couple of years. Once the video for that talk becomes available, I’ll link to it - hopefully it won’t be too long. I also particularly enjoyed talks from Violetta Pidvolotska, Kiran Prakash, Tom de Wolf, and Chelsea Troy. Gien Verschatse interviewed Eric Evans and me for an hour so so - again I’ll pass that link on when the video gets published.&lt;/p&gt;
+
+&lt;p&gt;One snippet that stood out to me was from &lt;a href="https://chelseatroy.com"&gt;Chelsea Troy&lt;/a&gt;. The main thrust of her talk was managing the context window of LLMs so that it was kept in a healthy state. Much of what she said was familiar, but one thing I hadn’t thought about was her thoughts about the &lt;b id="registers"&gt;different registers of conversations&lt;/b&gt; with LLMs.  These registers are different styles of conversation we can have with The Genie (or indeed other humans). She classified them in four ways:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Exploring: I want to understand before touching anything&lt;/li&gt;
+  &lt;li&gt;Brainstorming: Generate options, I’ll evaluate them separately&lt;/li&gt;
+  &lt;li&gt;Deciding: I need a recommendation with a rationale, not a list&lt;/li&gt;
+  &lt;li&gt;Implementing: The decision is made, help me build it&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Her point is that whenever I have a session with an LLM, I need to be conscious about which register I’m using. And should I change register, I should start a new conversation with a fresh context.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Charity Majors raises an alarm about &lt;a href="https://charitydotwtf.substack.com/p/ai-enthusiasts-are-in-a-race-against"&gt;the crevasse forming between AI enthusiasts and AI skeptics&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The enthusiasts are not wrong. We are starting to see real, non-imaginary, discontinuous leaps in capabilities from teams that lean in hard to working with AI. And this does not feel like a normal technology cycle where you can wait for the dust to settle; teams that sit this out while competitors are hustling could be out of business before the dust settles. That’s a real, existential threat.&lt;/p&gt;
+
+  &lt;p&gt;The skeptics are also not wrong. When you ship code faster than engineers can read it, in domains where nobody has full context, you are making withdrawals from a trust account that took years to build. Reliability degrades, institutional knowledge evaporates. You end up with systems nobody understands, products burbling into incoherence, and on-call rotations that grind people up and spit them out. That is ALSO a real existential threat.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The heart of the problem is that there is no common feedback connecting these two groups. She posts some concrete ways forward. Enthusiasts tend to talk most publicly, and focus on the wins, but they need to tell the whole story, highlighting the costs too. We all need to look at working with AI as an engineering problem. Don’t just assume that we can or can’t ship code to production without review: instead ask what would make it possible to reduce review effort. She asserts that engineering discipline is becoming more important, echoing others who’ve observed that AI is an amplifier of our current practices. She wants us to avoid getting into arguments with maximalist stances and speculation, but stick to the reality we observe. Authority comes from engagement:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The engineers who shape how AI gets used will be the ones with credibility: they understand the opportunity, the stakes, and the tradeoffs, and they own enough of the consequences to have standing when they push back. Earning that position takes work, but it is work worth doing.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://simonwillison.net/2026/May/27/product-market-fit/"&gt;Simon Willison noticed&lt;/a&gt; that Anthropic and Open AI have increased their enterprise pricing:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Why these sudden aggressive moves on pricing? Both Anthropic and OpenAI are planning to IPO, but I suspect there’s a more important factor here: I think they’ve finally found product-market fit, with the coding/general-purpose agent products embodied by Claude Code/Cowork and Codex.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;His view is that since the &lt;a href="https://martinfowler.com/bliki/NovemberInflection.html"&gt;November Inflection&lt;/a&gt; there’s increasing evidence that LLMs are making a big difference to programming, and this is translating to a viable business model for these companies. He suspects there’s another inflection point that happened in April:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;I think April 2026 is a new inflection point where the revenue implications of this have started to land, to the benefit of the frontier AI labs and with material impacts on the budgets of large companies.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Mike Masnick looks back at the &lt;a href="https://www.liberalism.org/p/enshittification-despotification-and-the-open-internet"&gt;internet’s failed promise of decentralization&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The early-internet conventional wisdom was that the network would kill the middleman. Yet the promised era of “disintermediation” never quite happened. What actually happened was that the middlemen changed character.&lt;/p&gt;
+
+  &lt;p&gt;The pre-internet middlemen—record labels, book publishers, movie studios, magazine editors—were gatekeepers. Their entire job was rejecting 99% of what came through the door so that a curated few could reach an audience. The internet middlemen who replaced them did the opposite. Their approach depended on letting nearly everything through. They became enablers rather than gatekeepers, and an entire generation of cultural production—music, video, writing, podcasts—flowed through them in volumes the old gatekeepers couldn’t have imagined.&lt;/p&gt;
+
+  &lt;p&gt;But the new middlemen still needed a business model.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;That business model came from realizing that when content is bountiful, the new scarce resource is attention. The enablers built advertising machines to sell attention, and focused attention with algorithmic curation. Seeking to increase profits, the enablers rode down the road of &lt;a href="https://www.wired.com/story/tiktok-platforms-cory-doctorow/?utm_campaign=enshittification-despotification-and-the-open-internet&amp;amp;utm_medium=referral&amp;amp;utm_source=www.liberalism.org"&gt;enshittification&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The companies that embraced centralized control over the user experience did so initially because they were, in fact, making things better for their users. Information overload was a real issue. Having a better system for managing it was a good thing. It’s why so many people flocked to these centralized social media platforms and became so enraptured by their algorithms.&lt;/p&gt;
+
+  &lt;p&gt;The problem of centralized systems is that they create an irresistible temptation to control and exploit. Users who found value early on feel stuck: they can leave, but doing so means abandoning their community. That lack of easy exit creates lock-in, and lock-in enables enshittification.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Masnick’s view is that we have to fight this process of digital despotism, realizing that decentralization, despite it’s ergonomic problems, is worth striving for as it’s the key to cognitive liberty. The key to achieving this is the user’s control over their data with the ability to easily move from one service to another. Ease of exit promotes competition, and competition is what pushes back against the ills of despotic centralization.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Truly decentralized tools push power to the ends. Users control their data and choose which intermediaries operate on it—and that arrangement is a poison pill to both enshittification and despotification. Any move in those directions only pushes users across the deliberately low barrier to exit, taking their content, data, and community with them.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The lessons of the past are important to guide our AI-enabled future. We need to create an environment that encourages decentralization and competition.&lt;/p&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>Fragments: June  2</title>
+    <link href="https://martinfowler.com/fragments/2026-06-02.html"/>
+    <updated>2026-06-02T11:21:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-06-02.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;Greg Wilson has noticed that lots of folks are &lt;a href="https://third-bit.com/2026/05/20/twelve-ways-to-be-wrong/"&gt;using dodgy metrics&lt;/a&gt; to figure out if AI tools are worth their costs.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Would you measure lines of code generated, or tickets closed? Or would you send out a survey asking whether developers feel more productive? Each of those approaches is flawed in a different way;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He lists lots of common metrics, and why they are flawed. Sadly he doesn’t give any suggestions on what would be better. In my view, since we &lt;a href="https://martinfowler.com/bliki/CannotMeasureProductivity.html"&gt;cannot measure productivity&lt;/a&gt;, any metrics are weak evidence at the best of times.&lt;/p&gt;
+
+&lt;p&gt;I do somewhat use one of his flawed measures: “Asking Developers If They Feel More Productive”. While I acknowledge the problems he gives with this measure, I find that in an environment where decent measures are hard to find, even such a dim light is the best we have. In this situation these kinds of qualitative metrics may not be conclusive, &lt;a href="https://martinfowler.com/articles/measuring-developer-productivity-humans.html"&gt;but they are useful&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Benedict Evans observes that &lt;a href="https://www.ben-evans.com/benedictevans/2026/5/24/ai-job-exposure"&gt;extensive automation didn’t mean the demise of professions&lt;/a&gt; in the past.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;we spent a century automating accounting: we built calculating machines, punch cards, mainframes, data processing, databases, PCs, spreadsheets, ERPs, cloud… in fact, we built half of the tech industry around automating this. Yet the number of accountants kept going up.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He goes into the myriad of problems that exist when we’re trying to forecast the impact of a technology on jobs. There’s the much-talked-about &lt;a href="https://en.wikipedia.org/wiki/Jevons_paradox"&gt;Jevons paradox&lt;/a&gt; - once something becomes cheaper, people do it more, which can increase demand. Often this leads to the nature of jobs changing, even if it’s called the same thing.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Accountants today aren’t doing exactly the same work that they did in 1970 or 1980 ‘but more’ - they’re still called ‘accountants’ but the job is different. New technology often starts out being used for ‘the old thing but more’, but it rarely ends up like that.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Technologies often affect whole businesses - consider the impact of the internet on news publishing. Did anyone observing the rise of smart phones in the early 2000s realize that a consequence of this would change the economics of taxis due to the rise of ride-sharing apps? The conclusion is that it is, at the very least, almost impossible to forecast the impact of AI on our work.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Stephen O’Grady looks at how &lt;a href="https://redmonk.com/sogrady/2026/05/15/open-ai-models/"&gt;closed and open models have performed on benchmarks over time&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Closed models are setting the pace of innovation, and constantly breaking new ground from a capabilities standpoint. Open models are chasing them, and the cycle times seem to be getting shorter. There are no clear capability moats, and what is frontier today is table stakes tomorrow.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It tooks 13-18 months for open models to catch up to GPT-4 on these benchmarks, but only 2-7 months to catch up to GPT-4o.&lt;/p&gt;
+
+&lt;p&gt;There’s a bunch of caveats to this analysis, that he lists, but it’s a worthwhile survey of how various kinds of models perform against the various measures we are trying to assess them with.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;One of the starkest examples of sloppy AI use is hallucinated citations - a give-away of both usage of LLMs and carelessness driving them. GPTZero is a company that makes tools to detect AI writing. I’ve no insight as to whether their tool is effective or not, but they do publish investigations of AI usage, and have published several articles highlighting hallucinated citations. &lt;a href="https://gptzero.me/investigations/ey"&gt;One post focuses on Ernst &amp;amp; Young Canada’s report&lt;/a&gt; on cyber threats to loyalty systems and found that more than half its references were hallucinations. The post uses a lot of extremely annoying animations in how it presents its information (breaking Safari’s reader mode in the process). But the harm that these kind of AI generated reports can do goes further than just some misled humans:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Publishing a report online is essentially a form of data injection into the pool of knowledge that is the internet. When the report includes fake information (either vibed citations or false claims) it can “poison the well” by misleading future researchers, especially if the report is published by a well-known consulting firm and hosted on a high-traffic website.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;As LLMs get more capable in programming, we are rightly worried that people will use them attack software systems. But these models can also be used for defense, allowing teams to find bugs before attackers do. Some folks from Mozilla posted an article on how they’ve used AI model to &lt;a href="https://hacks.mozilla.org/2026/05/behind-the-scenes-hardening-firefox/"&gt;identify and fix an unprecedented number of latent security bugs in Firefox&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Just a few months ago, AI-generated security bug reports to open source projects were mostly known for being unwanted slop. Dealing with reports that look plausibly correct but are wrong imposes an asymmetric cost on project maintainers: it’s cheap and easy to prompt an LLM to find a “problem” in code, but slow and expensive to respond to it.&lt;/p&gt;
+
+  &lt;p&gt;It is difficult to overstate how much this dynamic changed for us over a few short months. This was due to a combination of two main factors. First, the models got a lot more capable. Second, we dramatically improved our techniques for harnessing these models — steering them, scaling them, and stacking them to generate large amounts of signal and filter out the noise.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;During 2025, there were 17-31 security bugs fixed each month. In April 2026, they fixed 423.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://pavelvoronin.com/technical-debt-is-a-prompt-now/"&gt;Pavel Voronin riffs&lt;/a&gt; on Unmesh Joshi’s post on &lt;a href="https://martinfowler.com/articles/what-is-code.html"&gt;What is Code&lt;/a&gt;. He observes that cruft in a codebase (technical debt) has always added friction to software development. But the consequences of this cruft are compounded when LLMs are using existing code as context for future work.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;In a degraded codebase, the model does not see “technical debt” as debt. It sees examples. It sees precedent. It sees a style to continue.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;LLMs multiply what’s currently happening. I hear reports that good code might take the place of much of what’s put in markdown, because LLMs will imitate what’s already in the code base. But bad code multiplies too. Inevitably he introduces another variation of rampant debt metaphors:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Cognitive debt accumulates when a team uses abstractions it no longer understands. Generative debt accumulates when a codebase contains confused concepts that models are likely to continue.&lt;/p&gt;
+
+  &lt;p&gt;Cognitive debt is about what the team no longer understands. Generative debt is about what the model is now likely to reproduce.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Jason Koebler, from the very worthwhile 404 media, has written a plaintive essay on how &lt;a href="https://www.404media.co/your-ai-use-is-breaking-my-brain/"&gt;AI-generated slop is driving us crazy&lt;/a&gt;. Not just because its filling the web with this slop, but also because how it’s making us humans react to slop and the threat of slop. We review our own writing and notice: it’s not just reading AI slop that hurts us, it’s the risk that we write something that looks like AI slop. If I use phrasing that AI copied from me, does it seem like I’m copying AI? This has led to the appearance of “humanizers” - AI tools that make our writing look less like AI.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Humanizers add typos, randomly replaces words, removes “AI tells,” and sometimes inserts random characters.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It’s another step on the way to the Zombie internet:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;I called it the Zombie Internet because the truth is that large parts of the internet are not just bots talking to bots or bots talking to people. It’s people talking to bots, people talking to people, people creating “AI agents” and then instructing them to interact with people. […] It’s my email inbox, in which I used to occasionally get poorly-formatted, poorly written, extremely long emails from delusional people who were positive the CIA had imprisoned them in a virtual torture chamber using undisclosed secret technology but where I now get well-formatted, passably written, extremely long emails from delusional people who are positive they have proven AI sentience and have the AI transcripts to prove it.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Andy Osmani points out that spawning lots of agents is like launching a bunch of parallel processes that all rely on a &lt;a href="https://x.com/addyosmani/status/2059844244907696186"&gt;single orchestrating thread - yourself&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Python has the Global Interpreter Lock (GIL). You can spawn as many threads as you want but only one executes python bytecode at a time because they must acquire the lock. You are the GIL of your AI agents. They all can run at once. But when any of their work needs genuine understanding of the architecture or resolving merge conflicts, that work has to acquire the lock. There is one lock. You hold it.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;This means you must design the workflow with the agents with that GIL in mind. You shouldn’t launch more agents than you can properly review. It’s handy to separate background tasks that can be offloaded to an agent from complex tasks that require applied attention. Don’t use that precious brain for things that the machine can verify itself. [And I’d add - do get the machine to build tools that ease human verification. For example, it’s better to surface test case data in tables rather than buried in assert statements.]&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Spawning agents is not the skill. Anyone can run 20.&lt;/p&gt;
+
+  &lt;p&gt;The real skill is designing the system around the one serial resource that cannot be cloned or parallelized. That resource is your attention.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Jamie Hurst is a Principal Engineer at booking.com, where he works in developer experience with a focus on AI tooling. He’s written realistically about &lt;a href="https://jamiehurst.co.uk/2026-05-24_ai-sustainable"&gt;the gains and losses of using LLMs&lt;/a&gt; in this work.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The cost of building has collapsed, but the cost of aligning organisationally has not. If anything, it’s gone up. When three different teams can each produce a working solution to the same problem in the time it used to take to write a proposal, the bottleneck moves from engineering to coordination.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He thinks he’s able to do more as a senior engineer, but is concerned about how sustainable it is, both for him personally and for the organization he works for. He’s able to shape directions for multiple workstreams at once, in a way that he couldn’t three years ago. But one loss is that he doesn’t have enough time for mentoring, which will exact a toll on his employer in the longer term. He also finds he doesn’t have enough time to think.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The productivity gains from AI got captured by output volume rather than output quality. The org’s expectations rose to absorb the speed-up, and the slack that used to exist between tasks, the unstructured time where strategic thinking actually happens, got eaten first because it’s invisible on a dashboard. I’m at a point in my career where thinking is supposed to be most of the job, and most of it now happens on holiday because the working week doesn’t accommodate it.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+</content>
+  </entry>
+
+<entry>
+    <title>Fragments: May 27</title>
+    <link href="https://martinfowler.com/fragments/2026-05-27.html"/>
+    <updated>2026-05-27T15:40:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-05-27.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;At the GOTO Conference in Copenhagen in 2025, &lt;a href="https://www.youtube.com/watch?v=ii_rLjQfjp0&amp;amp;list=PLEx5khR4g7PINwOsYrkwz3lTTJUYoXC53"&gt;Kent Beck and I spent some time on stage&lt;/a&gt; talking and answering questions from the audience - a format I refer to as “two old geezers on a park bench”. We talk about our experiences with LLM-augmented programming (at that point - October 2025), we show our frustration that things we’ve been saying for thirty years  still need to be said, we say how anything like a manifesto reunion needs to be led by a younger generation, and opine on what junior developers should be focusing on in their career.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=ii_rLjQfjp0&amp;amp;list=PLEx5khR4g7PINwOsYrkwz3lTTJUYoXC53"&gt;&lt;img src="https://martinfowler.com/img/catalog/2025-goto-kent.png" alt=""&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Ian Johnson has written a series of posts about &lt;a href="https://dev.to/tacoda/the-agent-harness-turning-ai-slop-into-shipping-software-589i"&gt;restructuring a gnarly codebase&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The story follows a real Laravel + React codebase over ~3 months and ~258 commits from a legacy monolith with no tests to a well-structured application with automated quality gates, a React SPA migration in progress, and an AI agent that reliably ships production code with minimal supervision.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The series covers the steps in decent detail, and his approach follows the kinds of steps I’d use. First get everything under the control of decent characterization tests, add static analysis, introduce the right patterns to make things flow easily.&lt;/p&gt;
+
+&lt;p&gt;With all of this, is his use of AI, which changed during the exercise:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;For the first two months of this project, I used Claude Code with auto-approve turned off. Every file edit, every terminal command, every change… I reviewed it before it executed. […] The results were good. The code was clean. But I was doing most of the thinking and half the typing. The agent was a fancy autocomplete with better suggestions. I wasn’t getting the leverage I’d hoped for.&lt;/p&gt;
+
+  &lt;p&gt;I read an article about “on-the-loop” versus “in-the-loop” human-AI collaboration. The framing clicked immediately […]  I was micromanaging because I didn’t trust the agent to do the right thing. And I didn’t trust the agent because there was nothing forcing it to do the right thing.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;His early steps put in tests, static analysis, and the right architectural patterns. With those in place, he could let the agent do more work.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;My role shifted from writer to curator. I don’t write most of the code anymore. I Define the patterns […] Review the test specs […] Review the output […] Update the harness […] Make strategic decisions […]&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He finishes the series with conclusions about how he’d generalize his experience to other circumstances.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Back in the land of my birth, there was some notable groans when the National Health Service decided to &lt;a href="https://shkspr.mobi/blog/2026/05/nhs-goes-to-war-against-open-source/"&gt;close nearly all of their Open Source repositories&lt;/a&gt;, supposedly to the security threat of LLMs. Closing repos like this isn’t an effective counter to LLM-augmented attackers. I suspect it’s no coincidence to see GDS (Government Data Services), the highly-regarded IT enablers in the UK government &lt;a href="https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector"&gt;publish their position&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Moving code from public to private as a substitute for investment in secure-by-design delivery, ownership and remediation is a warning sign because it reduces sharing and scrutiny, can slow coordinated improvement across government and suppliers, and does not remove the underlying weaknesses in a running service.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;a href="https://shkspr.mobi/blog/2026/05/gds-weighs-in-on-the-nhss-decision-to-retreat-from-open-source/"&gt;Terence Eden&lt;/a&gt; memorably sums up his view on this:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Within the UK’s Civil Service you occasionally hear the expression “being invited to a meeting without biscuits”. It implies a rather frosty discussion without any of the polite niceties of a normal meeting.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;I’ve seen a few cases where those developers who are most involved in working with LLMs find they are running into a problem with cognitive endurance, &lt;a href="https://adamtornhill.substack.com/p/compressed-cognition-the-hidden-cost"&gt;Adam Tornhill has joined this group&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;One of the big wins with agents is that they let us stay with the higher-level problem for longer. We get less sidetracked by details, dependency cleanup, and similar secondary tasks that used to break concentration.&lt;/p&gt;
+
+  &lt;p&gt;But there is a cost we are still underestimating. Agentic coding is mentally expensive.&lt;/p&gt;
+
+  &lt;p&gt;I can usually sustain the pace for a couple of hours. Then I need a break. The pace is simply too intense. And based on conversations with other engineers, I do not think I am alone in that.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He explains that working with The Genie means we are making more decisions in less time, this increase in decision density is hard on the brain.&lt;/p&gt;
+
+&lt;p&gt;He responds by keeping agent tasks small, automating everything he can, and accepting that he won’t know every line of code as long as he has good verification mechanisms in place.&lt;/p&gt;
+
+&lt;p&gt;Notably, he has not gone in the direction of doing his work with swarms of agents that he coordinates. Instead has one long-running task that he babysits and one focus task&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;That last point is important given the running-twenty-agents-in-parallel hype. I cannot even think about twenty meaningful things to build, and even less so about the resulting cognitive tax of the likely interruptions. It’s exactly the wrong thing to even consider. At least for humans. (And yes, I understand sub-agents and machine parallelisation. That is not what I’m objecting to. It is the parallelisation of human attention that does not scale).&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;I liked that he included some thoughts about what folks can do in time outside this intense programming time. Not just “have a coffee” (although he includes that) but also about learning about the domain that the software supports.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;A couple of pithy quotes from social media&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://toot.thoughtworks.com/@norootcause@hachyderm.io/116626163784445316"&gt;Lorin Hochstein&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;“Metaphor debt” is when all of your metaphors involve the concept of “debt” because you can’t think of any other metaphors anymore.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://toot.thoughtworks.com/@tastapod@mas.to/116641666908831725"&gt;Daniel Terhorst-North&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;If a vegan crossfit fan is using Claude to write Rust, which thing do they tell you first?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Karl Bode reacts to speakers getting booed when mentioning AI during commencement addresses. He points out that younger folks are increasingly &lt;a href="https://karlbode.com/anger-at-ai-is-inextricably-fused-with-justified-loathing-of-the-extraction-class-deal-with-it/"&gt;unhappy with the tech oligarchy and their fruits&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The thing is the kids aren’t stupid. They see the field clearly. They see the difference between what’s being sold to them by tech companies, the press, and commencement speakers, and what they have repeatedly seen with their own eyes.&lt;/p&gt;
+
+  &lt;p&gt;They’ve watched tech oligarchs spend the last decade mired in scandal after scandal, hype cycle after hype cycle, steadily enshittifying everything they touch along the way.&lt;/p&gt;
+
+  &lt;p&gt;[…]&lt;/p&gt;
+
+  &lt;p&gt;The percentage of Gen Z that think AI’s benefits don’t counterbalance the risks now sits around fifty percent, up 11 percentage points in just the last year. Eight out of every ten believe that using AI makes the process of actual learning more difficult.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He sees young people saddled with the perception of entering a worsening world -
+which leads them to rage against this latest fruit of the tech oligarchy. A rage
+that is easy for folks like me
+ - with a comfortable retirement off-ramp -  to properly appreciate. A rage that could have marked political and social consequences.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Relevant to these concerns are a couple of items in last week’s Economist newspaper. The newspaper argues that historically major technological advances haven’t led to significant unemployment or drops in wages (&lt;a href="https://www.economist.com/finance-and-economics/2026/05/14/the-jobs-apocalypse-a-very-short-history"&gt;paywalled article&lt;/a&gt;). The closest was the original industrial revolution in 19th Century Britain. There was a stagnation in wages during this period, but there was also a massive increase in population, from 4½ million to 12 million.&lt;/p&gt;
+
+&lt;p&gt;It also points out that we’ll probably only understand the full consequences of all this when a recession hits, as this is when most unproductive jobs tend to be flushed out of the system.&lt;/p&gt;
+
+&lt;p&gt;A second article (&lt;a href="https://www.economist.com/finance-and-economics/2026/05/13/is-ai-putting-graduates-out-of-work-already"&gt;also paywalled&lt;/a&gt;) indicates that AI is having some effect on graduate hiring. They did an analysis of surveys of recent graduates, looking to see if employment varied depending on a job’s exposure to AI. The least exposed quintile of subjects saw employment rate fall by 1.5% over the last couple of years, while the most exposed quintile’s drop was 6.6%.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;&lt;a href="https://www.lawfaremedia.org/article/ai-governance-by-phone-call"&gt;Lawfare isn’t impressed&lt;/a&gt; with the latest efforts by the US Government to regulate AI.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;On [last] Wednesday, the White House invited leaders of OpenAI, Google, Anthropic, Meta, and Microsoft to the Oval Office for a signing ceremony the following afternoon. President Trump was to sign an executive order on AI and cybersecurity—the administration’s most formal effort yet to establish a voluntary process for reviewing frontier models before their release. But roughly three hours before the ceremony, when some company executives were already in the air to Washington, the White House called it off.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;They see the proposed regulations as mild, and including some valuable measures to harden defenses against cyber threats.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;But it’s worth underscoring the implications of postponing (if not outright canceling) this order, which, by its own terms, was about as modest a frontier-AI intervention as the federal government could put on paper: voluntary, focused on the government’s own defenses, and explicitly barred from becoming a licensing regime. The objection isn’t so much about government coercion as about the government having any settled role at all. Voluntary, in other words, isn’t the floor of frontier AI policy in this administration; it’s the ceiling.&lt;/p&gt;
+
+  &lt;p&gt;This is a questionable position given that the concerns animating this draft order will likely grow in the near future. It is also self-defeating for those who applauded the order’s delay or demise. Far from resolving the risk of government meddling in AI, killing the order just leaves in place what Ball has described as the “opaque and essentially lawless” alternative: government access happening through back channels, on terms set case by case, with no stable rules at all.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;One of the problems here is a distinct lack of governmental expertise, either in AI or in software in general. Too much is being decided at the whims of the tech oligarchy, there isn’t any attempt to engage in the broader issues at hand. That’s not entirely a bad thing, trying to regulate something that’s still evolving so fast is usually a fool’s errand - but the problem here is the impact of AI is so big that there’s real danger in being too far behind.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Which leads me to a rare thing, an endorsement of a candidate for political office. If you are voting in congressional district MA-06 (North Shore of Massachusetts), I’d seriously look at &lt;a href="https://bethfordemocracy.com/"&gt;Beth Anders-Beck&lt;/a&gt;, who is running for congress in that district. Beth has a long background in software development (including developing the notion of &lt;a href="https://martinfowler.com/bliki/ForestAndDesert.html"&gt;Forest and Desert&lt;/a&gt;), so would introduce expertise that Congress desperately needs. I’ve known Beth for decades, and have a high opinion of their intelligence, judgment, and ability to work with others. Congress doesn’t deserve Beth, but it does need her.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>The test suite as a regression sensor</title>
+    <link href="https://martinfowler.com/articles/sensors-for-coding-agents.html#TheTestSuiteAsARegressionSensor"/>
+    <updated>2026-05-27T11:01:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-05-27:The-test-suite-as-a-regression-sensor</id>
+    <category term="skip-home-page"/>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html#TheTestSuiteAsARegressionSensor'&gt;&lt;img src = 'https://martinfowler.com/articles/sensors-for-coding-agents/card.png' width = '350px'&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; finishes her post on sensors for
+      coding agents by examining the role of a test suite as a regression
+      sensor, focusing on the role mutation testing can play.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html#TheTestSuiteAsARegressionSensor'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>The VibeSec Reckoning</title>
+    <link href="https://martinfowler.com/articles/vibesec-reckoning.html"/>
+    <updated>2026-05-27T10:03:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-05-27:The-VibeSec-Reckoning</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;Vibe coding has significantly accelerated software prototyping but AI
+      agents frequently recommend insecure configurations, creating security
+      problems. &lt;b class = 'author'&gt;Gautam Koul, Lucian Moss, Neil Drew-Lopez, and Daberechi
+      Ruth Edeokoh&lt;/b&gt; share their experience while building applications
+      for Thoughtworks's global marketing. They learned that to combat this we
+      need to write a security context file to guide the AI, be cautious with AI
+      permission requests, create a daily security intelligence feed, and
+      provide builders with a secure-by-default harness and templates.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/vibesec-reckoning.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Bliki: Vibe Coding</title>
+    <link href="https://martinfowler.com/bliki/VibeCoding.html"/>
+    <updated>2026-05-21T07:49:00-04:00</updated>
+    <id>https://martinfowler.com/bliki/VibeCoding.html</id>
+    <category term="bliki"/>
+    <author>
+      <name>Martin Fowler</name>
+      <uri>/</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;Vibe coding is building a software application by prompting an LLM, telling it
+  what to build, trying it out, prompting for changes - but without looking at
+  any of the code that the LLM generates. This technique can be used by people
+  without any knowledge of programming. However the resulting software often
+  shows problems with maintainability, correctness, and security - so is best
+  used for disposable software written for a limited audience.&lt;/p&gt;
+
+&lt;p&gt;The term was coined in February 2025 by Andrej Karpathy, an experienced
+  programmer, in a post on X:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;There's a new kind of coding I call “vibe coding”, where you fully give
+    in to the vibes, embrace exponentials, and forget that the code even exists.
+    It's possible because the LLMs (e.g. Cursor Composer w Sonnet) are getting
+    too good. Also I just talk to Composer with SuperWhisper so I barely even
+    touch the keyboard. I ask for the dumbest things like “decrease the padding
+    on the sidebar by half” because I'm too lazy to find it. I “Accept All”
+    always, I don't read the diffs anymore. When I get error messages I just
+    copy paste them in with no comment, usually that fixes it. The code grows
+    beyond my usual comprehension, I'd have to really read through it for a
+    while. Sometimes the LLMs can't fix a bug so I just work around it or ask
+    for random changes until it goes away. It's not too bad for throwaway
+    weekend projects, but still quite amusing. I'm building a project or webapp,
+    but it's not really coding - I just see stuff, say stuff, run stuff, and
+    copy paste stuff, and it mostly works.&lt;/p&gt;
+
+&lt;p class="quote-attribution"&gt;-- &lt;a href="https://x.com/karpathy/status/1886192184808149383"&gt;Andrej Karpathy&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The key point about vibe coding is &lt;b&gt;“forget that the code even exists”&lt;/b&gt;.
+  This is what gives it much of its usefulness, but also its limitations.&lt;/p&gt;
+
+&lt;p&gt;Since the &lt;a href="/bliki/NovemberInflection.html"&gt;November Inflection&lt;/a&gt; many programmers are
+  getting LLMs to write all their code, commenting that they may never write a
+  line of code directly again. However they do care about this code, reviewing
+  it, paying attention to its internal structure. In that case, they aren't
+  forgetting the code exists, so it's really a different thing that I call
+  &lt;a href="/bliki/AgenticProgramming.html"&gt;Agentic Programming&lt;/a&gt;. Sadly the term “vibe coding” really
+  caught on, so many people use it to mean agentic programming. However I feel
+  that despite this rapid &lt;a href="/bliki/SemanticDiffusion.html"&gt;Semantic Diffusion&lt;/a&gt;, it's worth
+  trying to keep the concepts of vibe coding and agentic programming separate,
+  as they are both different to use and different in their consequences.&lt;/p&gt;
+
+&lt;p&gt;Because a vibe coder doesn't look at the code, they don't need programming
+  skills, so it's perfect for someone with no programming knowledge to build
+  applications for their own use. Experienced programmers may also find it handy
+  for rapid development of disposable software or prototypes.&lt;/p&gt;
+
+&lt;p&gt;Vibe coding
+  is still new, so we are exploring its limitations, and those limitations
+  change as the sophistication of models and their &lt;a href="/articles/harness-engineering.html"&gt;harnesses&lt;/a&gt; change. These
+  limitations do introduce considerable risks, particularly if the vibed
+  software is used widely or has access to sensitive information.&lt;/p&gt;
+
+&lt;p&gt;Perhaps the most serious risk is that of security. LLMs are inherently
+  vulnerable as they provide a large attack surface for predators. Vibe coded
+  applications can often expose sensitive information or worse, credentials to
+  attack deeper into an organization's systems. Even non-programmers need to be
+  aware of the &lt;a href="/articles/agentic-ai-security.html#lethal-trifecta"&gt;Lethal
+  Trifecta&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;With little attention to the code, vibed software can rapidly produce
+  many lines of code of a very low quality. Such code makes it difficult, even for an LLM,
+  to modify and enhance the software in the future. While it's possible that
+  growing LLM capabilities will allow it to work with even the largest bowls of
+  spaghetti software, thus far it seems clear that well-structured software
+  makes life easier for LLMs too.&lt;/p&gt;
+
+&lt;p&gt;LLMs are famous for habit of hallucinating incorrect facts and presenting
+  these with great confidence. This habit also leads them to create software
+  that behaves incorrectly - and those errors may not be manifest to the user.
+  Furthermore the non-determinism of LLMs means that it's likely that asking an
+  LLM to enhance some software could easily lead it to introduce errors, even in
+  parts of the code that shouldn't change due to the new request. We should thus
+  treat LLM-generated software with skepticism, it can still be useful, but we
+  need to be aware of the risks.&lt;/p&gt;
+
+&lt;p&gt;On the whole vibe coding software is best used for disposable software
+  that's only used by its author or a close group of collaborators who
+  understand and accept the risks involved. Code that is more complex, more
+  widely-used, and with more consequences to its risks should not be forgotten about.&lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>Three more static code analysis sensors</title>
+    <link href="https://martinfowler.com/articles/sensors-for-coding-agents.html#StaticCodeAnalysisDependencyRules"/>
+    <updated>2026-05-20T10:27:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-05-20:Three-more-static-code-analysis-sensors</id>
+    <category term="skip-home-page"/>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html#StaticCodeAnalysisDependencyRules'&gt;&lt;img src = 'https://martinfowler.com/articles/sensors-for-coding-agents/card.png' width = '350px'&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; adds discussion of &lt;a href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html#StaticCodeAnalysisDependencyRules'&gt;three more
+      sensors&lt;/a&gt; for static code analysis, focusing on checking and enforcing
+      better modularity. Computational sensors for dependency checks were good
+      at enforcing rules, but the rules were limited. Building a computational
+      sensor for coupling data proved lackluster. Prompting an inferential
+      sensor to review modularity was more effective.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html#StaticCodeAnalysisDependencyRules'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Maintainability sensors for coding agents</title>
+    <link href="https://martinfowler.com/articles/sensors-for-coding-agents.html"/>
+    <updated>2026-05-19T12:38:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-05-19:Maintainability-sensors-for-coding-agents</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;div class = 'img-link'&gt;&lt;a href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html'&gt;&lt;img src = 'https://martinfowler.com/articles/sensors-for-coding-agents/card.png' width = '350px'&gt;&lt;/img&gt;&lt;/a&gt;&lt;/div&gt;
+
+&lt;p&gt;In her recent article about harness engineering for coding agent users,
+      &lt;b class = 'author'&gt;Birgitta B&amp;#xF6;ckeler&lt;/b&gt; laid out a mental model for expanding a
+      coding agent harness: a system of guides and sensors that increase the
+      probability of good agent outputs and enable self-correction before issues
+      reach human eyes. Birgitta has now started publishing an article where she
+      walks though &lt;a href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html'&gt;her experiences using sensors&lt;/a&gt; to keep a codebase
+      maintainable. This part looks at static analysis with basic code linting.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/sensors-for-coding-agents.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Fragments: May 14</title>
+    <link href="https://martinfowler.com/fragments/2026-05-14.html"/>
+    <updated>2026-05-14T17:52:00-04:00</updated>
+    <id>https://martinfowler.com/fragments/2026-05-14.html</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">&lt;p&gt;Last week I spent a day at The Orchard Retreat, hosted by &lt;a href="https://www.mechanical-orchard.com/"&gt;Mechanical Orchard&lt;/a&gt;. that brought together several people working in software development to talk about the profession’s future with the rise of agentic programming. The event was help under the &lt;a href="https://www.chathamhouse.org/about-us/chatham-house-rule"&gt;Chatham House Rule&lt;/a&gt;, so I can’t attribute the comments and stories I heard. (If anyone recognizes themselves, and would like attribution, let me know.) Here are a few tidbits that caught my notebook.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;One group developed a behavioral clone of GNU Cobol compiler in Rust. The result is 70K lines of Rust and was built in 3 days. This is yet another sign of the ability of LLMs to do a good job of porting existing code to a new platform. Good regression tests are extremely valuable here (and I don’t know how good GNU Cobol’s are). There’s also the possibility of building a test suite if you have access an existing implementation.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Large spec documents can be complex for a human to review. One attendee shared the idea of getting the LLM to interview a human expert, asking the human questions to verify the correctness of the specification, a form of &lt;a href="https://martinfowler.com/bliki/InterrogatoryLLM.html"&gt;Interrogatory LLM&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Not specifically about AI - but I liked how one attendee commented that the first thing they do when consulting with an organization is to read the guidelines for their change-control board. This is the scar tissue of what’s gone wrong in the past. I’ve often said that to understand why a thing is the way it is, you need to understand the history of how it got there. This seems like an excellent way to tap into important parts of that history.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;My colleagues who work with modernizing legacy systems have long been rather sniffy about “Lift and Shift” - porting a legacy system to a new platform while retaining &lt;a href="https://martinfowler.com/articles/patterns-legacy-displacement/feature-parity.html"&gt;Feature Parity&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;We see this pattern as a huge missed opportunity. Often the old systems have bloated over time, with many features unused by users (50% according to a 2014 Standish Group report) and business processes that have evolved over time. Replacing these features is a waste. Instead, try to muster the energy to take a step back and understand what users currently need, and prioritize these needs against business outcomes and metrics.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;But this point of view was developed before LLM’s ability to port code appeared. One attendee who does a lot of work in this field said they believed that lifting and shifting to a new platform should now be always the first step in a legacy migration. The cost is no longer as formidable as it used to be, and a better environment makes further evolution much cheaper. Just don’t stop there.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Several attendees were from the financial industry, and thus were immersed the problems of complex legacy environments coupled with regulatory controls and significant risk should software do something wrong with money. One of their issues is the complexity we run into when a financial product is offered in multiple jurisdictions, each with their own regulations to satisfy. There’s a lot of software complexity in deciding which jurisdiction applies, and picking the right set of rules at the right point of the workflow.&lt;/p&gt;
+
+&lt;p&gt;The question here is whether the rapidity of agentic programming means that we can build individual, simpler systems for each jurisdiction. We would then use LLMs to ensure consistency between them, so that as the product rules change, each system reflects that into its own environment.&lt;/p&gt;
+
+&lt;p&gt;A large part of software design is about identifying what is the same and what differs between various business contexts. Where things are the same, and need to be the same, we are rightly wary of duplicating code, since this increases the cost of updates the dangers of inconsistency. The interesting question is what role LLMs can play to give us new tools to tackle this.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;As is usually the case in gatherings like this, folks were concerned about junior developers. When we work with The Genie, our value comes from good judgment - how do we teach that? This group did have one common tool - &lt;a href="https://martinfowler.com/bliki/PairProgramming.html"&gt;Pair Programming&lt;/a&gt;. One of the key benefits of pairing has always been skills transfer, and here an experienced agentic programmer can pass on their judgment for software design and how to use the genie to get there. And the junior will often have a trick or two to share too - that fresh pair of eyes in particularly valuable in the shift to our agentic future.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Historically, we use computer systems to bring order to chaotic human processes. Is AI reversing that?&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;So much software is involved in data transformation. Those records over there need to be consumed by these APIs over here, but there are differences in how the data is structured, often due to being in different &lt;a href="https://martinfowler.com/bliki/BoundedContext.html"&gt;Bounded Contexts&lt;/a&gt;, so we have to do some conversion. Agents are particularly adept at writing this kind of transformation code, which is often more tedious than we’d like.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Chaos Engineering has become a valuable technique to improve resiliency, made famous by Netflix’s Chaos Monkey that randomly breaks live services to see how well the ecosystem reacts and recovers. What would a Chaos Monkey for AI look like? Would it deliberately introduce hallucinations into a pipeline to see if sensors were able to catch them?&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Back at my desk&lt;/p&gt;
+
+&lt;p&gt;There’s been a bunch of questions about the article on &lt;a href="https://martinfowler.com/articles/structured-prompt-driven/"&gt;Structured-Prompt-Driven Development (SPDD)&lt;/a&gt; that the authors answered in a &lt;a href="https://martinfowler.com/articles/structured-prompt-driven/#faq"&gt;Q&amp;amp;A section&lt;/a&gt;. One in particular caught my eye:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Have you considered having an agent do the prompt/spec review itself — not a human reviewing the Canvas, but an agent that reads the REASONS Canvas alongside the code diff and verifies alignment?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The reply talks about how there is an available command to do this, but there downsides. In particular one reason not to do this automatically is:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Letting humans learn. Review is also where humans learn from the AI’s choices — patterns, trade-offs, options they had not thought of. Cutting humans out speeds things up, but it blocks the long-term skill growth that SPDD is designed to protect. […] Once enough decision rules build up to give us real confidence, we may shift more of the review to the agent step by step — but the part where humans learn from the AI is something we plan to keep.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;One of the ways we should judge the value of an AI tool is how much it helps us humans learn more about the world we inhabit and build.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;In some strange way I injured my elbow last week. No idea how, there was no event where I said “oh shit”. It just gradually started hurting and swelling. My life-long strategy to avoid sports injuries&lt;sup id="fnref:1"&gt;&lt;a href="#fn:1" class="footnote" rel="footnote" role="doc-noteref"&gt;1&lt;/a&gt;&lt;/sup&gt; had defied me. I applied ice and ibuprofin, the swelling went down, but my range of motion got worse. I’m glad I learned to use a knife and fork in English childhood, so I normally eat with my left hand.&lt;/p&gt;
+
+&lt;p&gt;I noticed that that loss of range of motion occurred after I got home, when I started spending all day at the computer again. I might not use my elbow directly, but my right hand does a lot of typing and mousing. My desk set up is pretty ergonomic, with a &lt;a href="https://martinfowler.com/articles/kinesis-advantage2.html"&gt;good keyboard&lt;/a&gt;, a wrist rest for the mouse, and arm rests on my chair. But even so, did my computer use make my elbow get worse once I got home? I can’t imagine not using the computer, for me writing has become an unstoppable habit. But maybe I should use this opportunity to explore voice input - after all most people can speak faster than they can type.&lt;/p&gt;
+
+&lt;p&gt;I tried this many years ago, when a colleague told me how good voice recognition was once it trained to you. I tried it, and indeed the voice recognition, even in those pre-AI days, was very good. But it didn’t work for me. When I’m writing I rapidly type words into Emacs, but almost immediately I go back to edit them. Write two sentences, edit them, write another, re-edit the paragraph. The back-and-forth between seeing my words and thinking about them is tight - I can’t just dictate my words.&lt;/p&gt;
+
+&lt;p&gt;That made me reflect further. I only started using a computer for my writing in my 20s. At school I had to write longhand, and in university to type on typewriter. But those media don’t support the constant rewriting that I do now. Would I even have become a writer had the text editor not been invented?&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;James Pritchard thinks that many developers are over-using agents at run-time in their products, when &lt;a href="https://james-pritchard.com/blog/llms-are-functions"&gt;LLMs are better used as functions&lt;/a&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The problem with agents isn’t that they don’t work. It’s that they work unpredictably. You trade a known execution path for “autonomy” that mostly means “I don’t know what it’s going to do.” When an agent-powered feature breaks in production, you’re debugging a conversation transcript, not a stack trace.&lt;/p&gt;
+
+  &lt;p&gt;Most “agent” use cases are actually workflows, a known sequence of steps where one or two of those steps happen to involve an LLM. You don’t need autonomy for that. You need a function call.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He points out that functions compose predictably, so if you know the workflow, then composing in a program text is better than agents figuring out how to coordinate themselves. It’s  faster, and needs less tokens. It’s usually easier to deal with failures, since the scope of the interaction is smaller.&lt;/p&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;Pritchard also thinks that people &lt;a href="https://james-pritchard.com/blog/skills-junk-drawer"&gt;use skills far more than they should&lt;/a&gt;. He thinks people accumulate folders of markdown skill files but LLMs use them inconsistently, often missing them when they’re needed, or bloating context when they are not. Many things that should go in skills should be other parts of a &lt;a href="https://martinfowler.com/articles/harness-engineering.html"&gt;harness&lt;/a&gt;, preferably computational. Skills should only be used with deliberate, infrequent workflows.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The skills obsession is a symptom of a deeper pattern: people reaching for configuration when they should be reaching for architecture.&lt;/p&gt;
+
+  &lt;p&gt;“The LLM doesn’t write good tests.” Don’t write a testing skill. Are your existing tests inconsistent? Is the test setup complex? Fix those things and it’ll write good tests without being told how. Point it at a test file you’re proud of. Code is clearer than English.&lt;/p&gt;
+
+  &lt;p&gt;[…]&lt;/p&gt;
+
+  &lt;p&gt;The best setup is one where you barely need to configure the LLM at all. A clean codebase with clear patterns, a short project config for the non-obvious stuff, hooks for automation, and maybe one or two skills for specific workflows you run intentionally. That’s it.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt; ❄                ❄                ❄                ❄                ❄&lt;/p&gt;
+
+&lt;p&gt;An oft-stated point about the rise of agentic programming is that we have to start dealing with non-determinism in our work. Of course that’s somewhat of a simplification, because some aspects of software development have long had to face non-determinism. A notable example of this is distributed systems, and a notable figure in helping us probe the truly uncomfortable waters of distributed systems is Kyle Kingsbury (Aphyr).&lt;/p&gt;
+
+&lt;p&gt;Last month he dropped a long article (the pdf is 32 pages) on how he sees our LLM-enabled future. The title “&lt;a href="https://aphyr.com/posts/411-the-future-of-everything-is-lies-i-guess"&gt;The Future of Everything is Lies, I Guess&lt;/a&gt;” betrays his lack of enthusiasm for this future.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Some readers are undoubtedly upset that I have not devoted more space to the wonders of machine learning—how amazing LLMs are at code generation, how incredible it is that Suno can turn hummed melodies into polished songs. But this is not an article about how fast or convenient it is to drive a car. We all know cars are fast. I am trying to ask what will happen to the shape of cities.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;It’s worth the long read, even if it isn’t terribly cheerful. Kingsbury brings up many of worries about AI’s growth from the perspective of someone who is clearly well-informed about their capabilities.&lt;/p&gt;
+
+&lt;p&gt;His view is that the best response to all this is that we should stop. He wants to avoid using AIs for his writing, software, or personal life. He thinks those working for the AI companies should quit. And yet he also knows that these tools are useful, and wants to use them.&lt;/p&gt;
+
+&lt;p&gt;I’m both a hoper and a doomer when it comes to our AI future. Fundamentally I see any powerful technology as a big bus: we are either on it, or get run over by it. I’m onboard the bus because I don’t think putting up some barriers would stop me being crushed by its wheels. Maybe if I’m on the bus I can join some people to influence the driver a bit. I’m also very reluctant to speculate on the future outcomes of anything, let alone something as powerful as this. Did the early industrialists in the late eighteenth century have any clue what the industrial revolution they unleashed would do? While it created many harms, it also created a massive rise in the living standards of millions of people, at least those whose countries were on the bus. AI may create benefits that I can’t really dream of, although I can glimpse it when it helps &lt;a href="https://bjsm.bmj.com/content/60/9/677"&gt;a friend stave off Parkinson’s disease.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Those hopes are there, but Kingsbury’s article shines a light on the darker elements of the here-and-now, asking serious questions of responsibility&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;a part of my work as a moderator of a Mastodon instance is to respond to user reports, and occasionally those reports are for CSAM, and I am legally obligated to review and submit that content to the NCMEC. I do not want to see these images, and I really wish I could unsee them. On dark mornings, when I sit down at my computer and find a moderation report for AI-generated images of sexual assault, I sometimes wish that the engineers working at OpenAI etc. had to see these images too. Perhaps it would make them reflect on the technology they are ushering into the world, and how “alignment” is working out in practice.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class="footnotes" role="doc-endnotes"&gt;
+  &lt;ol&gt;
+    &lt;li id="fn:1"&gt;
+      &lt;p&gt;Don’t do sports &lt;a href="#fnref:1" class="reversefootnote" role="doc-backlink"&gt;↩&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>Bliki: Interrogatory LLM</title>
+    <link href="https://martinfowler.com/bliki/InterrogatoryLLM.html"/>
+    <updated>2026-05-14T11:04:00-04:00</updated>
+    <id>https://martinfowler.com/bliki/InterrogatoryLLM.html</id>
+    <category term="bliki"/>
+    <author>
+      <name>Martin Fowler</name>
+      <uri>/</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;When we need an LLM to perform a complex task, we often need to feed it a
+  lot of context. Coming up with a design for a new feature requires
+  descriptions of how we want the feature to appear to the user, guidelines on
+  how it should be implemented, information on external systems to consult, and
+  so on. All this can be several pages of markdown. The obvious way to do
+  this is for a human to write this context, but an alternative is to use an LLM to write
+  this context after interviewing a human.&lt;/p&gt;
+
+&lt;p&gt;The way I can do this is to prompt the LLM to interrogate me. It should ask me
+  all the questions it needs to create this appropriate context. I can feed much
+  of the information it needs, and tell it other sources it needs to consult if
+  it can't figure those out itself. Once it's done, it can then create the
+  context report for another session (perhaps with another model) to carry out
+  the next step.&lt;/p&gt;
+
+&lt;p&gt;I first saw a decent description of this approach in &lt;a href="https://harper.blog/2025/02/16/my-llm-codegen-workflow-atm/"&gt;Harper
+  Reed's blog&lt;/a&gt;. A striking element of his approach is insisting that the LLM
+  ask only one question at a time. (When I tried it, I found it needed to be
+  frequently reminded of this.)&lt;/p&gt;
+
+&lt;p&gt;Another way to use an interrogatory LLM is to give it a document, such as a
+  software specification, that captures knowledge about a domain - and then ask
+  the LLM to interview a human expert to determine if the document is accurate.
+  This is an alternative to getting the human expert to read the document to
+  review it. People often find reviewing hard, so a conversation with an LLM
+  might be more fruitful, particularly if the document isn't well-written.&lt;/p&gt;
+
+&lt;p&gt;Naturally we can use both of these, using one interrogatory LLM to build a
+  document, then using other interrogatory LLMs to review it with other experts.
+  &lt;/p&gt;
+
+&lt;p&gt;The above is getting an LLM to create or assess context for a particular
+  use of an LLM. But the technique is more broadly applicable. I've become a
+  natural writer, someone who finds the process of writing an essential part of
+  thinking. To really understand something, I need to write about it. But
+  different people are different. Many folks find writing hard, often
+  &lt;i&gt;very&lt;/i&gt; hard. This can be a real problem when we need to get information
+  out of someone's head into a form that other humans can consume. Maybe such
+  people would find it easier to ask an LLM to interview them than to write a
+  document themselves. Certainly the result will have that tang of AI-writing
+  that folks like me shudder at - but that's better than not having the
+  information itself, either due to rushed writing or no writing at all. &lt;/p&gt;
+</content>
+  </entry>
+
+<entry>
+    <title>What is Code</title>
+    <link href="https://martinfowler.com/articles/what-is-code.html"/>
+    <updated>2026-05-12T09:30:00-04:00</updated>
+    <id>tag:martinfowler.com,2026-05-12:What-is-Code</id>
+    <author>
+      <name>Martin Fowler</name>
+      <email>martin@martinfowler.com</email>
+      <uri>https://martinfowler.com</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;Increasingly humans delegate writing code to agents. Will there even be
+      source code in the future? To wrestle with this question, we have to
+      understand what code is. &lt;b class = 'author'&gt;Unmesh Joshi&lt;/b&gt; sees code as having
+      two distinct but intertwined purposes: &lt;i&gt;instructions to a machine&lt;/i&gt; and a
+      &lt;i&gt;conceptual model of the problem domain&lt;/i&gt;. He explores why it's vital
+      to build a vocabulary to talk to the machine, how programming languages
+      are thinking tools, and how this affects our future as we work with LLMs.&lt;/p&gt;
+
+&lt;p&gt;&lt;a class = 'more' href = 'https://martinfowler.com/articles/what-is-code.html'&gt;more…&lt;/a&gt;&lt;/p&gt;</content>
+  </entry>
+
+<entry>
+    <title>Bliki: Mythical Man Month</title>
+    <link href="https://martinfowler.com/bliki/MythicalManMonth.html"/>
+    <updated>2026-05-05T12:18:00-04:00</updated>
+    <id>https://martinfowler.com/bliki/MythicalManMonth.html</id>
+    <category term="bliki"/>
+    <author>
+      <name>Martin Fowler</name>
+      <uri>/</uri>
+    </author>
+    <content type="html">
+&lt;p&gt;In the early 1960s, Fred Brooks managed the development of IBM's System/360
+  computer systems. After it was done he penned his thoughts in the book &lt;a href="https://www.amazon.com/gp/product/0201835959/ref=as_li_tl?ie=UTF8&amp;amp;camp=1789&amp;amp;creative=9325&amp;amp;creativeASIN=0201835959&amp;amp;linkCode=as2&amp;amp;tag=martinfowlerc-20"&gt;The
+  Mythical Man-Month&lt;/a&gt; which became one of the most influential books on software
+  development after its publication in 1975. Reading it in 2026, we'll find some
+  of it outdated, but it also retains many lessons that are still relevant today.&lt;/p&gt;
+
+&lt;p&gt;The book contains Brooks's law: “Adding manpower to a late software project
+  makes it later.” The issue here is communication, as the number of people
+  grows, the number of communication paths between those people grows
+  exponentially. Unless these paths are skillfully designed, then work quickly
+  falls apart.&lt;/p&gt;
+
+&lt;p&gt;Perhaps my most enduring lesson from this book is the importance of
+  &lt;b&gt;conceptual integrity&lt;/b&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;I will contend that conceptual integrity is the most important
+    consideration in system design. It is better to have a system omit certain
+    anomalous features and improvements, but to reflect one set of design ideas,
+    than to have one that contains many good but independent and uncoordinated
+    ideas.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;He argues that conceptual integrity comes from both simplicity and
+  straightforwardness - the latter being how easily we can compose elements.
+  This point of view has been a strong influence upon my career, the pursuit
+  of conceptual integrity underpins much of my work.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href="https://www.amazon.com/gp/product/0201835959/ref=as_li_tl?ie=UTF8&amp;amp;camp=1789&amp;amp;creative=9325&amp;amp;creativeASIN=0201835959&amp;amp;linkCode=as2&amp;amp;tag=martinfowlerc-20"&gt;anniversary edition&lt;/a&gt; of this book is the one to get, because it also
+  includes his even-more influential 1986 essay “No Silver Bullet”.&lt;/p&gt;
+</content>
+  </entry>
+
+</feed>

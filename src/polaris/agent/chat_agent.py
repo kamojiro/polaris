@@ -63,6 +63,7 @@ if TYPE_CHECKING:
     from polaris.adapters.searxng.client import SearxngResponse
     from polaris.agent.extract_metadata import PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer
+    from polaris.db.news_repository import NewsRepository
     from polaris.db.repository import PaperRepository
     from polaris.db.todo_repository import TodoRepository
     from polaris.domain.entities import Item, PaperRecord, TodoRecord
@@ -72,8 +73,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # 一覧表示の上限。件数が増えるほど DB 負荷・LLM に渡すトークン量が際限なく
-# 増えないよう、フロントではなくここ(list_papers の SQL LIMIT)で絞る。
+# 増えないよう、フロントではなくここ(list_papers/list_news の SQL LIMIT)で絞る。
 _RECENT_PAPERS_LIMIT = 20
+_RECENT_NEWS_LIMIT = 30
 
 _INSTRUCTIONS = """\
 あなたは個人用の論文管理・TODO管理アシスタントです。次のルールに従ってください。
@@ -104,6 +106,11 @@ _INSTRUCTIONS = """\
   ように保存済みデータについて尋ねられた場合は web_search ではなく
   list_papers/get_paper_full_text/list_todos を使ってください。
   web_search の結果をもとに回答するときは、根拠にした出典のURLを必ず併記してください。
+- 「ニュース一覧」「最近の記事」「今日のニュース」のように尋ねられたら list_news ツールを
+  呼び出してください。list_news の結果は画面側で情報源のカテゴリごとに一覧表示されるため、
+  あなたは結果を文章で列挙せず、「取り込み済みのニュース一覧を表示しました」程度の
+  一言だけ返してください。ニュースの取り込み自体はチャットからはできません
+  (RSSの定期巡回でのみ更新されます)。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
@@ -483,6 +490,44 @@ def _register_todo_write_tools(agent: Agent[ChatDeps, str], todo_repo: TodoRepos
         return f"削除しました: 『{item.title}』"
 
 
+class NewsSummary(BaseModel):
+    """一覧表示用のニュース記事サマリ."""
+
+    title: str
+    source_name: str
+    source_label: str
+    summary: str
+    published_at: datetime
+    source_url: str
+
+
+class NewsListResult(BaseModel):
+    """list_news の戻り値."""
+
+    news: list[NewsSummary]
+
+
+def _register_news_tools(agent: Agent[ChatDeps, str], news_repo: NewsRepository) -> None:
+    """list_news ツールを登録する(008-daily-digest-domain Phase A)."""
+
+    @agent.tool_plain
+    def list_news() -> NewsListResult:
+        """取り込み済みのニュース記事一覧を返す(情報源のラベルごとに画面側でグルーピング表示される)."""
+        logger.info("tool call: list_news()")
+        news = [
+            NewsSummary(
+                title=item.title,
+                source_name=record.source_name,
+                source_label=record.source_label,
+                summary=item.summary,
+                published_at=record.published_at,
+                source_url=record.source_url,
+            )
+            for item, record in news_repo.list_news(limit=_RECENT_NEWS_LIMIT)
+        ]
+        return NewsListResult(news=news)
+
+
 def _register_memory_instructions(agent: Agent[ChatDeps, str]) -> None:
     """想起した長期記憶(017-chat-memory)を動的instructionsとして注入する.
 
@@ -509,8 +554,9 @@ def build_chat_agent(
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
     todo_repo: TodoRepository,
+    news_repo: NewsRepository,
 ) -> Agent[ChatDeps, str]:
-    """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODOリポジトリ依存からチャットエージェントを組み立てる."""
+    """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODO/ニュースリポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
     agent = Agent(model, deps_type=ChatDeps, instructions=_INSTRUCTIONS)
     _register_memory_instructions(agent)
@@ -526,4 +572,5 @@ def build_chat_agent(
     _register_todo_write_tools(agent, todo_repo)
     _register_paper_qa_tools(agent, repo, settings=settings)
     _register_web_search_tools(agent, settings=settings)
+    _register_news_tools(agent, news_repo)
     return agent
