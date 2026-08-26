@@ -9,18 +9,19 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 `#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。
 
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
-2. ~~004 (citation-relations)~~ — 見送り
-3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-5. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-6. 009 (dashboard) — 008 Phase B・010の依存元
-7. 010 (mobile-pwa) — 009に依存
-8. 011 (agent-registry)
-9. 012 (local-llm-cutover)
-10. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-11. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-12. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+2. **023 (daily-summary-notification)** — 依存なし(002/007/013/017の既存ドメインだけで動く設計)、spec詳細化済みで着手可能。013と並行でも順不同でもよい
+3. ~~004 (citation-relations)~~ — 見送り
+4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+7. 009 (dashboard) — 008 Phase B・010の依存元
+8. 010 (mobile-pwa) — 009に依存
+9. 011 (agent-registry)
+10. 012 (local-llm-cutover)
+11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
 
 ## いつかやるリスト
 
@@ -52,6 +53,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 020 | [google-workspace-integration](020-google-workspace-integration/spec.draft.md) | - | 💤 スケルトンのみ | Google Calendar/Driveとの連携。用途未確定(Calendarは007のリマインド、Driveは文書取り込み元/バックアップ先候補)。公式MCP(Calendar)とコミュニティMCP(Drive候補)が混在しうる |
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |
+| 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✅ 実装開始可能 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチとして実装。002/007/013/017の既存ドメインだけで動く設計、008/019は実装され次第集計対象に追加 |
 
 ## ステータスの意味
 
