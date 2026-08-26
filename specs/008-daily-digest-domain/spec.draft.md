@@ -29,6 +29,25 @@
 - Polaris側は「決められたラベルに基づいて記事をグルーピングして見せる」だけの実装で済み、主観的な自動判定ロジックを持たずに済む
 - ラベルの定義・粒度はユーザーが完全にコントロールできる(タクソノミー自体は未決定事項、下記参照)
 
+## Ingestソース候補(2026-08-23、技術系記事中心で調査)
+
+ユーザーが日常的に読むのは技術系記事(AI/LLM、ソフトウェア工学一般、日本のテックブログ、一般テック業界ニュース)。この4分類が、そのまま「対立軸の定義方針」で言うsource_labelの初期セットとして使えそうと分かった(政治的傾向軸ではなく、技術領域の偏りに気づくための軸)。
+
+- **`ai_llm`**: 以下いずれも候補
+  - arXiv公式のカテゴリ別RSS。ユーザーの関心(ソフトウェア工学・機械学習・AIエージェント・情報検索/埋め込み、2026-08-23確認)に合わせて`https://rss.arxiv.org/rss/cs.LG+cs.AI+cs.MA+cs.IR`(機械学習+総合AI+マルチエージェントシステム+情報検索)を候補にする。完全に公式・安定で、論文そのものの新着を追える。ダイジェストで気になったものは既存の`save_paper`/URL Ingest(002/014)でそのまま論文ライブラリに取り込む運用を想定(IDEAS.mdの`search_arxiv`(能動的キーワード検索)とは補完関係)。自然言語処理全般(`cs.CL`)は言語学寄りの論文も混ざり範囲が広すぎるため、v1では外す(必要になれば追加できる)
+  - 「ローカルLLM推論・高速化」「エージェント評価・ベンチマーク」への関心は、専用のarXivカテゴリが無く`cs.LG`/`cs.AI`に既に混在しているため、新規カテゴリの追加は不要(上記の組み合わせでカバー済み)。推論高速化系をさらに厚く拾いたい場合`cs.DC`(分散・並列計算)も候補になるが、LLMと無関係な分散システム全般の論文も大量に混ざり範囲が広すぎるため、v1では見送り、必要になったら追加を検討する
+  - Simon Willisonのブログ(`https://simonwillison.net/atom/everything/`、公式・安定)
+  - ニュースレター: Ahead of AI(Sebastian Raschka、論文解説が強い)、Latent Space(swyx、AIエンジニアリング寄り)。いずれもSubstack系で`/feed`形式のRSSがある想定(着手時に確認)。Import AI(Jack Clark)は2026年3月頃からAIリスク・政策寄りに軸足を移しており、論文カバレッジの比重は下がっている点に留意
+  - Hugging Face Papers(毎日の注目論文キュレーション)は公式RSSが存在せず、非公式ミラー(例: `huangboming/huggingface-daily-paper-feed`)頼みになる点に注意(下記リスク参照)
+  - Anthropic公式ブログも公式RSSが存在せず、非公式ミラー(例: `conoro/anthropic-engineering-rss-feed`)頼みになる(同上)
+- **`swe_general`**: arXiv cs.SEカテゴリ(`https://rss.arxiv.org/rss/cs.SE`、ユーザーの関心領域として確認済み)。Martin Fowler等の個別エンジニアブログも候補だが、具体的なフィードURLは着手時に個別確認する
+- **`jp_tech_blog`**: Zennトレンド(`https://zenn.dev/feed`)、Qiitaトレンド(`https://qiita.com/popular-items/feed`)、はてなブックマーク テクノロジー人気エントリー(`http://b.hatena.ne.jp/hotentry/it.rss`)。いずれも公式・安定
+- **`tech_industry_news`**: Hacker News。公式(`https://news.ycombinator.com/rss`)より`https://hnrss.org/frontpage`の方がポイント数・コメント数等のメタデータやキーワードフィルタが使え、こちらを優先候補にする
+
+**運用上のリスク**: Anthropicの例のように、公式RSSを持たない情報源は非公式ミラー(サードパーティのRSS生成サービス)に頼ることになり、ミラーが停止するとIngestが静かに壊れる。v1は公式RSSが存在する情報源を優先し、非公式ミラー頼みの情報源は後回しにする。
+
+はてなブックマーク/Qiitaトレンドのようなアグリゲータ系フィードは複数の書き手・媒体が混在するため、source_labelは個々の記事ではなく「そのフィード自体」に対して付与する(静的ソースラベル方式の前提通り)。
+
 ## フェーズ分割
 
 ### Phase A: Ingest/Structure(独立して着手可能)
@@ -86,8 +105,8 @@ class Event(SQLModel, table=True):
 
 ## 未決定事項
 
-- 具体的なRSS/ニュースAPIの選定(候補調査は着手時)
-- ソースラベルの具体的なタクソノミー(いくつのラベルを持つか、政治的傾向軸にするか情報源タイプ軸にするか等はユーザー自身が決める運用にするか、初期セットをPolaris側で提案するか)
+- `swe_general`(ソフトウェア工学一般)の具体的なフィードURL選定(候補調査は着手時)
+- 上記4分類(`ai_llm`/`swe_general`/`jp_tech_blog`/`tech_industry_news`)を初期タクソノミーとして固定するか、着手時にユーザーが自由に見直せる余地を残すか(017のテーマ再編と同様の考え方が使えるかもしれない)
 - `Relation`のエッジ判定基準(embedding類似度の閾値、上位N件のみ繋ぐか等)
 - `009-dashboard`が無い間、Phase Bをどう暫定的に見せるか(専用の簡易ページを先に作るか、009自体を前倒しするか)
 - RSSの巡回頻度・スケジューリング方式(cron想定、`wishlist-design.md`のバッチ処理方針を踏襲)
