@@ -7,7 +7,7 @@ import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
 import { PaperList, type PaperListResult } from "./PaperList";
 import { Sidebar } from "./Sidebar";
 import { TodoList, type TodoListResult } from "./TodoList";
-import { type TurnUsage, useChatAgent } from "./useChatAgent";
+import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -64,6 +64,15 @@ function formatUsageLine(usage: TurnUsage): string {
   return `${parts.join(" / ")}${costPart}`;
 }
 
+/**
+ * tool呼び出しごとの所要時間の表示用フォーマット(例: "web_search 2.1s / save_paper 8.4s")。
+ * どのtoolが遅かったか一目でわかるようにする(「実行が遅かった」原因調査で毎回ログの
+ * タイムスタンプを手で見比べていた反省から追加、api/app.py の `_tool_call_durations` 参照)。
+ */
+function formatTimingsLine(timings: ToolTiming[]): string {
+  return timings.map((t) => `${t.tool_name} ${t.duration_seconds.toFixed(1)}s`).join(" / ");
+}
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -107,8 +116,18 @@ interface UploadResponse {
 }
 
 export default function App() {
-  const { messages, isRunning, status, error, sendMessage, usageByMessageId, totalUsage, paperMode, exitPaperMode } =
-    useChatAgent();
+  const {
+    messages,
+    isRunning,
+    status,
+    error,
+    sendMessage,
+    usageByMessageId,
+    totalUsage,
+    timingsByMessageId,
+    paperMode,
+    exitPaperMode,
+  } = useChatAgent();
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -221,6 +240,9 @@ export default function App() {
                 {findToolResults<NewsListResult>(LIST_NEWS_TOOL_NAME, message, messages).map((result, i) => (
                   <NewsList key={`${message.id}-news-${i}`} news={result.news} />
                 ))}
+                {message.role === "assistant" && timingsByMessageId[message.id]?.length > 0 && (
+                  <p className="usage-line">{formatTimingsLine(timingsByMessageId[message.id])}</p>
+                )}
                 {message.role === "assistant" && usageByMessageId[message.id] && (
                   <p className="usage-line">{formatUsageLine(usageByMessageId[message.id])}</p>
                 )}

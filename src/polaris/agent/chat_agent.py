@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING
 import httpx
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
+from pydantic_ai.common_tools.web_fetch import web_fetch_tool
 
 # TodoScale は tool 関数の引数の型注釈として使われ、pydantic-ai が実行時に
 # シグネチャからスキーマを組み立てる(`from __future__ import annotations` で
@@ -102,11 +103,14 @@ _INSTRUCTIONS = """\
   ついて続けて質問された場合、全文は既に会話履歴に残っているのでツールを
   再度呼ぶ必要はありません。複数の論文を比較する場合は、それぞれについて
   ツールを呼んでください。
-- 最新情報や、保存済みの論文・TODOには無い一般的な事柄を尋ねられたら web_search
-  ツールを使ってWebを検索してください。ただし「保存した論文は?」「TODO一覧」の
-  ように保存済みデータについて尋ねられた場合は web_search ではなく
-  list_papers/get_paper_full_text/list_todos を使ってください。
-  web_search の結果をもとに回答するときは、根拠にした出典のURLを必ず併記してください。
+- ユーザーのメッセージに具体的なURL(arXiv/PDF以外の、記事・ブログ等へのリンク)が
+  含まれていて、その内容について尋ねられたら web_fetch でそのURLを直接取得して
+  答えてください。web_search で近似する必要はありません。
+- 最新情報や、保存済みの論文・TODOには無い一般的な事柄を(具体的なURLが無い状態で)
+  尋ねられたら web_search ツールを使ってWebを検索してください。ただし
+  「保存した論文は?」「TODO一覧」のように保存済みデータについて尋ねられた場合は
+  web_search ではなく list_papers/get_paper_full_text/list_todos を使ってください。
+  web_search/web_fetch の結果をもとに回答するときは、根拠にした出典のURLを必ず併記してください。
 - 「ニュース一覧」「最近の記事」「今日のニュース」のように尋ねられたら list_news ツールを
   呼び出してください。list_news の結果は画面側で情報源のカテゴリごとに一覧表示されるため、
   あなたは結果を文章で列挙せず、「取り込み済みのニュース一覧を表示しました」程度の
@@ -559,7 +563,10 @@ def build_chat_agent(
 ) -> Agent[ChatDeps, str]:
     """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODO/ニュースリポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
-    agent = Agent(model, deps_type=ChatDeps, instructions=_INSTRUCTIONS)
+    # web_fetch はpydantic-ai同梱のツール(SSRF対策済みhttps取得+markdown変換)。
+    # 具体的なURLの内容を尋ねられたとき、web_searchで近似せず直接読ませるために使う
+    # (008拡張のニュースサイドバー「クリックで詳しく教えて」導線での実運用から着想)。
+    agent = Agent(model, deps_type=ChatDeps, instructions=_INSTRUCTIONS, tools=[web_fetch_tool()])
     _register_memory_instructions(agent)
     _register_paper_tools(
         agent,

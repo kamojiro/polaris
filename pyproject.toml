@@ -9,7 +9,7 @@ dependencies = [
     "feedparser>=6.0.14",
     "httpx>=0.28.1",
     "pydantic>=2.12.4",
-    "pydantic-ai-slim[ag-ui,openrouter]>=2.30.0",
+    "pydantic-ai-slim[ag-ui,openrouter,web-fetch]>=2.30.0",
     "pydantic-settings>=2.12.0",
     "pypdf>=6.16.1",
     # FastAPI の UploadFile(multipart/form-data)に必須。014-paper-url-pdf-ingestの

@@ -74,6 +74,15 @@ const ZERO_USAGE: TurnUsage = {
   cost_jpy: 0,
 };
 
+/**
+ * 1回のtool呼び出しにかかった実行時間。バックエンドの`_tool_call_durations`
+ * (api/app.py)が`ToolCallPart`/`ToolReturnPart`のtimestamp差分から算出したもの。
+ */
+export interface ToolTiming {
+  tool_name: string;
+  duration_seconds: number;
+}
+
 function addUsage(a: TurnUsage, b: TurnUsage): TurnUsage {
   return {
     input_tokens: a.input_tokens + b.input_tokens,
@@ -104,6 +113,7 @@ export function useChatAgent() {
   const [error, setError] = useState<string | null>(null);
   const [usageByMessageId, setUsageByMessageId] = useState<Record<string, TurnUsage>>({});
   const [totalUsage, setTotalUsage] = useState<TurnUsage>(ZERO_USAGE);
+  const [timingsByMessageId, setTimingsByMessageId] = useState<Record<string, ToolTiming[]>>({});
   const [paperMode, setPaperMode] = useState<PaperModeState>(NO_PAPER_MODE);
 
   useEffect(() => {
@@ -154,15 +164,19 @@ export function useChatAgent() {
               setError(event.message);
             },
             onCustomEvent: ({ event, messages: snapshotMessages }) => {
-              if (event.name !== "usage") {
-                return;
-              }
-              const usage = event.value as TurnUsage;
               const lastMessage = snapshotMessages[snapshotMessages.length - 1];
-              if (lastMessage) {
-                setUsageByMessageId((prev) => ({ ...prev, [lastMessage.id]: usage }));
+              if (event.name === "usage") {
+                const usage = event.value as TurnUsage;
+                if (lastMessage) {
+                  setUsageByMessageId((prev) => ({ ...prev, [lastMessage.id]: usage }));
+                }
+                setTotalUsage((prev) => addUsage(prev, usage));
+              } else if (event.name === "tool_timings") {
+                const timings = event.value as ToolTiming[];
+                if (lastMessage) {
+                  setTimingsByMessageId((prev) => ({ ...prev, [lastMessage.id]: timings }));
+                }
               }
-              setTotalUsage((prev) => addUsage(prev, usage));
             },
           },
         );
@@ -197,6 +211,7 @@ export function useChatAgent() {
     sendMessage,
     usageByMessageId,
     totalUsage,
+    timingsByMessageId,
     paperMode,
     exitPaperMode,
   };

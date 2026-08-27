@@ -17,6 +17,7 @@ from ag_ui.core import BaseEvent, CustomEvent, RunAgentInput, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
@@ -269,6 +270,49 @@ async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEv
     )
 
 
+def _tool_call_durations(result: AgentRunResult[Any]) -> list[tuple[str, float]]:
+    """このターンで呼ばれたtoolそれぞれの実行時間(秒)を算出する.
+
+    `pydantic_ai`はtool呼び出し(`ToolCallPart`、`ModelResponse.timestamp`)と
+    その結果(`ToolReturnPart.timestamp`)の両方に既にタイムスタンプを打っているため、
+    差分を取るだけで済む(tool関数側やtoolset側に計測コードを仕込む必要がない)。
+    これは`web_fetch`のようにこちらで定義していないtool(pydantic-ai同梱)の
+    実行時間も同じ仕組みで取れる利点がある。実機確認(2026-08-27):テスト用の
+    1.5秒sleepするtoolで、この方法で1.502秒という正しい差分が取れることを確認済み。
+    """
+    call_started_at: dict[str, tuple[str, datetime]] = {}
+    durations: list[tuple[str, float]] = []
+    for message in result.new_messages():
+        for part in message.parts:
+            # ToolCallPart は ModelResponse.parts にのみ現れる(モデルからの出力のため)。
+            # ModelRequest.timestamp は datetime | None のため、message側もisinstanceで
+            # 絞り込まないとpyrightがNoneの可能性を消せない。
+            if isinstance(part, ToolCallPart) and isinstance(message, ModelResponse):
+                call_started_at[part.tool_call_id] = (part.tool_name, message.timestamp)
+            elif isinstance(part, ToolReturnPart) and part.tool_call_id in call_started_at:
+                tool_name, started_at = call_started_at.pop(part.tool_call_id)
+                durations.append((tool_name, (part.timestamp - started_at).total_seconds()))
+    return durations
+
+
+async def _emit_tool_timings_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
+    """このターンで呼ばれたtoolの実行時間を、ログとAG-UIのCUSTOMイベント両方に出す.
+
+    ログ側は個々のtool関数が呼び出し開始時に出している`tool call: X(args)`とは
+    別に、完了時の所要時間だけをまとめて出す(どのtoolが遅かったかを手元のログの
+    タイムスタンプ差分で毎回手計算しなくて済むように)。フロント側は`usage`と
+    同じCUSTOMイベントパターンでチャットの表示に使う(`useChatAgent.ts`参照)。
+    """
+    durations = _tool_call_durations(result)
+    for tool_name, duration in durations:
+        logger.info("tool call: %s took %.2fs", tool_name, duration)
+    if durations:
+        yield CustomEvent(
+            name="tool_timings",
+            value=[{"tool_name": name, "duration_seconds": duration} for name, duration in durations],
+        )
+
+
 def _latest_user_text(run_input: RunAgentInput) -> tuple[str, str] | None:
     """直近のユーザー発言を (message id, テキスト) として返す(無ければ None).
 
@@ -331,6 +375,8 @@ async def chat(request: Request) -> Response:
 
     async def on_complete(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
         async for event in _emit_usage_event(result):
+            yield event
+        async for event in _emit_tool_timings_event(result):
             yield event
         yield StateSnapshotEvent(snapshot=deps.state.model_dump(mode="json"))
         if latest is not None:
