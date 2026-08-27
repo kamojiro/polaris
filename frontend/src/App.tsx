@@ -3,7 +3,9 @@ import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { NewsList, type NewsListResult } from "./NewsList";
+import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
 import { PaperList, type PaperListResult } from "./PaperList";
+import { Sidebar } from "./Sidebar";
 import { TodoList, type TodoListResult } from "./TodoList";
 import { type TurnUsage, useChatAgent } from "./useChatAgent";
 
@@ -169,121 +171,135 @@ export default function App() {
     }
   };
 
-  return (
-    <div className="app">
-      <header>
-        <h1>Polaris</h1>
-        <p>
-          arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。TODOも「明日までに〇〇したい」のように話しかけると追加できます。「保存した論文は?」「TODO一覧見せて」で一覧を確認できます。
-        </p>
-        {totalUsage.input_tokens > 0 && <p className="usage-total">この会話の使用量: {formatUsageLine(totalUsage)}</p>}
-      </header>
+  const handleSelectSidebarNews = (item: SidebarNewsItem) => {
+    // URLの前後を全角括弧で囲むと、remark-gfm のオートリンクが閉じ括弧までURLに
+    // 含めてしまう(末尾が「）」のURLになる)ため、半角スペース区切りにする。
+    void sendMessage(`「${item.title}」について詳しく教えて ${item.source_url}`);
+  };
 
-      <main className="messages">
-        {messages
-          .filter((message) => message.role === "user" || message.role === "assistant")
-          .map((message) => (
-            <div key={message.id} className="message-group">
-              {messageText(message) !== "" && (
-                <>
-                  <div className={`bubble bubble-${message.role}`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageText(message)}</ReactMarkdown>
-                  </div>
-                  <div className={`message-actions message-actions-${message.role}`}>
-                    <CopyButton text={messageText(message)} />
-                  </div>
-                </>
-              )}
-              {findToolResults<PaperListResult>(LIST_PAPERS_TOOL_NAME, message, messages).map((result, i) => (
-                // 同一メッセージ内で同じツールを複数回呼ぶことは想定していないが、
-                // 念のため index も key に含めて一意にしておく。
-                <PaperList
-                  key={`${message.id}-papers-${i}`}
-                  papers={result.papers}
-                  total_count={result.total_count}
-                  onSelectPaper={(title) => void sendMessage(`『${title}』について教えて`)}
-                />
-              ))}
-              {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
-                <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
-              ))}
-              {findToolResults<NewsListResult>(LIST_NEWS_TOOL_NAME, message, messages).map((result, i) => (
-                <NewsList key={`${message.id}-news-${i}`} news={result.news} />
-              ))}
-              {message.role === "assistant" && usageByMessageId[message.id] && (
-                <p className="usage-line">{formatUsageLine(usageByMessageId[message.id])}</p>
-              )}
+  return (
+    <div className="app-layout">
+      <div className="app">
+        <header>
+          <h1>Polaris</h1>
+          <p>
+            arXiv/PDFのURLを貼るか📎でPDFをアップロードすると論文を保存します。TODOも「明日までに〇〇したい」のように話しかけると追加できます。「保存した論文は?」「TODO一覧見せて」で一覧を確認できます。
+          </p>
+          {totalUsage.input_tokens > 0 && (
+            <p className="usage-total">この会話の使用量: {formatUsageLine(totalUsage)}</p>
+          )}
+        </header>
+
+        <main className="messages">
+          {messages
+            .filter((message) => message.role === "user" || message.role === "assistant")
+            .map((message) => (
+              <div key={message.id} className="message-group">
+                {messageText(message) !== "" && (
+                  <>
+                    <div className={`bubble bubble-${message.role}`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{messageText(message)}</ReactMarkdown>
+                    </div>
+                    <div className={`message-actions message-actions-${message.role}`}>
+                      <CopyButton text={messageText(message)} />
+                    </div>
+                  </>
+                )}
+                {findToolResults<PaperListResult>(LIST_PAPERS_TOOL_NAME, message, messages).map((result, i) => (
+                  // 同一メッセージ内で同じツールを複数回呼ぶことは想定していないが、
+                  // 念のため index も key に含めて一意にしておく。
+                  <PaperList
+                    key={`${message.id}-papers-${i}`}
+                    papers={result.papers}
+                    total_count={result.total_count}
+                    onSelectPaper={(title) => void sendMessage(`『${title}』について教えて`)}
+                  />
+                ))}
+                {findToolResults<TodoListResult>(LIST_TODOS_TOOL_NAME, message, messages).map((result, i) => (
+                  <TodoList key={`${message.id}-todos-${i}`} todos={result.todos} />
+                ))}
+                {findToolResults<NewsListResult>(LIST_NEWS_TOOL_NAME, message, messages).map((result, i) => (
+                  <NewsList key={`${message.id}-news-${i}`} news={result.news} />
+                ))}
+                {message.role === "assistant" && usageByMessageId[message.id] && (
+                  <p className="usage-line">{formatUsageLine(usageByMessageId[message.id])}</p>
+                )}
+              </div>
+            ))}
+          {isRunning && (
+            <div className="bubble bubble-assistant bubble-pending">
+              {status.length > 0
+                ? status.map((line) => <div key={line}>{line}</div>)
+                : "…"}
             </div>
-          ))}
-        {isRunning && (
-          <div className="bubble bubble-assistant bubble-pending">
-            {status.length > 0
-              ? status.map((line) => <div key={line}>{line}</div>)
-              : "…"}
+          )}
+        </main>
+
+        {error !== null && <div className="error">{error}</div>}
+        {uploadError !== null && <div className="error">{uploadError}</div>}
+
+        {paperMode.active_paper !== null && (
+          <div className="paper-mode-badge">
+            <span>📄 読書中: {paperMode.active_paper.title}</span>
+            <button type="button" onClick={exitPaperMode} title="論文モードを終了">
+              ✕
+            </button>
           </div>
         )}
-      </main>
 
-      {error !== null && <div className="error">{error}</div>}
-      {uploadError !== null && <div className="error">{uploadError}</div>}
-
-      {paperMode.active_paper !== null && (
-        <div className="paper-mode-badge">
-          <span>📄 読書中: {paperMode.active_paper.title}</span>
-          <button type="button" onClick={exitPaperMode} title="論文モードを終了">
-            ✕
+        <form className="composer" onSubmit={handleSubmit}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            hidden
+            onChange={(event) => void handleFileSelected(event)}
+          />
+          <button
+            type="button"
+            className="attach"
+            disabled={isRunning || isUploading}
+            onClick={() => fileInputRef.current?.click()}
+            title="PDFをアップロードして保存"
+          >
+            {isUploading ? "…" : "📎"}
           </button>
-        </div>
-      )}
+          <button
+            type="button"
+            className="quick-action"
+            disabled={isRunning}
+            onClick={() => void sendMessage("論文一覧ちょうだい")}
+            title="論文一覧を表示"
+          >
+            📚
+          </button>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(event) => {
+              setInput(event.target.value);
+              autoResize(event.target);
+            }}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
+            }}
+            placeholder="arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)"
+            rows={1}
+            disabled={isRunning}
+          />
+          <button type="submit" disabled={isRunning || input.trim() === ""}>
+            送信
+          </button>
+        </form>
+      </div>
 
-      <form className="composer" onSubmit={handleSubmit}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/pdf"
-          hidden
-          onChange={(event) => void handleFileSelected(event)}
-        />
-        <button
-          type="button"
-          className="attach"
-          disabled={isRunning || isUploading}
-          onClick={() => fileInputRef.current?.click()}
-          title="PDFをアップロードして保存"
-        >
-          {isUploading ? "…" : "📎"}
-        </button>
-        <button
-          type="button"
-          className="quick-action"
-          disabled={isRunning}
-          onClick={() => void sendMessage("論文一覧ちょうだい")}
-          title="論文一覧を表示"
-        >
-          📚
-        </button>
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(event) => {
-            setInput(event.target.value);
-            autoResize(event.target);
-          }}
-          onKeyDown={handleKeyDown}
-          onCompositionStart={() => {
-            isComposingRef.current = true;
-          }}
-          onCompositionEnd={() => {
-            isComposingRef.current = false;
-          }}
-          placeholder="arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)"
-          rows={1}
-          disabled={isRunning}
-        />
-        <button type="submit" disabled={isRunning || input.trim() === ""}>
-          送信
-        </button>
-      </form>
+      <Sidebar>
+        <NewsSidebar onSelect={handleSelectSidebarNews} />
+      </Sidebar>
     </div>
   );
 }

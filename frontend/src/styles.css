@@ -8,18 +8,48 @@
 
 body {
   margin: 0;
+}
+
+.app-layout {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   display: flex;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 
 .app {
-  width: 100%;
-  max-width: 900px;
+  flex: 1;
+  max-width: 840px;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
   box-sizing: border-box;
+}
+
+/* チャット右側の汎用パネル(008拡張のニュースピックアップから着手、Sidebar.tsx)。
+   狭い画面ではチャット欄の下に積む。 */
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 860px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
 }
 
 header {
@@ -392,6 +422,96 @@ header p {
   align-self: flex-start;
   color: gray;
   font-size: 0.9rem;
+}
+
+/* ニュースサイドバー(NewsSidebar.tsx、Sidebar内の1セクション)。ラベルごとのアクセント色
+   (--news-accent、上のnews-bucket-*で定義済み)を再利用し、一覧側と見た目を揃える。 */
+.news-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 3%);
+  font-size: 0.85rem;
+}
+
+.news-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.news-sidebar-header h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  color: gray;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.news-sidebar-refresh {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: gray;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  border-radius: 0.4rem;
+}
+
+.news-sidebar-refresh:hover {
+  background: rgb(0 0 0 / 8%);
+}
+
+.news-sidebar-refresh:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.news-sidebar-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-left: 3px solid var(--news-accent, rgb(0 0 0 / 15%));
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.4rem 0 0.4rem 0.6rem;
+  border-bottom: 1px solid rgb(0 0 0 / 7%);
+}
+
+.news-sidebar-item:last-child {
+  border-bottom: none;
+}
+
+.news-sidebar-item:hover .news-sidebar-title {
+  color: #2563eb;
+}
+
+.news-sidebar-title {
+  display: block;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.news-sidebar-meta {
+  display: block;
+  margin-top: 0.15em;
+  color: gray;
+  font-size: 0.8em;
+}
+
+.news-sidebar-empty,
+.news-sidebar-loading {
+  margin: 0;
+  color: gray;
+  font-size: 0.85em;
 }
 
 /* 015-paper-qa-chat: 各ターンのトークン使用量・コスト(assistantバブルの下に小さく表示) */

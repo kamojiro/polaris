@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import random
 import time
 import uuid
+from datetime import datetime  # noqa: TC003 (pydanticがランタイムで解決するため実importが必要)
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -14,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 from ag_ui.core import BaseEvent, CustomEvent, RunAgentInput, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
@@ -26,6 +29,7 @@ from polaris.agent.memory_extract import (
     build_memory_rewrite_agent,
 )
 from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall_agent
+from polaris.agent.sidebar_title import AgentSidebarTitler, build_sidebar_title_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
@@ -103,6 +107,7 @@ _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
 _memory_recaller = AgentMemoryRecaller(build_memory_recall_agent(settings))
 _memory_extractor = AgentMemoryExtractor(build_memory_extract_agent(settings))
 _memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
+_sidebar_titler = AgentSidebarTitler(build_sidebar_title_agent(settings))
 _agent = build_chat_agent(
     settings,
     _repo,
@@ -189,6 +194,52 @@ async def upload_paper_pdf(file: UploadFile) -> dict[str, str]:
     await asyncio.to_thread(upload_path.write_bytes, content)
     logger.info("PDFアップロード完了: upload_id=%s, filename=%s, %dバイト", upload_id, file.filename, len(content))
     return {"upload_id": upload_id, "filename": file.filename or "アップロードされたPDF"}
+
+
+class SidebarNewsItem(BaseModel):
+    """ニュースサイドバーの1件分(008-daily-digest-domain拡張)."""
+
+    display_title: str
+    title: str
+    source_name: str
+    source_label: str
+    published_at: datetime
+    source_url: str
+
+
+# サイドバーの抽選プール(ラベルごとの直近件数)。list_news のチャット向け表示上限
+# (chat_agent._RECENT_NEWS_LIMIT_PER_LABEL)とは独立に、サイドバー用にやや広めに取る。
+_SIDEBAR_POOL_PER_LABEL = 30
+
+
+@app.get("/api/news/sidebar")
+async def news_sidebar(count: int = 5) -> list[SidebarNewsItem]:
+    """取り込み済みニュースからランダムに`count`件選び、表示用の短い見出しをLLMで生成して返す(008-daily-digest-domain拡張).
+
+    チャットの`list_news`ツール(チャット履歴の一部としてのみ表示される)とは別に、
+    ページを開いた時点でアンビエントに表示したいサイドバー用の専用エンドポイント。
+    見出し生成はここで選ばれた数件分だけなのでLLM呼び出しコストは小さい
+    (arXivフィードの565件全部を判定するような設計は避けている、settings.pyの
+    NewsFeed.skip_summary docstring参照)。
+    """
+    pool = _news_repo.list_news(limit_per_label=_SIDEBAR_POOL_PER_LABEL)
+    if not pool:
+        return []
+    picked = random.sample(pool, k=min(count, len(pool)))
+    display_titles = await asyncio.gather(
+        *(_sidebar_titler.title(title=item.title, summary=item.summary) for item, _ in picked)
+    )
+    return [
+        SidebarNewsItem(
+            display_title=display_title.display_title,
+            title=item.title,
+            source_name=record.source_name,
+            source_label=record.source_label,
+            published_at=record.published_at,
+            source_url=record.source_url,
+        )
+        for (item, record), display_title in zip(picked, display_titles, strict=True)
+    ]
 
 
 async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
