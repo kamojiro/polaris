@@ -10,18 +10,20 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
 2. **023 (daily-summary-notification)** — 依存なし(002/007/013/017の既存ドメインだけで動く設計)、spec詳細化済みで着手可能。013と並行でも順不同でもよい
-3. ~~004 (citation-relations)~~ — 見送り
-4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-7. 009 (dashboard) — 008 Phase B・010の依存元
-8. 010 (mobile-pwa) — 009に依存
-9. 011 (agent-registry)
-10. 012 (local-llm-cutover)
-11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+3. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
+4. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
+5. ~~004 (citation-relations)~~ — 見送り
+6. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+7. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+8. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+9. 009 (dashboard) — 008 Phase B・010の依存元
+10. 010 (mobile-pwa) — 009に依存
+11. 011 (agent-registry)
+12. 012 (local-llm-cutover)
+13. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+14. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+15. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+16. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
 
 ## いつかやるリスト
 
@@ -32,7 +34,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | # | spec | フェーズ | ステータス | 備考 |
 |---|---|---|---|---|
 | 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | 1 | ✔️ 完了 | AG-UI+FastAPI+pydantic-ai+Reactの一往復が動作確認済み |
-| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み |
+| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み。**2026-08-26追記**: 生成したembeddingを読み出す機能が1つも無いと判明し、ADR-0004でIngest時のembedding生成を一時停止(`Chunk`テーブル・コードは残す) |
 | 003 | [chat-ui-polish](003-chat-ui-polish/spec.draft.md) | 1 | ✔️ 完了 | react-markdown導入・list_papersのgenerative UI化(専用テーブル)・レイアウト調整を実装済み。追加提案(2026-08-23、2026-08-26実装): メッセージのコピーボタン、入力欄の「論文一覧」クイックアクションボタン |
 | 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | 🚫 やらない | 見送り決定。設計(スタブは作らない方針)は記録として残す |
 | 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | 🗓 いつか | spec自体は完成済み(対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化)。直近では実装しない、いつかやるリスト行き |
@@ -54,6 +56,8 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |
 | 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✅ 実装開始可能 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチとして実装。002/007/013/017の既存ドメインだけで動く設計、008/019は実装され次第集計対象に追加 |
+| 024 | [memory-theme-housekeeping](024-memory-theme-housekeeping/spec.draft.md) | - | 💤 スケルトンのみ | 017のテーマ整理を023と同じcron駆動で定期実行し、統合・分割・stale検出を「提案」として出す(自動適用はしない)。「現状調査・再現性テスト」は着想止まりでv1範囲外 |
+| 025 | [ir-tracking-expansion](025-ir-tracking-expansion/spec.draft.md) | - | 💤 スケルトンのみ | 013に追跡機能を追加。Stage 1(既存追跡企業の新規開示を日次チェック、詳細化済み)→Stage 2(追跡対象企業自体の発見、将来)の段階的拡大設計 |
 
 ## ステータスの意味
 

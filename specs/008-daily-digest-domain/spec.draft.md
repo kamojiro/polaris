@@ -64,7 +64,7 @@
 
 ### Phase B: Relate/Surface(`009-dashboard`待ち)
 
-- Relate: 記事間のトピック類似度(既存のChunk/Embedding基盤を再利用)による`Relation`エッジ、および情報源ラベルによるグルーピング
+- Relate: 記事間のトピック類似度(`Chunk`/`Embedding`基盤を使う)による`Relation`エッジ、および情報源ラベルによるグルーピング。**2026-08-26追記**: `docs/adr/0004-pause-paper-embedding-generation.md`で論文Ingest時のembedding生成は一時停止中(消費する機能が無かったため)。Phase Bはembeddingの具体的な消費者になるので、着手時に生成を再開する
 - Surface: 関係グラフの表示(D3.js/Cytoscape.js等)、ドリルダウン
 - Feedback: `Event`(閲覧ログ)の記録まではPhase Bでやる。`Interest`ベクトルの更新はさらに後回し(前述)
 
