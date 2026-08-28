@@ -213,8 +213,8 @@ class SidebarNewsItem(BaseModel):
 _SIDEBAR_POOL_PER_LABEL = 30
 
 
-@app.get("/api/news/sidebar")
-async def news_sidebar(count: int = 5) -> list[SidebarNewsItem]:
+@app.get("/api/news/picks")
+async def news_picks(count: int = 5) -> list[SidebarNewsItem]:
     """取り込み済みニュースからランダムに`count`件選び、表示用の短い見出しをLLMで生成して返す(008-daily-digest-domain拡張).
 
     チャットの`list_news`ツール(チャット履歴の一部としてのみ表示される)とは別に、

@@ -19,7 +19,7 @@ const SIDEBAR_COUNT = 5;
  * 取り込み済みニュースからランダムに数件をピックして表示する、Sidebar内の1セクション
  * (008-daily-digest-domain拡張)。チャットの list_news ツール結果(会話履歴の一部としてのみ
  * 表示される)とは別に、ページを開いた時点でアンビエントに見せたいため、専用のREST
- * エンドポイント(`/api/news/sidebar`)から直接取得する(チャット履歴を汚さない)。
+ * エンドポイント(`/api/news/picks`)から直接取得する(チャット履歴を汚さない)。
  *
  * クリックすると `onSelect` 経由で親(App.tsx)がチャットメッセージを送り、通常の会話の
  * 流れで詳しい説明を引き出す(PaperList.tsx の「タイトルクリックで論文モードへ」と同じ考え方)。
@@ -33,7 +33,7 @@ export function NewsSidebar({ onSelect }: NewsSidebarProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/news/sidebar?count=${SIDEBAR_COUNT}`);
+      const res = await fetch(`/api/news/picks?count=${SIDEBAR_COUNT}`);
       if (!res.ok) {
         throw new Error(`取得に失敗しました(status=${res.status})`);
       }
