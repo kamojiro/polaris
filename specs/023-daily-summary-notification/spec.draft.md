@@ -2,7 +2,7 @@
 
 ## ステータス
 
-✅ 実装開始可能(既存ドメインだけでも動く設計。008/019が実装されたら集計対象が増える)
+✔️ 完了(v1、2026-08-30)。013/019が実装されたら集計対象に追加可能な構造にしてある
 
 ## 概要
 
@@ -32,26 +32,29 @@
 
 008/019がまだ存在しなくても、既存ドメイン(002/007/013/017)だけで動く設計にする。各ドメインの「当日分」取得は、既存のリポジトリに`created_at`/`updated_at`でのフィルタを足す程度で済むはず。
 
-## データモデル(たたき台)
+## データモデル(v1実装、2026-08-30)
 
 ```python
 class DailySummaryRecord(SQLModel, table=True):
     __tablename__ = "daily_summary_records"
 
     id: str = Field(primary_key=True)
-    summary_date: date = Field(index=True, unique=True)  # 1日1件
-    content: str          # LLMが生成した要約本文
+    summary_date: date = Field(index=True, unique=True)  # 1日1件、JST基準
+    content: str           # LLMが生成した要約本文(単一の自然文、markdown想定はしていない)
     generated_at: datetime
 ```
 
 `019-diary-domain`の`DiaryRecord`と形は似ている(日付キー、1日1件、テキスト本文)が、別テーブルとして分ける。著者が違う(diaryはユーザー自身がチャットで書く、こちらはシステムが自動生成する)ため、意味的に混ぜない。
 
-## フロントエンド: 通知UI
+`sections: list[SummarySection]`(ドメインごとに構造化して見出し・展開表示する案)も並行して検討されたが、v1では採用しなかった。理由は下記「将来検討」参照。
 
-- ページロード時に最新のサマリーを取得するAPI(例: `GET /api/daily-summary/latest`)を叩き、未読なら`App.tsx`にバナーとして表示する。既存の`error`/`paper-mode-badge`と同じ軽量パターン(hooks 1つ + 条件描画)を踏襲する
+## フロントエンド: 通知UI(v1実装)
+
+- ページロード時に最新のサマリーを取得するAPI(`GET /api/daily-summary/latest`)を叩き、未読なら`App.tsx`にバナー(`DailySummaryBanner.tsx`)として表示する。既存の`error`/`paper-mode-badge`と同じ軽量パターン(hooks 1つ + 条件描画)を踏襲する
+- `content`(単一文字列)をそのまま全文表示する。見出しのみ+クリックで展開、という段階表示は行わない
 - プッシュ通知(Service Worker等)は`010-mobile-pwa`化した後の話。v1はページを開いたときに気づける程度で十分
 
-## 未決定事項(2026-08-30確定)
+## 未決定事項(2026-08-30確定、v1実装時点)
 
 - **「1日」の区切り方**: JST(`Asia/Tokyo`、`settings.daily_summary.timezone`)。DB保存はすべてUTCだが、
   集計時に`services/daily_summary.py`の`local_day_bounds_utc()`でJSTの日付境界をUTC範囲に変換する
@@ -76,6 +79,23 @@ class DailySummaryRecord(SQLModel, table=True):
 - `cli/generate_daily_summary.py`をOS cronから1日1回叩く方式(`cli/ingest_news.py`と同型)。
   既定は設定タイムゾーンでの「昨日」を対象にする(深夜〜早朝cron前提)
 - `GET /api/daily-summary/latest`で最新1件を返す(生成はCLI専用、APIは読み取り専用)
+
+## 将来検討: リッチな表示への拡張(2026-08-29、並行セッションでの検討・未実装)
+
+v1実装(このファイルの他セクション、2026-08-30)と並行して、別セッションが「複数ドメイン横断の
+要約は長文になりうる」という前提で表示方式を詳細化していた。まだコード化されていないため、v1では
+`content: str`の単一文字列+全文バナー表示を採用したが、設計の記録として残す。
+
+- LLMに直接HTMLを生成させ、チャット本体と同じDOM(親ページと同一オリジン)に`dangerouslySetInnerHTML`で描画する方式は採らない。プロンプトインジェクション経由のXSS類似リスクがあるのと、生成のたびに見た目がブレる(レイアウトをLLMの気分に委ねることになる)ため
+- 代わりに、LLMには`SummarySection`(`domain`/`title`/`body`)の構造化データだけを生成させ、実際の見た目(HTML/CSS)は`003-chat-ui-polish`のgenerative UIパターン(`list_papers`/`list_todos`と同じ、専用Reactコンポーネントで描画)を踏襲する。本文(`body`)はセクションごとに既存の`react-markdown`でレンダリングする
+- バナーは見出し(+先頭セクションの要約1行程度)のみ表示し、クリックで展開する。展開先はモーダルまたは専用ページ(`/daily-summary`)を想定。詳細なUIモックアップは未着手
+- このコンポーネントは`008-daily-digest-domain`のPhase B(まとめて見せる要求)でも再利用できる見込み
+- 「本文がmarkdownでは表現しきれない自由なレイアウト・図が必要」なケースが将来出てきた場合、上記の展開ビュー(モーダル/専用ページ)側に限り、Claude ArtifactsやChatGPT Canvas等のAIチャット製品が実際に採る方式(`<iframe sandbox="allow-scripts" srcdoc="...">`、`allow-same-origin`は付与しない)でHTMLを描画する選択肢を残す。iframeは親ページと別オリジン扱いになるため、中のscriptが親ページのcookie/localStorage/認証済みAPI呼び出しに触れられず、`dangerouslySetInnerHTML`直挿しより安全にLLM生成HTMLを許容できる。チャットバブルへのインライン表示(react-markdown + Mermaid)には適用しない、隔離コストに見合わないため。実際に必要になってから着手する。iframeのsandbox属性に加えて、Content Security Policy(CSP)でも通信先を絞る(Claude Artifacts/ChatGPT Canvasの実装もsandbox属性単体ではなくCSP併用)
+
+着手するかどうかは、v1(全文バナー表示)を実際に使ってみて「長すぎて読みにくい」という実利上の課題が出てから判断する(YAGNI、他specでも一貫している方針)。着手する場合の未決定事項:
+
+- `content: str`から`sections: list[SummarySection]`へのデータモデル移行方法(`SummarySectionRecord`として正規化するかJSON列にするか)
+- 展開表示をモーダルにするか専用ページ(`/daily-summary`)にするか
 
 ## 依存
 

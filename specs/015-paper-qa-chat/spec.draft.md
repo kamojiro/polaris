@@ -99,6 +99,8 @@ OpenRouter経由のQwenモデルも、Anthropicと同様`cache_control: {"type":
 - 「自己更新可能な設定値」(`usd_jpy_rate`をエージェントがWeb検索して更新してくれる、等)のアイデアは`specs/IDEAS.md`に切り出した。v1のスコープ外
 - prompt cachingのホストルーティング起因と見られる不安定さへの対処(上記参照、v1では見送り)
 
+**追記(2026-08-29)**: `get_paper_full_text`の全文が会話履歴に載ったまま複数論文/複数セッションに渡って蓄積し、コンテキストが単調増加する問題を`docs/adr/0012-trim-stale-tool-results-from-history.md`で設計した。履歴内で一番新しいものだけ残し、他は`<omitted ...>`形式のプレースホルダに置換する。ターン完了時に`MessagesSnapshotEvent`でクライアント側の履歴自体を書き換える方式(未実装)。
+
 ## 実装状況(2026-08-21)
 
 ✔️完了。

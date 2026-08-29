@@ -86,6 +86,7 @@
     "speckit",
     "sqlite",
     "sqlmodel",
+    "srcdoc",
     "startpage",
     "structurer",
     "subsplits",
