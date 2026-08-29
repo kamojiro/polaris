@@ -24,6 +24,7 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 14. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
 15. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
 16. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+17. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
 
 ## いつかやるリスト
 
@@ -58,6 +59,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✅ 実装開始可能 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチとして実装。002/007/013/017の既存ドメインだけで動く設計、008/019は実装され次第集計対象に追加 |
 | 024 | [memory-theme-housekeeping](024-memory-theme-housekeeping/spec.draft.md) | - | 💤 スケルトンのみ | 017のテーマ整理を023と同じcron駆動で定期実行し、統合・分割・stale検出を「提案」として出す(自動適用はしない)。「現状調査・再現性テスト」は着想止まりでv1範囲外 |
 | 025 | [ir-tracking-expansion](025-ir-tracking-expansion/spec.draft.md) | - | 💤 スケルトンのみ | 013に追跡機能を追加。Stage 1(既存追跡企業の新規開示を日次チェック、詳細化済み)→Stage 2(追跡対象企業自体の発見、将来)の段階的拡大設計 |
+| 026 | [voice-input](026-voice-input/spec.draft.md) | - | 💤 スケルトンのみ | 音声入力。Stage 1(プッシュトゥトーク+STT→既存チャット送信、003に合流)→Stage 2(常時リスニング+独り言/お願いの3分類、将来)の段階的拡大設計。STTエンジン(Web Speech API vs ローカルWhisper)は未決定 |
 
 ## ステータスの意味
 
