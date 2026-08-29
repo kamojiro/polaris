@@ -23,6 +23,7 @@ class ItemType(StrEnum):
     paper = "paper"
     todo = "todo"
     news_article = "news_article"
+    ir_document = "ir_document"
 
 
 class Item(SQLModel, table=True):
@@ -146,6 +147,31 @@ class TodoRecord(SQLModel, table=True):
     done: bool = False
     updated_at: datetime  # 熟成度(優先度)算出の基準。編集・完了のたびに更新する
     completed_at: datetime | None = None
+
+
+class IrRecord(SQLModel, table=True):
+    """IR文書ドメイン固有のサテライトテーブル(013-ir-analysis-domain).
+
+    EDINET(金融庁の開示書類システム)から取り込んだ有価証券報告書等のPDF
+    1件に対応する。`doc_id`はEDINETの書類管理番号(`S100XXXX`のような形式)で、
+    `PaperRecord.arxiv_id`と同じ役割の自然キー・重複防止キー。Chunk/Embeddingは
+    v1では作らない(spec「データモデル」参照、都度PDF再抽出して全文をチャットに
+    渡す方式のみで賄う)。
+    """
+
+    __tablename__ = "ir_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True)
+    doc_id: str = Field(index=True, unique=True)  # EDINETのdocID(書類管理番号)。重複防止キー
+    filer_name: str  # 提出者名(企業名)
+    edinet_code: str | None = None
+    doc_type_code: str | None = None  # 有価証券報告書/四半期報告書等の種別コード
+    period_start: date | None = None
+    period_end: date | None = None
+    submit_datetime: datetime
+    pdf_path: str | None = None
+    ingested_at: datetime
 
 
 class DailySummaryRecord(SQLModel, table=True):

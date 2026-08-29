@@ -3,6 +3,7 @@ import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { DailySummaryBanner } from "./DailySummaryBanner";
+import { IrList, type IrListResult } from "./IrList";
 import { NewsList, type NewsListResult } from "./NewsList";
 import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
 import { PaperList, type PaperListResult } from "./PaperList";
@@ -13,6 +14,7 @@ import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
 const LIST_NEWS_TOOL_NAME = "list_news";
+const LIST_IR_DOCUMENTS_TOOL_NAME = "list_ir_documents";
 
 function messageText(message: Message): string {
   if (typeof message.content === "string") {
@@ -240,6 +242,13 @@ export default function App() {
                 ))}
                 {findToolResults<NewsListResult>(LIST_NEWS_TOOL_NAME, message, messages).map((result, i) => (
                   <NewsList key={`${message.id}-news-${i}`} news={result.news} />
+                ))}
+                {findToolResults<IrListResult>(LIST_IR_DOCUMENTS_TOOL_NAME, message, messages).map((result, i) => (
+                  <IrList
+                    key={`${message.id}-ir-${i}`}
+                    documents={result.documents}
+                    total_count={result.total_count}
+                  />
                 ))}
                 {message.role === "assistant" && timingsByMessageId[message.id]?.length > 0 && (
                   <p className="usage-line">{formatTimingsLine(timingsByMessageId[message.id])}</p>

@@ -22,6 +22,7 @@ from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
 from polaris.agent.chat_agent import ChatDeps, PaperModeState, build_chat_agent
+from polaris.agent.extract_ir_metadata import AgentIrMetadataExtractor, build_extract_ir_metadata_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
 from polaris.agent.memory_extract import (
     AgentMemoryExtractor,
@@ -33,6 +34,7 @@ from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall
 from polaris.agent.sidebar_title import AgentSidebarTitler, build_sidebar_title_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.daily_summary_repository import DailySummaryRepository
+from polaris.db.ir_repository import IrRepository
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
@@ -103,10 +105,12 @@ _todo_repo = TodoRepository(_engine)  # 007-todo-domain: Paperと同じSQLiteフ
 _memory_repo = MemoryRepository(_engine)  # 017-chat-memory: 同上
 _news_repo = NewsRepository(_engine)  # 008-daily-digest-domain Phase A: 同上
 _daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notification: 同上(読み取り専用)
+_ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
+_ir_extractor = AgentIrMetadataExtractor(build_extract_ir_metadata_agent(settings))
 _memory_recaller = AgentMemoryRecaller(build_memory_recall_agent(settings))
 _memory_extractor = AgentMemoryExtractor(build_memory_extract_agent(settings))
 _memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
@@ -119,6 +123,8 @@ _agent = build_chat_agent(
     extractor=_extractor,
     todo_repo=_todo_repo,
     news_repo=_news_repo,
+    ir_repo=_ir_repo,
+    ir_extractor=_ir_extractor,
 )
 
 _upload_dir = Path(settings.ingest.upload_dir)

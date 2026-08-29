@@ -248,6 +248,44 @@ header p {
   font-size: 0.9rem;
 }
 
+/* IR文書一覧の専用テーブル(generative UI、013-ir-analysis-domain)。.paper-list-* を踏襲。
+   v1に「IR文書モード」は無いため、行クリックでの選択操作は無い読み取り専用の表示。 */
+.ir-list-wrapper {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.ir-list {
+  max-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ir-list th,
+.ir-list td {
+  border: 1px solid rgb(0 0 0 / 15%);
+  padding: 0.5em 0.75em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ir-list th {
+  background: rgb(0 0 0 / 5%);
+  font-weight: 600;
+}
+
+.ir-list-more {
+  margin: 0.4em 0 0;
+  color: gray;
+  font-size: 0.85rem;
+}
+
+.ir-list-empty {
+  align-self: flex-start;
+  color: gray;
+  font-size: 0.9rem;
+}
+
 /* TODO一覧(generative UI)。バケット(day/month/life)ごとに見出し+リストで表示する */
 .todo-list-wrapper {
   align-self: flex-start;

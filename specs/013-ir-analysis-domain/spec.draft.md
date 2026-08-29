@@ -2,7 +2,7 @@
 
 ## ステータス
 
-✅ 実装開始可能
+✔️ 完了(v1、2026-08-30)
 
 ## 概要
 
@@ -82,6 +82,39 @@ Chunk/Embeddingは**v1では作らない**。IR文書は「その1件を読ん�
 - ニュースとの関連付け
 - XBRLの構造化解析(財務数値の抽出・グラフ化等)
 - 投資助言(売買判断・価格予想等)
+
+## 実装状況(2026-08-30)
+
+✔️完了(v1)。002-papers-ingest-full/015-paper-qa-chatと同じHub/Satelliteパターン・
+「全文をそのままコンテキストに渡すチャット」方式で実装した。
+
+- `adapters/edinet/client.py`: `GET /api/v2/documents/{docID}?type=2`をSubscription-Key
+  クエリパラメータ付きで叩き、PDFバイト列を返すだけの薄いhttpxラッパー。書類一覧API
+  (`documents.json`)は未実装(spec「やらないこと」通り、docID直接貼り付けのみ)
+- `db/ir_repository.py`(`IrRepository`): `PaperRepository`と同じsession-per-methodの形。
+  Chunk/Embedding相当のメソッドは無い
+- `agent/extract_ir_metadata.py`: `agent/extract_metadata.py`と同じProtocol+Agent
+  パターンで新規作成(フィールドはIR文書固有)。要約は「書かれている事実の整理」に
+  留める注意をinstructionsに明記
+- `services/ingest_ir.py`(`ingest_ir_document`): PDF取得→本文抽出→メタデータ抽出→
+  永続化。doc_idで冪等性を担保(同じdocIDを2回投げても再取得しない)
+- `services/ir_full_text.py`(`load_ir_full_text`): pdf_pathから都度pypdf再抽出。
+  Chunkが無いためフォールバック先は`Item.summary`のみ(paper_full_text.pyより単純)
+- `agent/chat_agent.py`: `save_ir_document`/`get_ir_full_text`/`list_ir_documents`の
+  3ツールを追加。015の論文モードのようなstate駆動の動的instructions・モード終了toolは
+  持たない(未決定事項の通りv1では見送り)。投資助言を避ける注意を`_INSTRUCTIONS`に明記
+- フロント: `IrList.tsx`(`.ir-list-*`、`PaperList.tsx`を踏襲した読み取り専用テーブル)を
+  `list_ir_documents`のgenerative UIとして追加
+- **deviation(spec記載外の判断)**: `IrRecord.submit_datetime`はspec上必須(non-null)だが、
+  v1は書類一覧API(`documents.json`)を呼ばないため、EDINET側から正確な提出日時を取得する
+  手段が無い。表紙に記載された提出日をLLM抽出(`extract_ir_metadata.py`の`submit_datetime`
+  フィールド)で拾えればそれを使い、読み取れなければIngest時刻を代わりに入れる
+  (実際の提出日時とはズレうる、`services/ingest_ir.py`の`_build_records`にコメント記載)。
+  正確な提出日時が必要になったら、書類一覧APIを日付範囲で叩いて突き合わせる案を検討する
+- テスト: `tests/adapters/test_edinet_client.py`(respx)、`tests/db/test_ir_repository.py`、
+  `tests/services/test_ingest_ir.py`(フェイクExtractor、冪等性含む)、
+  `tests/services/test_ir_full_text.py`を追加。実際のEDINET APIへの疎通は未検証
+  (アカウント登録・APIキー発行はこのリポジトリでは扱わない、spec「未決定事項」通り)
 
 ## 未決定事項
 

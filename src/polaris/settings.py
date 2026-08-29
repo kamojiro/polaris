@@ -154,6 +154,23 @@ class DailySummarySettings(BaseModel):
     timezone: str = "Asia/Tokyo"
 
 
+class IrSettings(BaseModel):
+    """IR文書(有価証券報告書等)Ingestパイプライン(013-ir-analysis-domain)の設定.
+
+    EDINET API v2は書類取得・書類一覧のいずれも`Subscription-Key`(無料登録で
+    発行されるAPIキー)が必須(`LLMSettings.api_key`と同じ形で持つ)。
+    `edinet_base_url`はEDINET公式ドキュメント記載のv2ベースURL(2026-08-22 spec調査時点)。
+    アカウント登録・APIキー発行の手順はこのリポジトリでは扱わない(spec「未決定事項」参照)。
+    """
+
+    edinet_api_key: str = ""
+    edinet_base_url: str = "https://disclosure.edinet-fsa.go.jp/api/v2"
+    pdf_dir: str = "data/ir_pdfs"
+    # IR文書のメタデータ抽出(agent/extract_ir_metadata.py)に渡す本文先頭の文字数。
+    # ingest.metadata_head_charsと同じ理由(書誌情報は冒頭に載っているため十分)。
+    metadata_head_chars: int = 4000
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -174,6 +191,7 @@ class Settings(BaseSettings):
     memory: MemorySettings = MemorySettings()
     news: NewsSettings = NewsSettings()
     daily_summary: DailySummarySettings = DailySummarySettings()
+    ir: IrSettings = IrSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",
