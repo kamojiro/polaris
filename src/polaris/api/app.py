@@ -13,7 +13,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ag_ui.core import BaseEvent, CustomEvent, RunAgentInput, StateSnapshotEvent
+from ag_ui.core import BaseEvent, CustomEvent, MessagesSnapshotEvent, RunAgentInput, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -40,6 +40,7 @@ from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
 from polaris.services.progress import get_progress_lines
 from polaris.settings import Settings
@@ -47,6 +48,7 @@ from polaris.settings import Settings
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Callable
 
+    from ag_ui.core import Message
     from fastapi.responses import Response
     from pydantic_ai.run import AgentRunResult
 
@@ -344,6 +346,30 @@ async def _emit_tool_timings_event(result: AgentRunResult[Any]) -> AsyncIterator
         )
 
 
+def _trimmed_history_messages(result: AgentRunResult[Any]) -> list[Message]:
+    """今回のターン完了時点の全履歴から、古い全文取得ツール結果をプレースホルダに置換したAG-UIメッセージ列を作る(ADR-0012).
+
+    `result.all_messages()`(過去ターン分も含む全履歴)を対象にする必要がある
+    (`new_messages()`は今回のターン分のみのため、過去ターンで取り込まれた全文結果が見えない)。
+    `trim_stale_full_text_results` はpydantic-ai内部の`ModelMessage`列を返すだけなので、
+    クライアントへ返せる形式にするには`AGUIAdapter`が`load_messages`と対で使っている
+    `dump_messages`(AG-UI wire formatへの変換ロジック)にそのまま通す。
+    """
+    trimmed = trim_stale_full_text_results(result.all_messages())
+    return AGUIAdapter.dump_messages(trimmed)
+
+
+async def _emit_trimmed_history_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
+    """ADR-0012のトリミング結果を`MESSAGES_SNAPSHOT`としてフロントに送る.
+
+    フロントの`HttpAgent`は`MESSAGES_SNAPSHOT`受信時に保持中の`agent.messages`をメッセージIDで
+    突き合わせて反映する。`dump_messages`は毎回新規IDを振るため、旧メッセージとID一致するものは
+    無く、実質的に丸ごと置き換わる(実装時に`@ag-ui/client`のソースで確認済み、ADR-0012参照)。
+    これにより次のターン以降はクライアント自身が送り返す履歴も既にトリミング済みになる。
+    """
+    yield MessagesSnapshotEvent(messages=_trimmed_history_messages(result))
+
+
 def _latest_user_text(run_input: RunAgentInput) -> tuple[str, str] | None:
     """直近のユーザー発言を (message id, テキスト) として返す(無ければ None).
 
@@ -390,6 +416,7 @@ async def chat(request: Request) -> Response:
     メイン処理: 既存の `_agent` をそのまま使う(変更なし)。
 
     後処理(非同期): 論文モード(015拡張)の state 同期・使用量イベントに加えて、
+    ADR-0012(古い全文取得ツール結果のトリミング)の `MESSAGES_SNAPSHOT` 送出、
     017-chat-memory の記憶抽出を `asyncio.create_task` でバックグラウンド実行する
     (チャット応答をブロックしない)。
     """
@@ -408,6 +435,8 @@ async def chat(request: Request) -> Response:
         async for event in _emit_usage_event(result):
             yield event
         async for event in _emit_tool_timings_event(result):
+            yield event
+        async for event in _emit_trimmed_history_event(result):
             yield event
         yield StateSnapshotEvent(snapshot=deps.state.model_dump(mode="json"))
         if latest is not None:

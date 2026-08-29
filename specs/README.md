@@ -6,24 +6,23 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015には2026-08-29追記のADR-0012対応(下記1)が未実装で残っている(013は先に完了したが、影響は`get_paper_full_text`のみで`get_ir_full_text`は対象外のため独立に進められる)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015のADR-0012対応(会話履歴トリミング)も2026-08-30に実装完了(013の`get_ir_full_text`は対象外のトリミング設計だが、独立に進められたため013と並行実装できた)。
 
-1. **015のADR-0012対応(会話履歴トリミング)** — 依存なし、設計済みで着手可能。`get_paper_full_text`の全文が履歴に蓄積し続ける問題への対処
-2. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
-3. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
-4. ~~004 (citation-relations)~~ — 見送り
-5. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-6. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-7. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-8. 009 (dashboard) — 008 Phase B・010の依存元
-9. 010 (mobile-pwa) — 009に依存
-10. 011 (agent-registry)
-11. 012 (local-llm-cutover)
-12. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-15. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
-16. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
+1. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
+2. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
+3. ~~004 (citation-relations)~~ — 見送り
+4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+7. 009 (dashboard) — 008 Phase B・010の依存元
+8. 010 (mobile-pwa) — 009に依存
+9. 011 (agent-registry)
+10. 012 (local-llm-cutover)
+11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+15. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
 
 ## いつかやるリスト
 
@@ -47,7 +46,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 012 | [local-llm-cutover](012-local-llm-cutover/spec.draft.md) | 4 | 💤 スケルトンのみ | Layer0のモデル抽象を活かす想定。005の実績があると判断しやすい |
 | 013 | [ir-analysis-domain](013-ir-analysis-domain/spec.draft.md) | 5 | ✔️ 完了 | EDINET API v2(要APIキー、`settings.ir.edinet_api_key`)の書類取得(`type=2`)はPDFをそのまま返すため、015と同じPDF→pypdf→全文チャット方式で実装。`save_ir_document`/`get_ir_full_text`/`list_ir_documents`の3ツールを追加、`IrList.tsx`で一覧表示。企業名検索はAPI側に無いためv1はdocID直接入力のみ。ニュース関連付け・SEC EDGAR・XBRL構造化解析・投資助言・IR文書モードは範囲外 |
 | 014 | [paper-url-pdf-ingest](014-paper-url-pdf-ingest/spec.draft.md) | 1 | ✔️ 完了 | 002で当初スコープから外したurl/local_pdf対応。URL直リンクは`adapters/pdf/downloader.py`でダウンロード、local_pdfは`POST /api/papers/upload`+`save_paper`ツール経由(ADR-0002、AG-UI添付は不採用)。非arXivのメタデータは`agent/extract_metadata.py`で本文冒頭から抽出、重複判定は`source_url`を流用 |
-| 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了 | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした。追加提案(2026-08-23、2026-08-26実装): 論文モードへの手動エントリー(`PaperList`からのクリック)。**2026-08-29追記**: 全文が会話履歴に蓄積し続ける問題をADR-0012で設計(履歴上一番新しい`get_paper_full_text`結果だけ残し、他は`<omitted ...>`に置換してMESSAGES_SNAPSHOTで書き換える)、未実装 |
+| 015 | [paper-qa-chat](015-paper-qa-chat/spec.draft.md) | 1 | ✔️ 完了 | 1論文とのチャットはベクトル検索を使わず、`PaperRecord.pdf_path`から都度pypdf再抽出した全文を`get_paper_full_text`ツールでコンテキストに渡す方式。Chunk/Embeddingはライブラリ横断検索用として役割を分ける。prompt cachingは実測(かつコード上も`qwen`系はno-opと確認)したがv1では見送り。代わりにトークン使用量・コストをAG-UIのCUSTOMイベント経由でチャットUIに表示し、キャッシュのヒット状況を毎ターン目視できるようにした。追加提案(2026-08-23、2026-08-26実装): 論文モードへの手動エントリー(`PaperList`からのクリック)。**2026-08-29追記**: 全文が会話履歴に蓄積し続ける問題をADR-0012で設計(履歴上一番新しい`get_paper_full_text`結果だけ残し、他は`<omitted ...>`に置換してMESSAGES_SNAPSHOTで書き換える)。**2026-08-30実装完了**: `src/polaris/services/history_trim.py`+`api/app.py`の`on_complete`で実装、`tests/services/test_history_trim.py`でテスト |
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
 | 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✔️ 完了 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(`MemoryEvent`、追記のみ)+現在状態層(`memory/<slug>.md`、書き直し)の二層構造。ADR-0003の3段パイプライン(前処理=想起/メイン/後処理=抽出)を`/api/chat`に実装、`agent.deps_type`を自前の`ChatDeps`(dataclass)に差し替えて論文モードのstateと分離した。テーマ統合・分割・改名(明示指示での見直し)はv1未実装 |
 | 018 | [web-search-tool](018-web-search-tool/spec.draft.md) | - | ✔️ 完了 | 自前ホスト済みのSearXNGに`adapters/searxng/client.py`から直接HTTPで問い合わせる自前adapter方式(MCPは見送り、詳細はspec参照)。`web_search`ツールを常時登録。007/013/017など複数specから使われる横断インフラ |
