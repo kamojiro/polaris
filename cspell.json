@@ -31,6 +31,7 @@
     "evals",
     "fastapi",
     "feedparser",
+    "frozenset",
     "genai",
     "gmailmcp",
     "grobid",

@@ -99,7 +99,7 @@ OpenRouter経由のQwenモデルも、Anthropicと同様`cache_control: {"type":
 - 「自己更新可能な設定値」(`usd_jpy_rate`をエージェントがWeb検索して更新してくれる、等)のアイデアは`specs/IDEAS.md`に切り出した。v1のスコープ外
 - prompt cachingのホストルーティング起因と見られる不安定さへの対処(上記参照、v1では見送り)
 
-**追記(2026-08-29)**: `get_paper_full_text`の全文が会話履歴に載ったまま複数論文/複数セッションに渡って蓄積し、コンテキストが単調増加する問題を`docs/adr/0012-trim-stale-tool-results-from-history.md`で設計した。履歴内で一番新しいものだけ残し、他は`<omitted ...>`形式のプレースホルダに置換する。ターン完了時に`MessagesSnapshotEvent`でクライアント側の履歴自体を書き換える方式(未実装)。
+**追記(2026-08-29)**: `get_paper_full_text`の全文が会話履歴に載ったまま複数論文/複数セッションに渡って蓄積し、コンテキストが単調増加する問題を`docs/adr/0012-trim-stale-tool-results-from-history.md`で設計した。履歴内で一番新しいものだけ残し、他は`<omitted ...>`形式のプレースホルダに置換する。ターン完了時に`MessagesSnapshotEvent`でクライアント側の履歴自体を書き換える方式。**2026-08-30実装完了**(下記実装状況参照)。
 
 ## 実装状況(2026-08-21)
 
@@ -111,6 +111,7 @@ OpenRouter経由のQwenモデルも、Anthropicと同様`cache_control: {"type":
 - チャンク/Embeddingパイプライン(002)は変更していない。`get_paper_full_text`はベクトル検索を一切経由しない
 - 実LLM(本番モデル`qwen/qwen3.6-35b-a3b`、GPU embedder込みで`build_chat_agent`を組み立て)でE2E確認済み: タイトルの一部だけの指定から`get_paper_full_text`が1回だけ呼ばれて全文ベースの回答が返ること、同じ論文について続けて質問した2ターン目で`get_paper_full_text`が再度呼ばれず会話履歴の全文で回答すること(受け入れ条件の核心部分)、存在しない論文名では例外にならず案内文が返ることを確認
 - UIは`useChatAgent.ts`の`TOOL_STATUS_LABELS`にステータス行を1つ追加したのみ(「論文の全文を読み込み中…」)。tool結果メッセージはそもそもフロントで描画していないため、全文が画面に出ることはない
+- **2026-08-30追記(ADR-0012)**: `src/polaris/services/history_trim.py::trim_stale_full_text_results()`で古い`get_paper_full_text`結果をプレースホルダに置換し、`api/app.py`の`/api/chat`の`on_complete`から`MessagesSnapshotEvent`として送出するよう実装した。詳細はADR-0012の「実装」節を参照
 
 ## 依存
 
