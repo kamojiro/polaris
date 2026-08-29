@@ -9,7 +9,7 @@ SQLModel を使い、Pydantic モデルとテーブル定義を一本化する(�
 受け渡し用の非 table モデル。
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -146,3 +146,20 @@ class TodoRecord(SQLModel, table=True):
     done: bool = False
     updated_at: datetime  # 熟成度(優先度)算出の基準。編集・完了のたびに更新する
     completed_at: datetime | None = None
+
+
+class DailySummaryRecord(SQLModel, table=True):
+    """日次サマリー通知(023-daily-summary-notification)のドメイン固有テーブル.
+
+    `MemoryTheme`/`MemoryEvent`と同じく`Item`ハブは経由しない(特定の知識アイテム
+    1件に紐づくものではなく、複数ドメインを横断した1日分のまとめのため)。
+    `summary_date`はJST基準の日付(services/daily_summary.pyでUTC範囲に変換して集計する)。
+    既読管理はサーバー側に持たず、フロント側のlocalStorageで行う。
+    """
+
+    __tablename__ = "daily_summary_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    summary_date: date = Field(index=True, unique=True)  # 1日1件
+    content: str
+    generated_at: datetime

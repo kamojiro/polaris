@@ -31,6 +31,12 @@ class MemoryRepository:
         with Session(self._engine, expire_on_commit=False) as session:
             return list(session.exec(select(MemoryTheme)).all())
 
+    def list_themes_updated_between(self, start: datetime, end: datetime) -> list[MemoryTheme]:
+        """`updated_at`が`[start, end)`(UTC)に入るテーマ索引を返す(023-daily-summary-notification)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = select(MemoryTheme).where(MemoryTheme.updated_at >= start, MemoryTheme.updated_at < end)  # type: ignore[operator]
+            return list(session.exec(query).all())
+
     def upsert_theme(self, *, slug: str, description: str, updated_at: datetime) -> None:
         """テーマ索引を作成、または既存テーマの説明・更新日時を上書きする."""
         with Session(self._engine, expire_on_commit=False) as session:

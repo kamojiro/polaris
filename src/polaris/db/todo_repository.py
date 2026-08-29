@@ -14,6 +14,8 @@ from sqlmodel import Session, select
 from polaris.domain.entities import Item, TodoRecord
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from sqlalchemy import Engine
 
     from polaris.domain.entities import TodoScale
@@ -57,6 +59,27 @@ class TodoRepository:
                 query = query.where(TodoRecord.done == False)  # noqa: E712 - SQLAlchemy式ではisと書けない
             rows = session.exec(query).all()
             return list(rows)
+
+    def list_todos_created_between(self, start: datetime, end: datetime) -> list[tuple[Item, TodoRecord]]:
+        """`Item.created_at`が`[start, end)`(UTC)に入るTODO(=当日追加分)を返す(023-daily-summary-notification)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(Item, TodoRecord)
+                .join(TodoRecord, TodoRecord.item_id == Item.id)  # type: ignore[arg-type]
+                .where(Item.created_at >= start, Item.created_at < end)  # type: ignore[operator]
+            )
+            return list(session.exec(query).all())
+
+    def list_todos_completed_between(self, start: datetime, end: datetime) -> list[tuple[Item, TodoRecord]]:
+        """`TodoRecord.completed_at`が`[start, end)`(UTC)に入るTODO(当日完了分)を返す(023拡張)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(Item, TodoRecord)
+                .join(TodoRecord, TodoRecord.item_id == Item.id)  # type: ignore[arg-type]
+                .where(TodoRecord.completed_at.is_not(None))  # type: ignore[union-attr]
+                .where(TodoRecord.completed_at >= start, TodoRecord.completed_at < end)  # type: ignore[operator]
+            )
+            return list(session.exec(query).all())
 
     def get_by_item_id(self, item_id: str) -> tuple[Item, TodoRecord] | None:
         """Item.id で TODO を検索する(update/complete/delete tool が対象を引くのに使う)."""

@@ -6,24 +6,23 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・014・015・017・018・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。
 
 1. **013 (ir-analysis-domain)** — 依存なし、spec詳細化済みで着手可能
-2. **023 (daily-summary-notification)** — 依存なし(002/007/013/017の既存ドメインだけで動く設計)、spec詳細化済みで着手可能。013と並行でも順不同でもよい
-3. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
-4. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
-5. ~~004 (citation-relations)~~ — 見送り
-6. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-7. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-8. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-9. 009 (dashboard) — 008 Phase B・010の依存元
-10. 010 (mobile-pwa) — 009に依存
-11. 011 (agent-registry)
-12. 012 (local-llm-cutover)
-13. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-15. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-16. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+2. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
+3. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
+4. ~~004 (citation-relations)~~ — 見送り
+5. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+6. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+7. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+8. 009 (dashboard) — 008 Phase B・010の依存元
+9. 010 (mobile-pwa) — 009に依存
+10. 011 (agent-registry)
+11. 012 (local-llm-cutover)
+12. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+14. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+15. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
 
 ## いつかやるリスト
 
@@ -55,7 +54,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 020 | [google-workspace-integration](020-google-workspace-integration/spec.draft.md) | - | 💤 スケルトンのみ | Google Calendar/Driveとの連携。用途未確定(Calendarは007のリマインド、Driveは文書取り込み元/バックアップ先候補)。公式MCP(Calendar)とコミュニティMCP(Drive候補)が混在しうる |
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |
-| 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✅ 実装開始可能 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチとして実装。002/007/013/017の既存ドメインだけで動く設計、008/019は実装され次第集計対象に追加 |
+| 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✔️ 完了 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチ(`cli/generate_daily_summary.py`)として実装。002/007/017の既存ドメイン+008(要約付きフィードのみ)を集計。013は未実装のため対象外(実装され次第追加可能な構造)。既読管理はフロントのlocalStorageのみ(DB/APIは持たない) |
 | 024 | [memory-theme-housekeeping](024-memory-theme-housekeeping/spec.draft.md) | - | 💤 スケルトンのみ | 017のテーマ整理を023と同じcron駆動で定期実行し、統合・分割・stale検出を「提案」として出す(自動適用はしない)。「現状調査・再現性テスト」は着想止まりでv1範囲外 |
 | 025 | [ir-tracking-expansion](025-ir-tracking-expansion/spec.draft.md) | - | 💤 スケルトンのみ | 013に追跡機能を追加。Stage 1(既存追跡企業の新規開示を日次チェック、詳細化済み)→Stage 2(追跡対象企業自体の発見、将来)の段階的拡大設計 |
 

@@ -8,7 +8,7 @@ import logging
 import random
 import time
 import uuid
-from datetime import datetime  # noqa: TC003 (pydanticがランタイムで解決するため実importが必要)
+from datetime import date, datetime  # noqa: TC003 (pydanticがランタイムで解決するため実importが必要)
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -32,6 +32,7 @@ from polaris.agent.memory_extract import (
 from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall_agent
 from polaris.agent.sidebar_title import AgentSidebarTitler, build_sidebar_title_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
+from polaris.db.daily_summary_repository import DailySummaryRepository
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
@@ -101,6 +102,7 @@ _repo = PaperRepository(_engine)
 _todo_repo = TodoRepository(_engine)  # 007-todo-domain: Paperと同じSQLiteファイルを使う
 _memory_repo = MemoryRepository(_engine)  # 017-chat-memory: 同上
 _news_repo = NewsRepository(_engine)  # 008-daily-digest-domain Phase A: 同上
+_daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notification: 同上(読み取り専用)
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
@@ -241,6 +243,29 @@ async def news_picks(count: int = 5) -> list[SidebarNewsItem]:
         )
         for (item, record), display_title in zip(picked, display_titles, strict=True)
     ]
+
+
+class DailySummaryResponse(BaseModel):
+    """日次サマリーの1件分(023-daily-summary-notification)."""
+
+    summary_date: date
+    content: str
+    generated_at: datetime
+
+
+@app.get("/api/daily-summary/latest")
+def daily_summary_latest() -> DailySummaryResponse | None:
+    """最新の日次サマリーを返す(無ければ`null`)。生成はここでは行わない(CLI専用、cron駆動).
+
+    ページロード時にフロントが叩き、既読管理(最終既読日付との比較)はフロント側の
+    localStorageで行う(サーバー側にread状態を持たせない、spec確定事項)。
+    """
+    record = _daily_summary_repo.get_latest()
+    if record is None:
+        return None
+    return DailySummaryResponse(
+        summary_date=record.summary_date, content=record.content, generated_at=record.generated_at
+    )
 
 
 async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:

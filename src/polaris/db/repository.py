@@ -10,6 +10,8 @@ from polaris.db.vector_store import save_embeddings as _save_embeddings
 from polaris.domain.entities import Chunk, Item, PaperRecord
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from sqlalchemy import Engine
 
     from polaris.domain.entities import EmbeddingRecord
@@ -72,6 +74,21 @@ class PaperRepository:
                 query = query.limit(limit)
             rows = session.exec(query).all()
             return list(rows)
+
+    def list_papers_created_between(self, start: datetime, end: datetime) -> list[tuple[Item, PaperRecord]]:
+        """`Item.created_at`が`[start, end)`に入る論文を返す(023-daily-summary-notification).
+
+        `start`/`end`はUTC(DB保存値と同じタイムゾーン)。日付境界(JST等)への変換は
+        呼び出し側(services/daily_summary.py)の責務とする。
+        """
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(Item, PaperRecord)
+                .join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
+                .where(Item.created_at >= start, Item.created_at < end)  # type: ignore[operator]
+                .order_by(Item.created_at.asc())  # type: ignore[union-attr]
+            )
+            return list(session.exec(query).all())
 
     def search_papers(self, query: str, *, limit: int = 5) -> list[tuple[Item, PaperRecord]]:
         """arxiv_id/source_url の完全一致、またはタイトルの部分一致(大小無視)で論文を検索する.

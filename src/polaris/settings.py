@@ -141,6 +141,19 @@ class NewsSettings(BaseModel):
     timeout_seconds: float = 15.0
 
 
+class DailySummarySettings(BaseModel):
+    """日次サマリー通知(023-daily-summary-notification)の設定.
+
+    チャットのターンに紐づかない初めての処理(`docs/adr/0003-chat-turn-pipeline.md`の
+    対象外)で、`008-daily-digest-domain` Phase Aと同じOS cron駆動のCLI(`cli/generate_daily_summary.py`)
+    から呼ぶ想定。
+    """
+
+    # 「1日」の区切りをJST基準にする(DB保存はすべてUTCだが、生活時間の区切りは
+    # 生活圏のタイムゾーンであるべきという判断)。ZoneInfoに渡せる文字列。
+    timezone: str = "Asia/Tokyo"
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -160,6 +173,7 @@ class Settings(BaseSettings):
     searxng: SearxngSettings = SearxngSettings()
     memory: MemorySettings = MemorySettings()
     news: NewsSettings = NewsSettings()
+    daily_summary: DailySummarySettings = DailySummarySettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

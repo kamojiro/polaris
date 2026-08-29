@@ -527,6 +527,47 @@ header p {
   margin: 0.5rem 0;
 }
 
+/* 日次サマリー通知(023-daily-summary-notification): 未読の最新サマリーがあるときだけ出るバナー */
+.daily-summary-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: #eef2ff;
+  color: #1e1b4b;
+  font-size: 0.9rem;
+}
+
+.daily-summary-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.daily-summary-banner-date {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.daily-summary-banner p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.daily-summary-banner button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+  flex-shrink: 0;
+}
+
 /* 論文モード(015拡張): AG-UIのstateで同期した「今読んでいる論文」バッジ */
 .paper-mode-badge {
   display: flex;

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { DailySummaryBanner } from "./DailySummaryBanner";
 import { NewsList, type NewsListResult } from "./NewsList";
 import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
 import { PaperList, type PaperListResult } from "./PaperList";
@@ -256,6 +257,8 @@ export default function App() {
             </div>
           )}
         </main>
+
+        <DailySummaryBanner />
 
         {error !== null && <div className="error">{error}</div>}
         {uploadError !== null && <div className="error">{uploadError}</div>}

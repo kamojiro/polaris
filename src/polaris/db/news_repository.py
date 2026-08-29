@@ -12,6 +12,8 @@ from sqlmodel import Session, select
 from polaris.domain.entities import Item, NewsRecord
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from sqlalchemy import Engine
 
 
@@ -39,6 +41,19 @@ class NewsRepository:
             session.add(item)
             session.add(record)
             session.commit()
+
+    def list_news_created_between(self, start: datetime, end: datetime) -> list[tuple[Item, NewsRecord]]:
+        """`Item.created_at`(Polarisが取り込んだ日時、`published_at`ではない)が`[start, end)`(UTC)の記事を返す.
+
+        023-daily-summary-notification: 集計単位はフィード側の公開日時ではなく「その日Ingestした」こと。
+        """
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(Item, NewsRecord)
+                .join(NewsRecord, NewsRecord.item_id == Item.id)  # type: ignore[arg-type]
+                .where(Item.created_at >= start, Item.created_at < end)  # type: ignore[operator]
+            )
+            return list(session.exec(query).all())
 
     def list_news(self, *, limit_per_label: int | None = None) -> list[tuple[Item, NewsRecord]]:
         """保存済みのニュース記事を公開日時の降順で返す.
