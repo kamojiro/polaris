@@ -1,4 +1,4 @@
-# 0004. 論文Ingest時のEmbedding生成を一時停止する
+# 0011. 論文Ingest時のEmbedding生成を一時停止する
 
 ## ステータス
 

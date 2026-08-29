@@ -34,7 +34,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | # | spec | フェーズ | ステータス | 備考 |
 |---|---|---|---|---|
 | 001 | [walking-skeleton](001-walking-skeleton/spec.draft.md) | 1 | ✔️ 完了 | AG-UI+FastAPI+pydantic-ai+Reactの一往復が動作確認済み |
-| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み。**2026-08-26追記**: 生成したembeddingを読み出す機能が1つも無いと判明し、ADR-0004でIngest時のembedding生成を一時停止(`Chunk`テーブル・コードは残す) |
+| 002 | [papers-ingest-full](002-papers-ingest-full/spec.draft.md) | 1 | ✔️ 完了 | arXiv入力を実装(local_pdf/URLは014で追加)。PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)まで動作確認済み。**2026-08-26追記**: 生成したembeddingを読み出す機能が1つも無いと判明し、ADR-0011でIngest時のembedding生成を一時停止(`Chunk`テーブル・コードは残す) |
 | 003 | [chat-ui-polish](003-chat-ui-polish/spec.draft.md) | 1 | ✔️ 完了 | react-markdown導入・list_papersのgenerative UI化(専用テーブル)・レイアウト調整を実装済み。追加提案(2026-08-23、2026-08-26実装): メッセージのコピーボタン、入力欄の「論文一覧」クイックアクションボタン |
 | 004 | [citation-relations](004-citation-relations/spec.draft.md) | 1 | 🚫 やらない | 見送り決定。設計(スタブは作らない方針)は記録として残す |
 | 005 | [eval-harness](005-eval-harness/spec.draft.md) | 1 | 🗓 いつか | spec自体は完成済み(対象を002のStructure抽出と001/003のtool呼び出しの実データに絞って具体化)。直近では実装しない、いつかやるリスト行き |

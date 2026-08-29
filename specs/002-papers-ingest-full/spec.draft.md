@@ -135,6 +135,6 @@ structure_agent_settings = OpenRouterModelSettings(
 - url/local_pdf対応は `014-paper-url-pdf-ingest` に切り出し、2026-08-20 に完了した。「目的・スコープ」に書いた「PDF / URL / arXiv を入力として」はこれで達成された。
 - PDF取得→pypdf抽出→Structureエージェント→チャンク分割→Qwen3-Embedding-0.6B→SQLite(vec0)の一連は動作確認済み。
 
-## 追加判断: Embedding生成の一時停止(2026-08-26、`docs/adr/0004-pause-paper-embedding-generation.md`)
+## 追加判断: Embedding生成の一時停止(2026-08-26、`docs/adr/0011-pause-paper-embedding-generation.md`)
 
-実際のコードを確認したところ、生成・保存したembeddingを読み出して類似検索する経路がどこにも実装されておらず、`015`(全文コンテキスト方式を採用)・`013`(v1では作らない判断)ともにembeddingを使わない設計になっていた。つまりGPUコストをかけて生成しているembeddingの消費者が1つも無い状態だった。CUDA OOMの実害も出ていたことも踏まえ、Ingest時のembedding生成を一時停止することにした。`Chunk`テーブル・保存コード自体は残し、`008`のPhase B(関係グラフのトピック類似度)等で具体的に必要になったタイミングで再開する。詳細はADR-0004参照。
+実際のコードを確認したところ、生成・保存したembeddingを読み出して類似検索する経路がどこにも実装されておらず、`015`(全文コンテキスト方式を採用)・`013`(v1では作らない判断)ともにembeddingを使わない設計になっていた。つまりGPUコストをかけて生成しているembeddingの消費者が1つも無い状態だった。CUDA OOMの実害も出ていたことも踏まえ、Ingest時のembedding生成を一時停止することにした。`Chunk`テーブル・保存コード自体は残し、`008`のPhase B(関係グラフのトピック類似度)等で具体的に必要になったタイミングで再開する。詳細はADR-0011参照。

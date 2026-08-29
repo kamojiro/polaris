@@ -12,5 +12,6 @@
 - [0008. MCP経由か自前adapterかは、API複雑さと信頼できる実装の有無で判断する](0008-mcp-vs-custom-adapter.md)
 - [0009. 単一文書QAは全文インコンテキスト方式を採用する](0009-single-document-qa-full-context.md)
 - [0010. 長期記憶をログ層+現在状態層の二層構造で管理する](0010-memory-log-and-current-state-layers.md)
+- [0011. 論文Ingest時のEmbedding生成を一時停止する](0011-pause-paper-embedding-generation.md)
 
-`0000-template.md` をコピーし、次は `0011-...md` から番号を振って書き起こす。
+`0000-template.md` をコピーし、次は `0012-...md` から番号を振って書き起こす。
