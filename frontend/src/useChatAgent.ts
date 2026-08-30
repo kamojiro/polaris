@@ -25,6 +25,7 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   get_paper_full_text: "論文の全文を読み込み中…",
   exit_paper_mode: "論文モードを終了中…",
   web_search: "Webを検索中…",
+  get_diary_range: "日記を読み返し中…",
 };
 
 function toolStatusLabel(toolCallName: string): string {
@@ -53,6 +54,24 @@ export interface ChatUIState {
 }
 
 const INITIAL_CHAT_UI_STATE: ChatUIState = { active_paper: null, diary_mode: false };
+
+/**
+ * 執筆中の日記パネル(019拡張)の1日分。`GET /api/diary/recent`のレスポンス形と一致させる
+ * (entry_date昇順、末尾が「今まさに書いている」アンカー)。
+ */
+export interface DiaryDayEntry {
+  entry_date: string;
+  content: string;
+  updated_at: string;
+}
+
+async function fetchDiaryRecent(): Promise<DiaryDayEntry[]> {
+  const response = await fetch("/api/diary/recent");
+  if (!response.ok) {
+    return [];
+  }
+  return (await response.json()) as DiaryDayEntry[];
+}
 
 /**
  * 1ターン(agent.run 1回分、内部で複数回のLLMリクエストがあれば合算済み)のトークン使用量・
@@ -118,6 +137,7 @@ export function useChatAgent() {
   const [totalUsage, setTotalUsage] = useState<TurnUsage>(ZERO_USAGE);
   const [timingsByMessageId, setTimingsByMessageId] = useState<Record<string, ToolTiming[]>>({});
   const [uiState, setUiState] = useState<ChatUIState>(INITIAL_CHAT_UI_STATE);
+  const [diaryEntries, setDiaryEntries] = useState<DiaryDayEntry[]>([]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -193,7 +213,17 @@ export function useChatAgent() {
         // サブスクライバの state 引数は更新「前」の値を渡す実装だったため使わず、
         // run完了後にここで直接読む。
         const state = agent.state as Partial<ChatUIState> | undefined;
-        setUiState({ active_paper: state?.active_paper ?? null, diary_mode: state?.diary_mode ?? false });
+        const nextUiState: ChatUIState = {
+          active_paper: state?.active_paper ?? null,
+          diary_mode: state?.diary_mode ?? false,
+        };
+        setUiState(nextUiState);
+        // 執筆中パネル(019拡張 User Story 6): 日記モード中にターンが完了するたびに
+        // 直近の更新内容を取り直す。「日記モードに入っただけ(まだ送信していない)」時点では
+        // ここを通らないため、パネルは最初のメッセージ送信後にしか表示されない(FR-012)。
+        if (nextUiState.diary_mode) {
+          void fetchDiaryRecent().then(setDiaryEntries);
+        }
       }
     },
     [agent],
@@ -215,6 +245,10 @@ export function useChatAgent() {
     setUiState((prev) => {
       const next: ChatUIState = { active_paper: prev.active_paper, diary_mode: !prev.diary_mode };
       agent.setState(next);
+      if (!next.diary_mode) {
+        // 日記モードを抜けたらパネルも非表示に戻す(次に入ったときは、また最初の送信後に再表示される)。
+        setDiaryEntries([]);
+      }
       return next;
     });
   }, [agent]);
@@ -231,5 +265,6 @@ export function useChatAgent() {
     uiState,
     exitPaperMode,
     toggleDiaryMode,
+    diaryEntries,
   };
 }

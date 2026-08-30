@@ -35,9 +35,11 @@ AG-UI(`pydantic_ai.ui.ag_ui.AGUIAdapter` + `@ag-ui/client`の`HttpAgent`)。新�
 **Performance Goals**: 個人用ツールのため定量目標なし。既存の`ChatSettings`/`MemorySettings`と
 同水準(チャット1ターンあたりLLM呼び出し1〜2回程度)を維持する
 
-**Constraints**: ADR-0005(AG-UIステートレス設計、サーバーは会話履歴を保持しない)に従う。バックグラウンド
-タスクは`asyncio.create_task`のfire-and-forgetパターン(017の`_extract_memory_task`と同型)を踏襲し、
-チャット応答自体をブロックしない
+**Constraints**: ADR-0005(AG-UIステートレス設計、サーバーは会話履歴を保持しない)に従う。017の記憶抽出は
+`asyncio.create_task`のfire-and-forgetパターン(`_extract_memory_task`)を踏襲する。日記の記録
+(`_record_diary_task`)は当初同じfire-and-forgetを踏襲したが、User Story 6(執筆中パネル)追加時に
+「ターン完了直後にパネルを取り直す」設計とレースコンディションを起こすと判明したため`on_complete`内で
+直接`await`する方式に変更した(`research.md`の該当Decisionの「実装時の訂正」参照)
 
 **Scale/Scope**: 単一ユーザーの日次利用。1日あたりのエントリ数は多くても数件(複数回モードに出入り
 しても1エントリに集約されるため、スケールの懸念は無い)
@@ -108,3 +110,40 @@ tests/
 ## Complexity Tracking
 
 *(Constitution Checkに違反なし、記載事項なし)*
+
+## Increment: User Story 4-6(バックフィル・期間読み取り・執筆中パネル、2026-08-30追記)
+
+`spec.draft.md`「v1後の検討メモ」を正式化した追加分。上記のTechnical Context/Constitution Checkは
+変更なし(新規依存ライブラリ・新規プロジェクト構造なし)。追加で触るファイルのみ列挙する。
+
+```text
+src/polaris/
+├── agent/diary_date_infer.py       # 新規: DiaryDateInferrer(Protocol) + Agentラッパー(US4)
+├── services/diary.py               # record_diary_turn に target_date 引数を追加(US4)
+├── db/diary_repository.py          # list_records_in_range/get_latest_updated_record/
+│                                     # list_records_before を追加(US5/US6)
+├── agent/chat_agent.py             # get_diary_range tool を追加(US5)。日付推定はchat_agent.pyの
+│                                     # 外側(_record_diary_task)で行うため、_INSTRUCTIONSへの追記は無い
+├── services/history_trim.py        # FULL_TEXT_TOOL_NAMES に "get_diary_range" を追加(US5、ADR-0012対応)
+└── api/app.py                      # _record_diary_task が DiaryDateInferrer を呼んでから
+                                      # record_diary_turn に target_date を渡す(US4)。
+                                      # GET /api/diary/recent を追加(US6)
+
+frontend/src/
+├── useChatAgent.ts                 # /api/diary/recent を叩くフック追加(US6)
+├── App.tsx                         # 執筆中パネルの表示・折りたたみ(US6)
+└── styles.css                      # パネル用CSS(US6)
+
+tests/
+├── db/test_diary_repository.py     # 追加: list_records_in_range/get_latest_updated_record/list_records_before
+└── services/test_diary.py          # 追加: target_date指定時の挙動(US4、DiaryDateInferrerはフェイクに差し替え)
+```
+
+`agent/diary_date_infer.py`自体(実LLM呼び出しのAgentラッパー)は、既存の`agent/*.py`と同じ慣例で
+専用テストを持たない(オーケストレーション層をフェイクProtocol経由でテストする方針、`plan.md`の
+テスト方針参照)。
+
+**Constitution Check(再評価)**: 引き続き全項目PASS。`get_diary_range`はHub/Satelliteパターン
+(原則IV)に沿った既存`DiaryRecord`への読み取りのみで新規テーブルを増やさない。62日の上限ガードは
+YAGNI(原則II)というより既存のコンテキスト肥大化対策(ADR-0012)の踏襲であり、新たな複雑さの
+持ち込みではない。

@@ -22,6 +22,7 @@ from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
 from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
+from polaris.agent.diary_date_infer import AgentDiaryDateInferrer, build_diary_date_infer_agent
 from polaris.agent.diary_rewrite import AgentDiaryRewriter, build_diary_rewrite_agent
 from polaris.agent.extract_ir_metadata import AgentIrMetadataExtractor, build_extract_ir_metadata_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
@@ -42,6 +43,7 @@ from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.services.daily_summary import local_today
 from polaris.services.diary import record_diary_turn
 from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
@@ -121,6 +123,7 @@ _memory_recaller = AgentMemoryRecaller(build_memory_recall_agent(settings))
 _memory_extractor = AgentMemoryExtractor(build_memory_extract_agent(settings))
 _memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
 _diary_rewriter = AgentDiaryRewriter(build_diary_rewrite_agent(settings))
+_diary_date_inferrer = AgentDiaryDateInferrer(build_diary_date_infer_agent(settings))
 _sidebar_titler = AgentSidebarTitler(build_sidebar_title_agent(settings))
 _agent = build_chat_agent(
     settings,
@@ -132,6 +135,7 @@ _agent = build_chat_agent(
     news_repo=_news_repo,
     ir_repo=_ir_repo,
     ir_extractor=_ir_extractor,
+    diary_repo=_diary_repo,
 )
 
 _upload_dir = Path(settings.ingest.upload_dir)
@@ -281,6 +285,35 @@ def daily_summary_latest() -> DailySummaryResponse | None:
     )
 
 
+class DiaryDayResponse(BaseModel):
+    """執筆中パネル(019-diary-domain User Story 6)の1日分."""
+
+    entry_date: date
+    content: str
+    updated_at: datetime
+
+
+_DIARY_RECENT_DEFAULT_COUNT = 3
+
+
+@app.get("/api/diary/recent")
+def diary_recent(count: int = _DIARY_RECENT_DEFAULT_COUNT) -> list[DiaryDayResponse]:
+    """直近で更新された日記エントリを日付昇順で返す(執筆中パネル用、読み取り専用).
+
+    末尾の要素が「今まさに書いている」エントリ(`updated_at`が最新のもの)。アンカーを
+    「今日」固定ではなく`updated_at`降順の先頭にしているのは、バックフィル(過去日への追記)
+    後にも正しく機能させるため(`research.md` Decision 9)。
+    """
+    anchor = _diary_repo.get_latest_updated_record()
+    if anchor is None:
+        return []
+    context = _diary_repo.list_records_before(anchor.entry_date, limit=count - 1)
+    records = [*reversed(context), anchor]
+    return [
+        DiaryDayResponse(entry_date=r.entry_date, content=r.content, updated_at=r.updated_at) for r in records
+    ]
+
+
 async def _emit_usage_event(result: AgentRunResult[Any]) -> AsyncIterator[BaseEvent]:
     """ターンごとのトークン使用量・コストを AG-UI の CUSTOM イベントとしてフロントに渡す.
 
@@ -410,8 +443,14 @@ async def _extract_memory_task(user_text: str, assistant_text: str, *, turn_id: 
 
 
 async def _record_diary_task(user_text: str, assistant_text: str, *, turn_id: str) -> None:
-    """019-diary-domain の後処理本体(fire-and-forgetで呼ばれる想定、_extract_memory_taskと同型)."""
+    """019-diary-domain の後処理本体(fire-and-forgetで呼ばれる想定、_extract_memory_taskと同型).
+
+    記録先の日付は、まず`_diary_date_inferrer`で会話文面から過去日を推定し(推定できなければ
+    `None`)、`record_diary_turn`にそのまま渡す(バックフィル、User Story 4)。
+    """
     try:
+        today = local_today(settings.daily_summary.timezone)
+        inference = await _diary_date_inferrer.infer(user_text=user_text, assistant_text=assistant_text, today=today)
         await record_diary_turn(
             user_text,
             assistant_text,
@@ -419,6 +458,7 @@ async def _record_diary_task(user_text: str, assistant_text: str, *, turn_id: st
             rewriter=_diary_rewriter,
             repo=_diary_repo,
             settings=settings,
+            target_date=inference.target_date,
         )
     except Exception:
         logger.exception("diary recording failed")
@@ -435,11 +475,14 @@ async def chat(request: Request) -> Response:
 
     メイン処理: 既存の `_agent` をそのまま使う(変更なし)。
 
-    後処理(非同期): 論文モード(015拡張)の state 同期・使用量イベントに加えて、
-    ADR-0012(古い全文取得ツール結果のトリミング)の `MESSAGES_SNAPSHOT` 送出、
-    017-chat-memory の記憶抽出、`deps.state.diary_mode` が `True` の場合は
-    019-diary-domain の日記記録を、それぞれ `asyncio.create_task` でバックグラウンド
-    実行する(チャット応答をブロックしない)。
+    後処理: 論文モード(015拡張)の state 同期・使用量イベントに加えて、ADR-0012(古い全文取得
+    ツール結果のトリミング)の `MESSAGES_SNAPSHOT` 送出を行う。017-chat-memory の記憶抽出は
+    `asyncio.create_task` でバックグラウンド実行する(結果を即座に必要とするUIが無いため、
+    チャット応答をブロックしない)。019-diary-domain の日記記録(`deps.state.diary_mode` が
+    `True` の場合)は、フロントが応答完了直後に執筆中パネル(`GET /api/diary/recent`)を
+    取り直す設計(019拡張 User Story 6)のため、fire-and-forgetにはせずここで直接awaitして
+    DB書き込みを完了させてからストリームを終える(そうしないとパネルが古い内容のまま
+    表示されてしまう、レースコンディション回避)。
     """
     body = await request.body()
     run_input = AGUIAdapter.build_run_input(body)
@@ -467,8 +510,8 @@ async def chat(request: Request) -> Response:
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
             if deps.state.diary_mode:
-                diary_task = asyncio.create_task(_record_diary_task(user_text, result.output, turn_id=turn_id))
-                _background_tasks.add(diary_task)
-                diary_task.add_done_callback(_background_tasks.discard)
+                # fire-and-forgetにはしない(直前のdocstring参照): 執筆中パネルの取り直しが
+                # ストリーム完了直後に走るため、DB書き込みを完了させてから返す。
+                await _record_diary_task(user_text, result.output, turn_id=turn_id)
 
     return await AGUIAdapter.dispatch_request(request, agent=_agent, deps=deps, on_complete=on_complete)

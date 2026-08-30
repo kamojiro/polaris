@@ -24,8 +24,10 @@ if TYPE_CHECKING:
     from pydantic_ai.messages import ModelMessage
 
 # トリミング対象のtool名。ここに追加するだけで新しいtoolにも同じ「最新1件だけ残す」
-# ルールが適用される(トリミングロジック自体の変更は不要)。
-FULL_TEXT_TOOL_NAMES: frozenset[str] = frozenset({"get_paper_full_text"})
+# ルールが適用される(トリミングロジック自体の変更は不要)。get_diary_range(019-diary-domain
+# User Story 5)も対象を切り替えながら全文相当のコンテキストを取り込むtoolのため追加した
+# (research.md Decision 8)。
+FULL_TEXT_TOOL_NAMES: frozenset[str] = frozenset({"get_paper_full_text", "get_diary_range"})
 
 
 def trim_stale_full_text_results(messages: list[ModelMessage]) -> list[ModelMessage]:

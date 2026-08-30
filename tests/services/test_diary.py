@@ -5,6 +5,7 @@
 """
 
 from collections.abc import Sequence
+from datetime import timedelta
 from pathlib import Path
 
 from sqlmodel import Session
@@ -100,3 +101,49 @@ async def test_record_diary_turn_updates_item_summary(tmp_path: Path) -> None:
         item = session.get(Item, record.item_id)
         assert item is not None
         assert "雨も降った" in item.summary
+
+
+async def test_record_diary_turn_with_target_date_updates_past_entry_not_today(tmp_path: Path) -> None:
+    """target_dateが指定されれば、当日ではなくその日のDiaryRecordが更新される(US4バックフィル)."""
+    repo = _make_repo(tmp_path)
+    settings = Settings()
+    rewriter = _FakeRewriter()
+    today = local_today(settings.daily_summary.timezone)
+    past_date = today - timedelta(days=7)
+
+    await record_diary_turn(
+        "先週の水曜日は飲み会だった",
+        "楽しそうですね",
+        turn_id="turn-1",
+        rewriter=rewriter,
+        repo=repo,
+        settings=settings,
+        target_date=past_date,
+    )
+
+    assert repo.get_record(today) is None
+    past_record = repo.get_record(past_date)
+    assert past_record is not None
+    assert "飲み会" in past_record.content
+
+
+async def test_record_diary_turn_without_target_date_falls_back_to_today(tmp_path: Path) -> None:
+    """target_date未指定(None)なら、これまでどおり当日のDiaryRecordが更新される."""
+    repo = _make_repo(tmp_path)
+    settings = Settings()
+    rewriter = _FakeRewriter()
+
+    await record_diary_turn(
+        "今日はいい天気だった",
+        "よかったですね",
+        turn_id="turn-1",
+        rewriter=rewriter,
+        repo=repo,
+        settings=settings,
+        target_date=None,
+    )
+
+    today = local_today(settings.daily_summary.timezone)
+    record = repo.get_record(today)
+    assert record is not None
+    assert "いい天気" in record.content

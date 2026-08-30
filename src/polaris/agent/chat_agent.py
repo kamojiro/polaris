@@ -58,6 +58,7 @@ from polaris.adapters.arxiv.parser import extract_arxiv_id
 from polaris.adapters.searxng.client import SearxngSearchError
 from polaris.adapters.searxng.client import search as searxng_search
 from polaris.domain.entities import TodoScale  # noqa: TC001
+from polaris.services.daily_summary import local_today
 from polaris.services.ingest_ir import ingest_ir_document
 from polaris.services.ingest_paper import ingest_paper_from_url
 from polaris.services.ir_full_text import load_ir_full_text
@@ -74,6 +75,7 @@ if TYPE_CHECKING:
     from polaris.agent.extract_ir_metadata import IrMetadataExtractor
     from polaris.agent.extract_metadata import PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer
+    from polaris.db.diary_repository import DiaryRepository
     from polaris.db.ir_repository import IrRepository
     from polaris.db.news_repository import NewsRepository
     from polaris.db.repository import PaperRepository
@@ -92,6 +94,10 @@ _RECENT_PAPERS_LIMIT = 20
 _RECENT_NEWS_LIMIT_PER_LABEL = 15
 # 013-ir-analysis-domain: list_ir_documents の一覧表示上限(_RECENT_PAPERS_LIMITと同じ理由)。
 _RECENT_IR_LIMIT = 20
+# 019-diary-domain: get_diary_range が一度に読み込める期間の上限(日数)。get_paper_full_text と
+# 同種の全文コンテキストtoolのため、広すぎる範囲によるコンテキスト肥大化を防ぐガード
+# (research.md Decision 8)。
+_MAX_DIARY_RANGE_DAYS = 62
 
 _INSTRUCTIONS = """\
 あなたは個人用の論文管理・TODO管理アシスタントです。次のルールに従ってください。
@@ -142,6 +148,12 @@ _INSTRUCTIONS = """\
 - IR文書に関する要約・QAは、書かれている事実の整理に徹してください。「株を買うべきか」
   「今が売り時か」等の投資助言(売買判断・価格予想)を求められても、判断そのものは
   行わず、事実の整理に留める旨を答えてください。
+- 「この日の日記を見せて」「先週の水曜どうだった」「今月の日記まとめて」のように過去の日記の
+  内容について尋ねられたら get_diary_range で該当期間を取得してから答えてください。日記の記録
+  自体はチャットからはできません(日記モード中の会話から自動的に記録されます)。
+  get_diary_range が「期間が広すぎる」旨のメッセージを返した場合、範囲を分割して何度も
+  呼び出し直す(全期間を律儀に遡って調べる)のではなく、その旨をそのままユーザーに伝えて
+  期間を絞ってもらってください。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
@@ -677,6 +689,70 @@ def _format_ir_full_text(item: Item, record: IrRecord, full_text: IrFullText) ->
     return f"{header}{truncated_note}\n---\n{full_text.text}"
 
 
+class DiaryDayResult(BaseModel):
+    """get_diary_range の1日分の結果."""
+
+    entry_date: date
+    content: str
+
+
+class DiaryRangeResult(BaseModel):
+    """get_diary_range の戻り値.
+
+    実在する日のみを含む(無い日は含めない、`data-model.md`参照)。
+    """
+
+    entries: list[DiaryDayResult]
+
+
+def _register_diary_read_tools(agent: Agent[ChatDeps, str], diary_repo: DiaryRepository, *, settings: Settings) -> None:
+    """get_diary_range ツールを登録する(019-diary-domain User Story 5).
+
+    書き込み(日記モード中の記録)はチャットのtoolを経由しない(`services/diary.py`のdocstring
+    参照、Decision 1)ため、ここには読み取りtoolのみを登録する。
+
+    「今月」「先週」のような相対的な日付表現をLLMが正しくstart_date/end_dateへ変換できるよう、
+    動的instructionsで「今日の日付」を毎ターン伝える(実機検証で、これが無いと「今月」を
+    別の年月と誤解釈することを確認した)。
+    """
+
+    @agent.instructions
+    def _today_instructions(ctx: RunContext[ChatDeps]) -> str:  # noqa: ARG001
+        today = local_today(settings.daily_summary.timezone)
+        return f"今日の日付は{today}です。get_diary_rangeで相対的な日付表現を解釈する際はこれを基準にしてください。"
+
+    @agent.instructions
+    def _diary_mode_instructions(ctx: RunContext[ChatDeps]) -> str | None:
+        if not ctx.deps.state.diary_mode:
+            return None
+        return (
+            "現在は「日記モード」中です。ユーザーの発言はあなたの応答とは別に、裏側で自動的に"
+            "その日の日記として記録されています(あなたがtoolを呼ぶ必要はありません)。"
+            "「日記として保存されません」のような誤った案内はしないでください。"
+        )
+
+    @agent.tool_plain
+    def get_diary_range(start_date: date, end_date: date) -> DiaryRangeResult | str:
+        """指定期間の日記エントリを返す(単日を見たい場合は start_date と end_date を同じ日にする).
+
+        Args:
+            start_date: 取得したい期間の開始日。
+            end_date: 取得したい期間の終了日(この日を含む)。
+
+        Returns:
+            期間内に実在するエントリの一覧。期間が62日を超える場合は、その旨を伝える
+            日本語メッセージ(範囲を絞るよう促す)。
+
+        """
+        logger.info("tool call: get_diary_range(start_date=%s, end_date=%s)", start_date, end_date)
+        if (end_date - start_date).days > _MAX_DIARY_RANGE_DAYS:
+            return f"指定期間が広すぎます。{_MAX_DIARY_RANGE_DAYS}日以内の範囲を指定してください。"
+        records = diary_repo.list_records_in_range(start_date, end_date)
+        return DiaryRangeResult(
+            entries=[DiaryDayResult(entry_date=r.entry_date, content=r.content) for r in records]
+        )
+
+
 def _register_memory_instructions(agent: Agent[ChatDeps, str]) -> None:
     """想起した長期記憶(017-chat-memory)を動的instructionsとして注入する.
 
@@ -706,8 +782,9 @@ def build_chat_agent(
     news_repo: NewsRepository,
     ir_repo: IrRepository,
     ir_extractor: IrMetadataExtractor,
+    diary_repo: DiaryRepository,
 ) -> Agent[ChatDeps, str]:
-    """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODO/ニュース/IRリポジトリ依存からチャットエージェントを組み立てる."""
+    """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODO/ニュース/IR/日記リポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
     # web_fetch はpydantic-ai同梱のツール(SSRF対策済みhttps取得+markdown変換)。
     # 具体的なURLの内容を尋ねられたとき、web_searchで近似せず直接読ませるために使う
@@ -728,4 +805,5 @@ def build_chat_agent(
     _register_web_search_tools(agent, settings=settings)
     _register_news_tools(agent, news_repo)
     _register_ir_tools(agent, ir_repo, settings=settings, ir_extractor=ir_extractor)
+    _register_diary_read_tools(agent, diary_repo, settings=settings)
     return agent

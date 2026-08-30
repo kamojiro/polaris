@@ -47,7 +47,7 @@ class DiaryEvent(SQLModel, table=True):
 `domain/entities.py`の`MemoryEvent`と同じ形。`theme: str`が`entry_date: date`に置き換わる点のみ異なる
 (グルーピングキーがテーマではなく日付、`spec.draft.md`の背景・判断で既に決定済み)。
 
-## Repository: `DiaryRepository`(新規、`db/diary_repository.py`)
+## Repository: `DiaryRepository`(`db/diary_repository.py`、拡張)
 
 `MemoryRepository`/`DailySummaryRepository`と同じ「メソッドごとにSessionを開く」パターン。
 
@@ -62,7 +62,73 @@ class DiaryRepository:
     def upsert_record(self, item: Item, record: DiaryRecord) -> None:
         """entry_dateでupsertする(MemoryRepository.upsert_themeと同じ考え方、
         1日目はItem+DiaryRecordを新規作成、2回目以降はcontent/updated_atのみ更新)."""
+
+    # User Story 5(research.md Decision 8): 期間指定の読み取り
+    def list_records_in_range(self, start_date: date, end_date: date) -> list[DiaryRecord]:
+        """entry_date BETWEEN start_date AND end_dateのDiaryRecordをentry_date昇順で返す."""
+
+    # User Story 6(research.md Decision 9): 執筆中パネル用
+    def get_latest_updated_record(self) -> DiaryRecord | None:
+        """updated_at降順の先頭(アンカー)を返す(無ければNone)."""
+
+    def list_records_before(self, entry_date: date, *, limit: int) -> list[DiaryRecord]:
+        """entry_date未満のDiaryRecordをentry_date降順でlimit件返す(アンカーの前後文脈用)."""
 ```
+
+### `record_diary_turn`の拡張(User Story 4、`services/diary.py`)
+
+```python
+async def record_diary_turn(
+    user_text: str,
+    assistant_text: str,
+    *,
+    turn_id: str,
+    rewriter: DiaryRewriter,
+    repo: DiaryRepository,
+    settings: Settings,
+    target_date: date | None = None,  # 追加: DiaryDateInferrerが推定した過去日(推定できなければNone)
+) -> None:
+    """target_dateが指定されればそのentry_dateを、Noneならlocal_today()を対象にする.
+    それ以外のロジック(DiaryEvent追記→当日の全イベントをrewrite→upsert)は変更なし。"""
+```
+
+### 日付推定エージェント `DiaryDateInferrer`(User Story 4、`agent/diary_date_infer.py`、新規)
+
+`agent/memory_extract.py`の構造化抽出パターン(reasoning無効化)と同型。呼び出し元は`services/diary.py`
+ではなく`api/app.py::_record_diary_task`(`record_diary_turn`を呼ぶ前段、`research.md` Decision 7)。
+
+```python
+class DateInferenceResult(BaseModel):
+    target_date: date | None  # 推定できなければNone(当日のエントリを対象にする)
+
+class DiaryDateInferrer(Protocol):
+    async def infer(self, *, user_text: str, assistant_text: str, today: date) -> DateInferenceResult: ...
+
+def build_diary_date_infer_agent(settings: Settings) -> Agent[None, DateInferenceResult]: ...
+
+class AgentDiaryDateInferrer:
+    async def infer(self, *, user_text: str, assistant_text: str, today: date) -> DateInferenceResult: ...
+```
+
+### 読み取りtool `get_diary_range`(User Story 5、`chat_agent.py`)
+
+```python
+class DiaryDayResult(BaseModel):
+    entry_date: date
+    content: str
+
+class DiaryRangeResult(BaseModel):
+    entries: list[DiaryDayResult]  # 実在する日だけ、無い日は含めない
+
+@agent.tool_plain
+def get_diary_range(start_date: date, end_date: date) -> DiaryRangeResult | str:
+    """指定期間の日記エントリを返す(単日はstart_date == end_date)。
+    (end_date - start_date).days > 62 の場合は期間を絞るよう促す文字列を返す(research.md Decision 8)。
+    """
+```
+
+`get_paper_full_text`と同じ「全文をコンテキストに渡す」toolのため、`src/polaris/services/history_trim.py`の
+`FULL_TEXT_TOOL_NAMES`に`"get_diary_range"`を追加する(ADR-0012対応)。
 
 ## 状態遷移(AG-UI state)
 

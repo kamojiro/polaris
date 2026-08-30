@@ -108,7 +108,7 @@ description: "Task list template for feature implementation"
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 6: Polish & Cross-Cutting Concerns (v1)
 
 **Purpose**: 全体の整合性確認とドキュメント更新
 
@@ -120,20 +120,125 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 7: User Story 4 - 過去日を指定して日記を書く(バックフィル) (Priority: P4)
+
+**Goal**: 日記モード中の発話から過去の日付が推定できれば、当日ではなくその日のエントリが更新される
+
+**Independent Test**: `quickstart.md`シナリオ4(過去日を示唆する発話→該当日のエントリが更新される)
+
+### Tests for User Story 4
+
+- [X] T025 [P] [US4] `tests/services/test_diary.py`に、フェイクの`DiaryDateInferrer`が過去日を返した場合に
+  `record_diary_turn`がその日付の`DiaryRecord`を更新し、当日のエントリは作られないことを検証するテストを追加する
+- [X] T026 [P] [US4] 同ファイルに、フェイクが`None`を返した場合(推定できない)は`local_today()`が
+  使われることを検証するテストを追加する(既存テストが暗黙にこれを検証していなければ追加)
+
+### Implementation for User Story 4
+
+- [X] T027 [P] [US4] `src/polaris/agent/diary_date_infer.py`を新規作成し、`DiaryDateInferrer`(Protocol)+
+  `DateInferenceResult`+`build_diary_date_infer_agent`+`AgentDiaryDateInferrer`を実装する
+  (`agent/extract_metadata.py`と同じ構造化抽出パターン、reasoning無効化。`data-model.md`参照)
+- [X] T028 [US4] `src/polaris/services/diary.py`の`record_diary_turn`に`target_date: date | None = None`
+  引数を追加する。指定されればその日付を、`None`なら既存どおり`local_today()`を対象にする(T025・T026・T027に依存)
+- [X] T029 [US4] `src/polaris/api/app.py`に`_diary_date_inferrer`の構築を追加し、`_record_diary_task`内で
+  `record_diary_turn`を呼ぶ前に`DiaryDateInferrer.infer(...)`を呼んで`target_date`を渡すよう配線する(T028に依存)
+
+**Checkpoint**: 過去日を示唆する発話が正しく該当日のエントリに反映される、という機能がこの時点で単独動作する
+
+---
+
+## Phase 8: User Story 5 - 期間を指定して日記を読み返す (Priority: P5)
+
+**Goal**: チャットで単日・複数日の日記エントリの内容をもとに回答が得られる
+
+**Independent Test**: `quickstart.md`シナリオ5(単日・期間の問い合わせ、62日超のガード)
+
+### Tests for User Story 5
+
+- [X] T030 [P] [US5] `tests/db/test_diary_repository.py`に`list_records_in_range`(範囲内のみ返す、
+  境界値を含む)のテストを追加する
+
+### Implementation for User Story 5
+
+- [X] T031 [US5] `src/polaris/db/diary_repository.py`に`list_records_in_range(start_date, end_date)`
+  を実装する(`data-model.md`参照、T030に依存)
+- [X] T032 [US5] `src/polaris/agent/chat_agent.py`に`get_diary_range(start_date, end_date)`tool
+  (`tool_plain`)を追加する。62日を超える場合は例外を投げず案内文字列を返す(`contracts/diary-read-write.md`参照、T031に依存)。`_INSTRUCTIONS`に「日記の内容について聞かれたらget_diary_rangeを使う」旨の
+  1文を追加する
+- [X] T033 [US5] `src/polaris/services/history_trim.py`の`FULL_TEXT_TOOL_NAMES`に`"get_diary_range"`を
+  追加する(ADR-0012対応、`research.md` Decision 8)
+
+**Checkpoint**: チャットで日記を読み返せる、という機能がこの時点で単独動作する
+
+---
+
+## Phase 9: User Story 6 - 執筆中の日記をその場で確認できる (Priority: P6)
+
+**Goal**: 日記モードでメッセージを送ると、直近の更新内容を反映したパネルが画面に表示される
+
+**Independent Test**: `quickstart.md`シナリオ6(表示トリガー、アンカーの強調、折りたたみ)
+
+### Implementation for User Story 6
+
+- [X] T034 [P] [US6] `src/polaris/db/diary_repository.py`に`get_latest_updated_record()`と
+  `list_records_before(entry_date, *, limit)`を実装する(`data-model.md`参照)
+- [X] T035 [US6] `src/polaris/api/app.py`に`GET /api/diary/recent?count=3`を追加する。T034の2メソッドを
+  使い、アンカー1件+前後`count - 1`件を返す(`contracts/diary-read-write.md`参照、T034に依存)
+- [X] T036 [US6] `frontend/src/useChatAgent.ts`に、日記モードでのターン完了後に`/api/diary/recent`を
+  叩き直すロジックを追加する(既存の使用量表示等と同じ「ターン完了後に再取得」パターン、T035に依存)
+- [X] T037 [US6] `frontend/src/App.tsx`に執筆中パネル(直近3日、アンカーを強調、折りたたみトグル)を
+  追加する。表示トリガーは「日記モード中に最初のメッセージ送信後」(モードONの瞬間には出さない、T036に依存)
+- [X] T038 [P] [US6] `frontend/src/styles.css`にパネル用CSSを追加する
+
+**Checkpoint**: 全User Story(P1〜P6)が独立に動作確認できる状態になる
+
+---
+
+## Phase 10: Polish & Cross-Cutting Concerns (User Story 4-6追加分)
+
+- [X] T039 `uv run nox`(fix/typecheck/cspell/test)を実行し、クリーンであることを確認する
+- [X] T040 `cd frontend && npx tsc -b`を実行し、型チェックが通ることを確認する
+- [X] T041 `quickstart.md`のシナリオ4〜6+回帰確認(シナリオ1〜3が壊れていないこと)を実機で確認する。
+  実機検証で以下4件の実バグを発見し、その場で修正・再検証まで完了させた(詳細は`research.md`の
+  各Decisionの「実装時の訂正」参照):
+  - `agent/diary_date_infer.py`が`date`型を`TYPE_CHECKING`配下でしかimportしておらず、
+    Pydanticがランタイムでスキーマを構築できず**サーバー起動時にクラッシュ**していた
+    (`--reload`のたびに再クラッシュし、`/api/health`すら無応答になっていた)
+  - `_record_diary_task`をfire-and-forgetのままにしていたため、執筆中パネルの再取得が
+    DB書き込み完了前に走るレースコンディションがあった → `on_complete`内で直接`await`する方式に変更
+  - `get_diary_range`がメインのチャットエージェントの「今日の日付」を知らず、「今月」を別の
+    年月と誤解釈していた → `_today_instructions`を追加
+  - 62日超過時、モデルが案内に従わず31日ずつに分割して律儀に遡り続け約30回toolを呼んでいた
+    → `_INSTRUCTIONS`に「分割して呼び直さない」旨を追記
+  - 日記モード中の雑談で、メインのチャットエージェントが自分が日記モード中と知らず
+    「日記として保存されません」という誤った案内をしていた(データ自体は正しく記録されていた)
+    → `_diary_mode_instructions`を追加
+- [X] T042 [P] `specs/019-diary-domain/spec.md`/`spec.draft.md`に、User Story 4-6の実装状況を追記する
+- [X] T043 [P] `specs/README.md`の019行の備考を更新する(User Story 4-6が実装されたことを反映)
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
 
 - **Setup (Phase 1)**: 依存なし、即着手可能
 - **Foundational (Phase 2)**: Setup完了後。全User Storyをブロックする
-- **User Stories (Phase 3-5)**: Foundational完了後に着手可能。優先順位どおり P1→P2→P3 の順で進めるのが推奨(P2はP1の実装に依存する内容の検証が中心、P3はP1で作った最小トグルの上にUIを足すため)
-- **Polish (Phase 6)**: 実施したいUser Storyがすべて完了した後
+- **User Stories 1-3 (Phase 3-5)**: Foundational完了後に着手可能。優先順位どおり P1→P2→P3 の順で進めるのが推奨(P2はP1の実装に依存する内容の検証が中心、P3はP1で作った最小トグルの上にUIを足すため)
+- **Polish v1 (Phase 6)**: User Story 1-3完了後
+- **User Story 4 (Phase 7)**: User Story 1の実装(`record_diary_turn`/`_record_diary_task`)に依存
+- **User Story 5 (Phase 8)**: Foundational完了後に着手可能。User Story 1-4への依存なし(読み取り専用の追加機能)
+- **User Story 6 (Phase 9)**: User Story 4(バックフィル時のアンカー挙動を正しく扱うため)に依存
+- **Polish 追加分 (Phase 10)**: User Story 4-6のうち実施したいものがすべて完了した後
 
 ### User Story Dependencies
 
 - **User Story 1 (P1)**: Foundational完了後に着手可能。他Storyへの依存なし
 - **User Story 2 (P2)**: Foundational完了後に着手可能だが、実質的にはUser Story 1(T011)の実装を前提に検証するテスト中心の内容のため、P1の後に行うのが自然
 - **User Story 3 (P3)**: Foundational完了後に着手可能。P1のT014(最小トグル)を土台にUIを拡張するため、P1の後に行うのが自然
+- **User Story 4 (P4)**: User Story 1の`record_diary_turn`/`_record_diary_task`を拡張するため、P1完了後
+- **User Story 5 (P5)**: 読み取り専用の独立機能。Foundational完了後ならP1〜P4と並行して進められる
+- **User Story 6 (P6)**: アンカーロジック(`updated_at`降順)がUser Story 4のバックフィルと整合する必要があるため、P4の後に行うのが自然
 
 ### Parallel Opportunities
 
@@ -142,6 +247,11 @@ description: "Task list template for feature implementation"
 - T015([P]付きUS2テスト)はT008系のテストファイルと同じファイルへの追記のため、T008完了後に着手する(逐次)
 - T019([P]付きUS3のCSS)はT018と異なるファイルのため並行実行可能
 - T023・T024(Polishのドキュメント更新)は互いに異なるファイルのため並行実行可能
+- T025・T026([P]付きUS4テスト、同じファイルへの追記だが独立した検証観点)・T027([P]付き新規エージェント)は並行実行可能
+- T030([P]付きUS5テスト)はUser Story 1-4の完了を待たずに着手可能(読み取り専用の独立機能)
+- T034([P]付きUS6のリポジトリメソッド追加)は他のUser Story実装と異なるメソッドのため並行実行可能
+- T038([P]付きUS6のCSS)はT037と異なるファイルのため並行実行可能
+- T042・T043(Polish追加分のドキュメント更新)は互いに異なるファイルのため並行実行可能
 
 ---
 
@@ -170,7 +280,11 @@ Task: "src/polaris/agent/chat_agent.py の PaperModeState を ChatUIState に改
 2. User Story 1 → 単独検証 → MVP
 3. User Story 2 → 単独検証(1日1エントリの保証)
 4. User Story 3 → 単独検証(UI表示)
-5. Polish → 全体のnox/quickstart確認、ドキュメント更新
+5. Polish(v1) → 全体のnox/quickstart確認、ドキュメント更新(ここまでが2026-08-30実装完了分)
+6. User Story 4 → 単独検証(バックフィル)
+7. User Story 5 → 単独検証(期間読み返し、User Story 1-4と並行しても可)
+8. User Story 6 → 単独検証(執筆中パネル、User Story 4完了後)
+9. Polish(追加分) → 全体のnox/quickstart確認、ドキュメント更新
 
 ---
 

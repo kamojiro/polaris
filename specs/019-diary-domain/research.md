@@ -109,10 +109,112 @@ rewriteに渡しているのと同じ理由で、その日のログ全件を毎�
 「複数の会話断片を自然な日記文章にまとめる」という017のrewriteと同種の作業のため、同じ判断基準が
 そのまま当てはまる。
 
+## Decision 7: バックフィルの日付推定は専用の軽量エージェント(`DiaryDateInferrer`)が担う
+
+**Decision**: `record_diary_turn`に`target_date: date | None`引数を追加する点はそのまま(`data-model.md`
+参照)が、その値を作る主体は**メインのチャットエージェントではなく**、新規の軽量エージェント
+`DiaryDateInferrer`(`agent/diary_date_infer.py`)にする。`api/app.py::_record_diary_task`が
+`record_diary_turn`を呼ぶ前に`DiaryDateInferrer.infer(user_text, assistant_text, today=local_today(...))`
+を呼び、構造化出力`{ target_date: date | None }`を得て、それをそのまま`record_diary_turn`へ渡す。
+推定できなければ`None`(=`record_diary_turn`側で`local_today()`にフォールバック)。専用の日付パーサー・
+確認UIは作らない(`spec.md` Assumptions)。
+
+**Rationale**: 当初「メインのチャットLLMが推定して渡す」という書き方をしていたが、日記の記録処理は
+Decision 1のとおりtool呼び出しではなく`on_complete`側のバックグラウンド処理であり、メインの
+チャットエージェントの出力(ユーザーへの応答文)から構造化された日付情報を安全に取り出す経路が
+無い。017の`MemoryExtractor`(会話ターンを見て構造化出力を返す軽量エージェント)と同じパターンを
+踏襲し、「日記モード中の全ターンについて、まず日付推定の軽量LLM呼び出しを挟む」設計にする。
+`agent/extract_metadata.py`系と同じくreasoningは無効化した構造化抽出タスクとして扱う(単純な
+分類・抽出であり、023のような複数ドメイン横断の総合判断ではないため)。「今日」の日付
+(`local_today()`)を入力に含めることで、「先週の水曜」のような相対表現を絶対日付に解決できる
+ようにする。
+
+**Alternatives considered**:
+- 専用の日付抽出ステップ自体を設けず正規表現でパースする案は、「先週の水曜」のような相対表現の
+  解釈精度が低く不採用(当初案、Decision 1の設計を見落としていたための誤り)
+- メインのチャットエージェントに`target_date`を明示させる案(例: 応答メッセージに埋め込む、または
+  新規tool経由)も検討したが、前者はユーザー向け応答文に構造化データを混ぜる不自然な設計になり、
+  後者はDecision 1で明示的に避けた「日記記録をtool呼び出し依存にする」設計に逆戻りするため不採用
+
+## Decision 8: 読み取りtoolは`get_diary_range(start_date, end_date)`1本に統合
+
+**Decision**: 単日・期間どちらの読み取りも`get_diary_range(start_date: date, end_date: date)`という
+単一のtoolで扱う(単日は`start_date == end_date`)。`get_diary_by_date`/`get_diary_month`のような
+複数toolへの分割は採らない。読み取り元は`DiaryRecord`テーブルへの`entry_date BETWEEN`範囲クエリの
+みとし、月次markdownファイルのようなものは経由しない(v1で採用しなかったファイル層をここでも
+導入しない、Decision 2と一貫)。期間の上限は62日とし、超える場合はLLMに範囲を絞るよう伝えて弾く。
+
+**Rationale**: toolを2本に分けても「1日だけ見る」は「期間が1日の特殊形」でしかなく、実質的な処理は
+共通(範囲クエリ)になる。1本にまとめる方がtool定義・呼び出し判断のどちらもシンプル。月境界を
+またぐ範囲(7月末〜8月頭等)でも、DBの日付インデックスによる範囲クエリなら複数ファイルを
+またいでスライスする実装が要らない。62日という上限は`get_paper_full_text`と同種の「全文を
+コンテキストに渡す」toolである以上、広すぎる範囲によるコンテキスト肥大化(`specs/IDEAS.md`に
+記録した問題と同じ轍)を避けるための最低限のガード。
+
+**Alternatives considered**: `get_diary_by_date`(単日)と`get_diary_month`(月単位)への分割は、
+月境界をまたぐ質問(「先週」が月をまたぐ場合等)を素直に扱えず、結局範囲クエリのロジックを
+どちらのtoolにも持たせる二度手間になるため不採用。
+
+**ADR-0012との関係**: `get_diary_range`は`get_paper_full_text`と同じ「全文をコンテキストに渡す」
+性質のtoolのため、`docs/adr/0012-trim-stale-tool-results-from-history.md`の
+`FULL_TEXT_TOOL_NAMES`(`src/polaris/services/history_trim.py`)にツール名を追加する。書き込み系
+(`record_diary_turn`)には手を加えない。
+
+**実装時の訂正(2026-08-30)**: 実機検証で「今月の日記をまとめて教えて」と尋ねたところ、
+`get_diary_range(start_date=2026-01-01, end_date=2026-01-27)`のように**別の年月**(2026年1月)
+として解釈されるバグを確認した。原因は、メインのチャットエージェントに「今日の日付」を伝える
+仕組みがどこにも無く、「今月」「先週」のような相対表現をLLMが正しく絶対日付へ変換できなかった
+ため。`_register_diary_read_tools`に`@agent.instructions`の動的instructions(`_today_instructions`、
+`local_today()`を使う)を追加し、毎ターン「今日の日付」を伝えるようにして解消した。
+
+さらに、62日超過ガード(FR-011)自体は正しく機能していたが、「2025年1月1日から今日までの日記を
+全部見せて」のような極端な期間を尋ねると、モデルが案内メッセージに従ってユーザーに絞り込みを
+促す代わりに、31日ずつの範囲へ自律的に分割して20ヶ月分を律儀に遡り続け、約30回`get_diary_range`を
+呼び出す(実測、$0.01強)という非効率な挙動を確認した。結果自体は正しかった(実在する記録のみを
+正しく報告した)が、実用上は避けたい。`_INSTRUCTIONS`に「期間超過のメッセージを受け取ったら
+分割して呼び直すのではなく、その旨をユーザーに伝えて期間を絞ってもらう」旨を追記して対処した。
+
+もう1点、日記モード中に日記モードとは無関係な発言(「今日は掃除をした」)をした際、データ自体は
+正しく記録される(バックグラウンド処理は`deps.state.diary_mode`をチェックするだけでメインの
+チャットエージェントを経由しない)一方、メインのチャットエージェントは自分が「日記モード中」で
+あることを一切知らないため、「日記として保存されません」という**誤った案内文**をユーザーに
+返してしまう不整合を確認した(データは正しいが、応答テキストが紛らわしい)。`_paper_mode_instructions`
+(015)と同じパターンで`_diary_mode_instructions`を追加し、`deps.state.diary_mode`が`True`の間は
+「現在日記モード中で、発言は裏側で自動記録されている」旨を動的instructionsとして伝えることで解消した。
+
+## Decision 9: 執筆中パネルはDBの`updated_at`降順クエリで、専用エンドポイント`GET /api/diary/recent`を新設
+
+**Decision**: パネル表示用に軽量な読み取り専用エンドポイント`GET /api/diary/recent?count=3`を追加する。
+実装は「`DiaryRecord`を`updated_at`降順で1件(アンカー)取得 → `entry_date < アンカー`を`entry_date`
+降順で`count - 1`件取得」という2段クエリ。日付計算(`アンカー日 - 1日`等)は行わない。
+
+**Rationale**: アンカーを「今日」固定にすると、バックフィル(Decision 7)で過去日を書いた直後に
+パネルへ反映されない(今日のエントリが変わっていないため)。`updated_at`降順の1件を素直にアンカーに
+すれば「今まさに書いている(=直前に更新された)日」を常に正しく指せる。バックフィルで飛び石の
+日付になっていても、`entry_date <アンカー`を降順LIMITで取るだけで「直前に存在する日」を自然に
+拾えるため、日付計算ロジックを別途持つ必要がない。既存の`GET /api/daily-summary/latest`と同じ
+「読み取り専用の軽量エンドポイント」パターンを踏襲する。
+
+**Rationale(表示トリガー)**: `diary_mode`をONにした瞬間ではなく、日記モード中に最初のメッセージを
+送信しターンが完了した後にパネルを表示する。モードに入っただけの時点では当日分がまだ存在せず、
+空の枠を見せることになって座りが悪い。モード切替時専用の初期フェッチを別に用意する必要も無い。
+
+**実装時の訂正(2026-08-30)**: 当初「使用量表示等と同じ、ターン完了後に再取得する仕組みにそのまま
+乗る」と書いたが、これは誤りだった。使用量イベント(`_emit_usage_event`)はストリーム自体の中で
+`yield`されるため、ストリーム完了時点で値が確定している。しかし日記の記録(`_record_diary_task`)は
+`services/memory.py`の`_extract_memory_task`と同じ`asyncio.create_task`によるfire-and-forgetで
+設計しており、ストリーム完了(=フロントの`fetchDiaryRecent()`発火)を待たずに完了する保証が無い。
+実機検証で、パネルが1ターン古い内容を表示するレースコンディションとして実際に顕在化した。対応として、
+日記の記録処理(`_record_diary_task`)に限り`asyncio.create_task`ではなく`on_complete`内で直接
+`await`し、DB書き込みを完了させてからストリームを終える設計に変更した(`api/app.py`参照)。
+017の記憶抽出(`_extract_memory_task`)は即座の鮮度を要求するUIが無いため、fire-and-forgetのまま
+変更していない。
+
+**Alternatives considered**: AG-UI stateに「今アクティブな日付」を明示的に持たせ、チャット側から
+フロントへ伝える案も検討したが、バックフィルにより「今書いている日」が発話ターンごとに変わりうる
+ため、状態同期のタイミング調整が複雑になる。`updated_at`降順クエリなら、ターン完了後に同じ
+エンドポイントを叩き直すだけで常に正しいアンカーが取れるため、この複雑さを回避できる。
+
 ## 未解決のまま残す事項(実装時に決定)
 
-- `local_today(tz_name)`ヘルパーの正確な配置場所(`services/daily_summary.py`から共通化するか、
-  `services/diary.py`に置くか)
-- `ChatUIState`への改名の正確な移行手順(1コミットで全箇所を変更するか、段階的にやるか)
-- 日記エントリの`Item.title`/`Item.summary`の具体的な生成規則(例: `f"{date}の日記"`固定か、
-  rewriter出力から一部を流用するか)
+(v1実装時点の未解決事項はすべて実装時に解消済み。User Story 4-6追加分の未解決事項も実装時に解消: `GET /api/diary/recent`は`entry_date`昇順の配列+末尾がアンカーという形に決定、`get_diary_range`の62日超過時は日本語の案内メッセージ文字列を返す形に決定)

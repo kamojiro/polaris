@@ -71,3 +71,30 @@ class DiaryRepository:
                     existing_item.summary = item.summary
                     session.add(existing_item)
             session.commit()
+
+    def list_records_in_range(self, start_date: date, end_date: date) -> list[DiaryRecord]:
+        """`entry_date`が`[start_date, end_date]`(両端含む)に入るDiaryRecordをentry_date昇順で返す(User Story 5)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(DiaryRecord)
+                .where(DiaryRecord.entry_date >= start_date, DiaryRecord.entry_date <= end_date)  # type: ignore[operator]
+                .order_by(DiaryRecord.entry_date.asc())  # type: ignore[union-attr]
+            )
+            return list(session.exec(query).all())
+
+    def get_latest_updated_record(self) -> DiaryRecord | None:
+        """`updated_at`降順の先頭(直近で書かれたエントリ)を返す(無ければNone、User Story 6のアンカー)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = select(DiaryRecord).order_by(DiaryRecord.updated_at.desc())  # type: ignore[union-attr]
+            return session.exec(query).first()
+
+    def list_records_before(self, entry_date: date, *, limit: int) -> list[DiaryRecord]:
+        """`entry_date`未満のDiaryRecordをentry_date降順で`limit`件返す(User Story 6のアンカー前後文脈)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(DiaryRecord)
+                .where(DiaryRecord.entry_date < entry_date)  # type: ignore[operator]
+                .order_by(DiaryRecord.entry_date.desc())  # type: ignore[union-attr]
+                .limit(limit)
+            )
+            return list(session.exec(query).all())

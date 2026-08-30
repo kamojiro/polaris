@@ -3,6 +3,7 @@ import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { DailySummaryBanner } from "./DailySummaryBanner";
+import { DiaryPanel } from "./DiaryPanel";
 import { IrList, type IrListResult } from "./IrList";
 import { NewsList, type NewsListResult } from "./NewsList";
 import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
@@ -131,6 +132,7 @@ export default function App() {
     uiState,
     exitPaperMode,
     toggleDiaryMode,
+    diaryEntries,
   } = useChatAgent();
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -293,6 +295,8 @@ export default function App() {
             )}
           </div>
         )}
+
+        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
 
         <form className="composer" onSubmit={handleSubmit}>
           <input
