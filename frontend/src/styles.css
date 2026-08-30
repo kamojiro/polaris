@@ -26,7 +26,9 @@ body {
   flex: 1;
   max-width: 840px;
   min-width: 0;
-  min-height: 100vh;
+  /* .app-layout の上下padding(1.5rem×2)を差し引き、ページ全体の高さが
+     ちょうど100vhに収まるようにする(差し引かないと常に縦スクロールが出てしまう)。 */
+  min-height: calc(100vh - 3rem);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
