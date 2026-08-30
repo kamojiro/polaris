@@ -26,5 +26,9 @@ frontend/*.tsbuildinfo
 # Playwright MCP のスクリーンショット・ログ(動作確認用の一時ファイル)
 .playwright-mcp/
 
+# Claude Code のエージェントフォルダ(認証情報・セッション固有の実行時状態を含みうる。
+# GitHub Spec Kit導入時の警告に従いgit管理外にする)
+.claude/
+
 # macOS
 .DS_Store
