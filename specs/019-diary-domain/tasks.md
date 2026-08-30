@@ -30,7 +30,7 @@ description: "Task list template for feature implementation"
 
 **Purpose**: 新規依存関係・新規プロジェクト初期化は無し(既存リポジトリへの機能追加のみ)。
 
-- [ ] T001 `data-model.md`と`research.md`を読み直し、実装前提を最終確認する(新規ライブラリ追加・lint設定変更は無いことの確認のみ)
+- [X] T001 `data-model.md`と`research.md`を読み直し、実装前提を最終確認する(新規ライブラリ追加・lint設定変更は無いことの確認のみ)
 
 ---
 
@@ -40,12 +40,12 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: このフェーズ完了までUser Story実装は開始しない
 
-- [ ] T002 `src/polaris/domain/entities.py`に`ItemType.diary`、`DiaryRecord`、`DiaryEvent`を追加する(`data-model.md`のエンティティ定義どおり)
-- [ ] T003 `src/polaris/db/diary_repository.py`を新規作成し、`DiaryRepository`(`append_event`/`list_events`/`get_record`/`upsert_record`)を実装する(T002に依存、`db/memory_repository.py`と同じ「メソッドごとにSessionを開く」パターン)
-- [ ] T004 [P] `src/polaris/services/daily_summary.py`に`local_today(tz_name: str) -> date`ヘルパーを追加する(既存の`local_day_bounds_utc`から日付部分だけを取り出す形、`research.md` Decision 5)
-- [ ] T005 [P] `src/polaris/agent/chat_agent.py`の`PaperModeState`を`ChatUIState`に改名し、`diary_mode: bool = False`フィールドを追加する。`ChatDeps.state`の型注釈、`_register_paper_qa_tools`内の参照箇所も追従させる(`research.md` Decision 4)
-- [ ] T006 `frontend/src/useChatAgent.ts`の`PaperModeState`インターフェースを`ChatUIState`に改名し、`diary_mode: boolean`フィールドを追加する(T005に対応するフロント側の型、`contracts/state.md`参照)
-- [ ] T007 `frontend/src/App.tsx`内の`PaperModeState`型参照を`ChatUIState`に追従させる(挙動変更なし、コンパイルが通ることを確認)
+- [X] T002 `src/polaris/domain/entities.py`に`ItemType.diary`、`DiaryRecord`、`DiaryEvent`を追加する(`data-model.md`のエンティティ定義どおり)
+- [X] T003 `src/polaris/db/diary_repository.py`を新規作成し、`DiaryRepository`(`append_event`/`list_events`/`get_record`/`upsert_record`)を実装する(T002に依存、`db/memory_repository.py`と同じ「メソッドごとにSessionを開く」パターン)
+- [X] T004 [P] `src/polaris/services/daily_summary.py`に`local_today(tz_name: str) -> date`ヘルパーを追加する(既存の`local_day_bounds_utc`から日付部分だけを取り出す形、`research.md` Decision 5)
+- [X] T005 [P] `src/polaris/agent/chat_agent.py`の`PaperModeState`を`ChatUIState`に改名し、`diary_mode: bool = False`フィールドを追加する。`ChatDeps.state`の型注釈、`_register_paper_qa_tools`内の参照箇所も追従させる(`research.md` Decision 4)
+- [X] T006 `frontend/src/useChatAgent.ts`の`PaperModeState`インターフェースを`ChatUIState`に改名し、`diary_mode: boolean`フィールドを追加する(T005に対応するフロント側の型、`contracts/state.md`参照)
+- [X] T007 `frontend/src/App.tsx`内の`PaperModeState`型参照を`ChatUIState`に追従させる(挙動変更なし、コンパイルが通ることを確認)
 
 **Checkpoint**: ここまで完了すれば、各User Storyの実装を開始できる
 
@@ -59,16 +59,16 @@ description: "Task list template for feature implementation"
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] `tests/db/test_diary_repository.py`を新規作成し、`append_event`/`list_events`/`upsert_record`(新規作成)のテストを書く
-- [ ] T009 [P] [US1] `tests/services/test_diary.py`を新規作成し、フェイクの`DiaryRewriter`+実DBで「日記モード中の1ターンでエントリが作成される」ことを検証するテストを書く(`tests/services/test_memory.py`と同型)
+- [X] T008 [P] [US1] `tests/db/test_diary_repository.py`を新規作成し、`append_event`/`list_events`/`upsert_record`(新規作成)のテストを書く
+- [X] T009 [P] [US1] `tests/services/test_diary.py`を新規作成し、フェイクの`DiaryRewriter`+実DBで「日記モード中の1ターンでエントリが作成される」ことを検証するテストを書く(`tests/services/test_memory.py`と同型)
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] `src/polaris/agent/diary_rewrite.py`を新規作成し、`DiaryRewriter`(Protocol)+`build_diary_rewrite_agent`+`AgentDiaryRewriter`を実装する(`agent/memory_extract.py`のrewrite半分と同型、`build_model(settings)`でメインモデルを使う。`research.md` Decision 6)
-- [ ] T011 [US1] `src/polaris/services/diary.py`を新規作成し、`record_diary_turn(user_text, assistant_text, *, turn_id, rewriter, repo, settings)`を実装する。`DiaryEvent`追記→当日の全イベントを`rewriter`に渡してrewrite→`DiaryRecord`をupsert、の流れ(T003・T004・T010に依存)
-- [ ] T012 [US1] `src/polaris/api/app.py`に`_diary_repo`/`_diary_rewriter`の構築を追加し、`on_complete`内で`deps.state.diary_mode`が`True`の場合に`_extract_diary_task`(fire-and-forget)を起動する処理を追加する(既存の`_extract_memory_task`と並列、T011に依存)
-- [ ] T013 [US1] `frontend/src/useChatAgent.ts`に`toggleDiaryMode()`(`agent.setState`で`diary_mode`をON/OFFする、`exitPaperMode`と同型)を追加する(T006に依存)
-- [ ] T014 [US1] `frontend/src/App.tsx`の入力欄ツールバーに、日記モードをトグルする最小限のボタンを追加する(見た目の作り込みはUS3で行う。ここではON/OFFが機能することが目的)
+- [X] T010 [P] [US1] `src/polaris/agent/diary_rewrite.py`を新規作成し、`DiaryRewriter`(Protocol)+`build_diary_rewrite_agent`+`AgentDiaryRewriter`を実装する(`agent/memory_extract.py`のrewrite半分と同型、`build_model(settings)`でメインモデルを使う。`research.md` Decision 6)
+- [X] T011 [US1] `src/polaris/services/diary.py`を新規作成し、`record_diary_turn(user_text, assistant_text, *, turn_id, rewriter, repo, settings)`を実装する。`DiaryEvent`追記→当日の全イベントを`rewriter`に渡してrewrite→`DiaryRecord`をupsert、の流れ(T003・T004・T010に依存)
+- [X] T012 [US1] `src/polaris/api/app.py`に`_diary_repo`/`_diary_rewriter`の構築を追加し、`on_complete`内で`deps.state.diary_mode`が`True`の場合に`_extract_diary_task`(fire-and-forget)を起動する処理を追加する(既存の`_extract_memory_task`と並列、T011に依存)
+- [X] T013 [US1] `frontend/src/useChatAgent.ts`に`toggleDiaryMode()`(`agent.setState`で`diary_mode`をON/OFFする、`exitPaperMode`と同型)を追加する(T006に依存)
+- [X] T014 [US1] `frontend/src/App.tsx`の入力欄ツールバーに、日記モードをトグルする最小限のボタンを追加する(見た目の作り込みはUS3で行う。ここではON/OFFが機能することが目的)
 
 **Checkpoint**: 日記モードで会話するとその日のエントリが作られる、という中核機能がこの時点で単独動作する
 
@@ -82,12 +82,12 @@ description: "Task list template for feature implementation"
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] `tests/db/test_diary_repository.py`に、同じ`entry_date`で`upsert_record`を複数回呼んでも行が増えないことを検証するテストを追加する
-- [ ] T016 [US2] `tests/services/test_diary.py`に、同じ日に`record_diary_turn`を複数回(間に他の会話を挟んでも)呼んだ結果、`DiaryRecord`が1件のまま`content`に両方のやり取りが反映されることを検証するテストを追加する
+- [X] T015 [P] [US2] `tests/db/test_diary_repository.py`に、同じ`entry_date`で`upsert_record`を複数回呼んでも行が増えないことを検証するテストを追加する
+- [X] T016 [US2] `tests/services/test_diary.py`に、同じ日に`record_diary_turn`を複数回(間に他の会話を挟んでも)呼んだ結果、`DiaryRecord`が1件のまま`content`に両方のやり取りが反映されることを検証するテストを追加する
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] User Story 1の実装(T011の`upsert_record`呼び出し、`entry_date`のunique制約)で本要件が既に満たされているかをT015/T016で確認し、満たされていなければ`services/diary.py`/`db/diary_repository.py`を修正する
+- [X] T017 [US2] User Story 1の実装(T011の`upsert_record`呼び出し、`entry_date`のunique制約)で本要件が既に満たされているかをT015/T016で確認し、満たされていなければ`services/diary.py`/`db/diary_repository.py`を修正する
 
 **Checkpoint**: 1日1エントリの保証が、実装(T011)とテスト(T015/T016)の両面で確認できる
 
@@ -101,8 +101,8 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] `frontend/src/App.tsx`に日記モードのチップ表示(「📔 日記モード」+`×`で終了)を追加する。既存の論文モードバッジ(`paperMode.active_paper`)と同じ箇所に並べて表示し、両方が同時に表示されうることを確認する(T014で作った最小トグルボタンをこのチップ表示と統合してよい)
-- [ ] T019 [P] [US3] `frontend/src/styles.css`に日記モードチップ用のCSSブロックを追加する(既存の`.paper-mode-badge`と近い見た目、色味は区別する)
+- [X] T018 [US3] `frontend/src/App.tsx`に日記モードのチップ表示(「📔 日記モード」+`×`で終了)を追加する。既存の論文モードバッジ(`paperMode.active_paper`)と同じ箇所に並べて表示し、両方が同時に表示されうることを確認する(T014で作った最小トグルボタンをこのチップ表示と統合してよい)
+- [X] T019 [P] [US3] `frontend/src/styles.css`に日記モードチップ用のCSSブロックを追加する(既存の`.paper-mode-badge`と近い見た目、色味は区別する)
 
 **Checkpoint**: 全User Storyが独立に動作確認できる状態になる
 
@@ -112,11 +112,11 @@ description: "Task list template for feature implementation"
 
 **Purpose**: 全体の整合性確認とドキュメント更新
 
-- [ ] T020 `uv run nox`(fix/typecheck/cspell/test)を実行し、クリーンであることを確認する
-- [ ] T021 `cd frontend && npx tsc -b`を実行し、型チェックが通ることを確認する
-- [ ] T022 `quickstart.md`の全シナリオ(1〜3)+回帰確認を実機で確認する
-- [ ] T023 [P] `specs/README.md`の019行のステータスを更新し(実装完了後)、実装順の一覧からも外す(023実装時の更新パターンを踏襲)
-- [ ] T024 [P] `specs/019-diary-domain/spec.md`または`spec.draft.md`に実装状況の追記を行う(023の「実装状況」セクションと同じ形式)
+- [X] T020 `uv run nox`(fix/typecheck/cspell/test)を実行し、クリーンであることを確認する
+- [X] T021 `cd frontend && npx tsc -b`を実行し、型チェックが通ることを確認する
+- [X] T022 `quickstart.md`の全シナリオ(1〜3)+回帰確認を実機で確認する
+- [X] T023 [P] `specs/README.md`の019行のステータスを更新し(実装完了後)、実装順の一覧からも外す(023実装時の更新パターンを踏襲)
+- [X] T024 [P] `specs/019-diary-domain/spec.md`または`spec.draft.md`に実装状況の追記を行う(023の「実装状況」セクションと同じ形式)
 
 ---
 

@@ -21,7 +21,8 @@ from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.embeddings.qwen import QwenEmbedder
-from polaris.agent.chat_agent import ChatDeps, PaperModeState, build_chat_agent
+from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
+from polaris.agent.diary_rewrite import AgentDiaryRewriter, build_diary_rewrite_agent
 from polaris.agent.extract_ir_metadata import AgentIrMetadataExtractor, build_extract_ir_metadata_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
 from polaris.agent.memory_extract import (
@@ -34,12 +35,14 @@ from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall
 from polaris.agent.sidebar_title import AgentSidebarTitler, build_sidebar_title_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.daily_summary_repository import DailySummaryRepository
+from polaris.db.diary_repository import DiaryRepository
 from polaris.db.ir_repository import IrRepository
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.services.diary import record_diary_turn
 from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
 from polaris.services.progress import get_progress_lines
@@ -108,6 +111,7 @@ _memory_repo = MemoryRepository(_engine)  # 017-chat-memory: 同上
 _news_repo = NewsRepository(_engine)  # 008-daily-digest-domain Phase A: 同上
 _daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notification: 同上(読み取り専用)
 _ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
+_diary_repo = DiaryRepository(_engine)  # 019-diary-domain: 同上
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
@@ -116,6 +120,7 @@ _ir_extractor = AgentIrMetadataExtractor(build_extract_ir_metadata_agent(setting
 _memory_recaller = AgentMemoryRecaller(build_memory_recall_agent(settings))
 _memory_extractor = AgentMemoryExtractor(build_memory_extract_agent(settings))
 _memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
+_diary_rewriter = AgentDiaryRewriter(build_diary_rewrite_agent(settings))
 _sidebar_titler = AgentSidebarTitler(build_sidebar_title_agent(settings))
 _agent = build_chat_agent(
     settings,
@@ -404,6 +409,21 @@ async def _extract_memory_task(user_text: str, assistant_text: str, *, turn_id: 
         logger.exception("chat memory extraction failed")
 
 
+async def _record_diary_task(user_text: str, assistant_text: str, *, turn_id: str) -> None:
+    """019-diary-domain の後処理本体(fire-and-forgetで呼ばれる想定、_extract_memory_taskと同型)."""
+    try:
+        await record_diary_turn(
+            user_text,
+            assistant_text,
+            turn_id=turn_id,
+            rewriter=_diary_rewriter,
+            repo=_diary_repo,
+            settings=settings,
+        )
+    except Exception:
+        logger.exception("diary recording failed")
+
+
 @app.post("/api/chat")
 async def chat(request: Request) -> Response:
     """AG-UI プロトコルでチャットエージェントを実行する(ADR-0003の3段パイプライン).
@@ -417,14 +437,15 @@ async def chat(request: Request) -> Response:
 
     後処理(非同期): 論文モード(015拡張)の state 同期・使用量イベントに加えて、
     ADR-0012(古い全文取得ツール結果のトリミング)の `MESSAGES_SNAPSHOT` 送出、
-    017-chat-memory の記憶抽出を `asyncio.create_task` でバックグラウンド実行する
-    (チャット応答をブロックしない)。
+    017-chat-memory の記憶抽出、`deps.state.diary_mode` が `True` の場合は
+    019-diary-domain の日記記録を、それぞれ `asyncio.create_task` でバックグラウンド
+    実行する(チャット応答をブロックしない)。
     """
     body = await request.body()
     run_input = AGUIAdapter.build_run_input(body)
     latest = _latest_user_text(run_input)
 
-    deps = ChatDeps(state=PaperModeState())
+    deps = ChatDeps(state=ChatUIState())
     if latest is not None:
         _, user_text = latest
         deps.recalled_memory = await recall_memory(
@@ -445,5 +466,9 @@ async def chat(request: Request) -> Response:
             task = asyncio.create_task(_extract_memory_task(user_text, result.output, turn_id=turn_id))
             _background_tasks.add(task)
             task.add_done_callback(_background_tasks.discard)
+            if deps.state.diary_mode:
+                diary_task = asyncio.create_task(_record_diary_task(user_text, result.output, turn_id=turn_id))
+                _background_tasks.add(diary_task)
+                diary_task.add_done_callback(_background_tasks.discard)
 
     return await AGUIAdapter.dispatch_request(request, agent=_agent, deps=deps, on_complete=on_complete)

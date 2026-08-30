@@ -36,20 +36,23 @@ interface ProgressResponse {
 }
 
 /**
- * 論文モード(015拡張)の会話状態。バックエンドの `PaperModeState`(chat_agent.py)と
- * フィールド名を揃えている。AG-UI の state 機構(RunAgentInput.state ⇄
- * StateSnapshotEvent)で毎ターン自動的にサーバー↔クライアント間を往復する。
+ * チャットの会話状態(論文モードは015拡張、日記モードは019拡張)。バックエンドの
+ * `ChatUIState`(chat_agent.py)とフィールド名を揃えている。AG-UI の state 機構
+ * (RunAgentInput.state ⇄ StateSnapshotEvent)で毎ターン自動的にサーバー↔クライアント間を
+ * 往復する。`active_paper`(エンティティ紐付き型)と`diary_mode`(姿勢型)は独立したフィールドで、
+ * 両者は排他ではなく共存できる。
  */
 export interface ActivePaper {
   item_id: string;
   title: string;
 }
 
-export interface PaperModeState {
+export interface ChatUIState {
   active_paper: ActivePaper | null;
+  diary_mode: boolean;
 }
 
-const NO_PAPER_MODE: PaperModeState = { active_paper: null };
+const INITIAL_CHAT_UI_STATE: ChatUIState = { active_paper: null, diary_mode: false };
 
 /**
  * 1ターン(agent.run 1回分、内部で複数回のLLMリクエストがあれば合算済み)のトークン使用量・
@@ -114,7 +117,7 @@ export function useChatAgent() {
   const [usageByMessageId, setUsageByMessageId] = useState<Record<string, TurnUsage>>({});
   const [totalUsage, setTotalUsage] = useState<TurnUsage>(ZERO_USAGE);
   const [timingsByMessageId, setTimingsByMessageId] = useState<Record<string, ToolTiming[]>>({});
-  const [paperMode, setPaperMode] = useState<PaperModeState>(NO_PAPER_MODE);
+  const [uiState, setUiState] = useState<ChatUIState>(INITIAL_CHAT_UI_STATE);
 
   useEffect(() => {
     if (!isRunning) {
@@ -189,8 +192,8 @@ export function useChatAgent() {
         // 待つ processApplyEvents の中で同期的に適用される)。onStateSnapshotEvent
         // サブスクライバの state 引数は更新「前」の値を渡す実装だったため使わず、
         // run完了後にここで直接読む。
-        const state = agent.state as Partial<PaperModeState> | undefined;
-        setPaperMode({ active_paper: state?.active_paper ?? null });
+        const state = agent.state as Partial<ChatUIState> | undefined;
+        setUiState({ active_paper: state?.active_paper ?? null, diary_mode: state?.diary_mode ?? false });
       }
     },
     [agent],
@@ -199,8 +202,21 @@ export function useChatAgent() {
   const exitPaperMode = useCallback(() => {
     // LLMのターンを挟まず、クライアント側から即座にstateを書き換える。
     // 次回送信時に RunAgentInput.state として自動的にサーバーへ送られる。
-    agent.setState(NO_PAPER_MODE);
-    setPaperMode(NO_PAPER_MODE);
+    // diary_mode は独立したフィールドなので、論文モードの終了では変更しない(FR-006、両モードは排他ではない)。
+    setUiState((prev) => {
+      const next: ChatUIState = { active_paper: null, diary_mode: prev.diary_mode };
+      agent.setState(next);
+      return next;
+    });
+  }, [agent]);
+
+  const toggleDiaryMode = useCallback(() => {
+    // 論文モードと同じく、LLMのターンを挟まずクライアント側から即座に切り替える(019-diary-domain)。
+    setUiState((prev) => {
+      const next: ChatUIState = { active_paper: prev.active_paper, diary_mode: !prev.diary_mode };
+      agent.setState(next);
+      return next;
+    });
   }, [agent]);
 
   return {
@@ -212,7 +228,8 @@ export function useChatAgent() {
     usageByMessageId,
     totalUsage,
     timingsByMessageId,
-    paperMode,
+    uiState,
     exitPaperMode,
+    toggleDiaryMode,
   };
 }

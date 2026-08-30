@@ -630,6 +630,42 @@ header p {
   padding: 0.15rem 0.4rem;
 }
 
+/* 019-diary-domain: paper-mode-badgeと同じ枠に複数モードを横並びで表示するラッパー */
+.mode-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.mode-chips .paper-mode-badge,
+.mode-chips .diary-mode-badge {
+  margin-top: 0;
+}
+
+/* 日記モード(019拡張): paper-mode-badgeと同型だが、色味は区別する */
+.diary-mode-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.6rem;
+  background: #fde68a;
+  color: #111827;
+  font-size: 0.85rem;
+}
+
+.diary-mode-badge button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+}
+
 .composer {
   display: flex;
   align-items: flex-end;
@@ -675,4 +711,16 @@ header p {
   background: #e5e7eb;
   color: #111827;
   padding: 0.65rem 0.9rem;
+}
+
+/* 019-diary-domain: 日記モードのトグルボタン。OFF時は他のツールボタンと同じトーン、
+   ON時はモードチップ(.diary-mode-badge)と同じアクセントカラーで状態が一目で分かるようにする */
+.composer button.diary-mode-toggle {
+  background: #e5e7eb;
+  color: #111827;
+  padding: 0.65rem 0.9rem;
+}
+
+.composer button.diary-mode-toggle-active {
+  background: #fde68a;
 }

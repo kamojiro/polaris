@@ -24,6 +24,7 @@ class ItemType(StrEnum):
     todo = "todo"
     news_article = "news_article"
     ir_document = "ir_document"
+    diary = "diary"
 
 
 class Item(SQLModel, table=True):
@@ -172,6 +173,40 @@ class IrRecord(SQLModel, table=True):
     submit_datetime: datetime
     pdf_path: str | None = None
     ingested_at: datetime
+
+
+class DiaryRecord(SQLModel, table=True):
+    """日記ドメイン(019-diary-domain)の現在状態層(satellite).
+
+    `Item`ハブを経由する(将来の全文チャット方式での想起に備えた設計、`spec.draft.md`参照)。
+    `content`は`DiaryEvent`ログをもとにLLMが都度書き直すmaterialized view。ファイルではなく
+    DBカラムに留めているのは、v1では想起機能(このファイルを読む消費者)自体が無いため
+    (research.md Decision 2)。
+    """
+
+    __tablename__ = "diary_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True)
+    entry_date: date = Field(index=True, unique=True)  # 1日1エントリ、JST基準
+    content: str
+    updated_at: datetime
+
+
+class DiaryEvent(SQLModel, table=True):
+    """日記ドメインのログ層(019-diary-domain). 追記のみ、削除・編集しない.
+
+    `MemoryEvent`と同型(`theme`が`entry_date`に置き換わる)。日記モード中の会話は
+    「記憶に値するか」の選別を行わず無条件に追記する(017との違い、research.md Decision 3)。
+    """
+
+    __tablename__ = "diary_events"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    entry_date: date = Field(index=True)
+    recorded_at: datetime
+    source_conversation_turn: str  # AG-UIメッセージid(トレーサビリティ用、MemoryEventと同型)
+    raw_text: str  # このターンのuser発言+assistant応答の生テキスト
 
 
 class DailySummaryRecord(SQLModel, table=True):

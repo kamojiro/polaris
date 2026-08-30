@@ -17,7 +17,7 @@ LLMが add_todo の scale 引数をユーザーの自然文から直接選ぶ。
 ツールを再度呼ぶ必要はない。
 
 「論文モード」(015拡張)は、get_paper_full_text が成功すると AG-UI の state
-(PaperModeState.active_paper)に「今読んでいる論文」を記録し、動的instructions
+(ChatUIState.active_paper)に「今読んでいる論文」を記録し、動的instructions
 (_register_paper_qa_tools 内で登録)がそれを見て「曖昧な質問もこの論文への
 質問として解釈してよい」という指示を追加する。会話履歴だけに頼るのではなく、
 明示的な state を LLM への指示とフロントのバッジ表示の両方に使う。
@@ -174,16 +174,21 @@ class ActivePaper(BaseModel):
     title: str
 
 
-class PaperModeState(BaseModel):
-    """AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent で同期する会話状態(015拡張).
+class ChatUIState(BaseModel):
+    """AG-UI の RunAgentInput.state ⇄ StateSnapshotEvent で同期する会話状態(015拡張、019で汎用化).
 
     クライアントは毎ターン `state` をそのまま送り返してくるため、`Agent` の
-    `deps_type=StateDeps[PaperModeState]` で受け取り、`get_paper_full_text` が
+    `deps_type=StateDeps[ChatUIState]` で受け取り、`get_paper_full_text` が
     成功した時点で `active_paper` をセットする。フロント側はこれを見て
     「📄 読書中: (論文タイトル)」のバッジを表示する。
+
+    `diary_mode`(019-diary-domain)は`active_paper`と独立したフィールドで、両者は
+    排他ではなく共存できる(論文について話しながら、その内容を今日の日記にも残せる)。
+    元は`PaperModeState`という名前だったが、論文モード専用ではなくなったため改名した。
     """
 
     active_paper: ActivePaper | None = None
+    diary_mode: bool = False
 
 
 @dataclass
@@ -197,7 +202,7 @@ class ChatDeps:
     `state` ではないため AG-UI 側には一切公開されない(StateSnapshotEventにも乗らない)。
     """
 
-    state: PaperModeState
+    state: ChatUIState
     recalled_memory: str | None = None
 
 

@@ -128,8 +128,9 @@ export default function App() {
     usageByMessageId,
     totalUsage,
     timingsByMessageId,
-    paperMode,
+    uiState,
     exitPaperMode,
+    toggleDiaryMode,
   } = useChatAgent();
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -272,12 +273,24 @@ export default function App() {
         {error !== null && <div className="error">{error}</div>}
         {uploadError !== null && <div className="error">{uploadError}</div>}
 
-        {paperMode.active_paper !== null && (
-          <div className="paper-mode-badge">
-            <span>📄 読書中: {paperMode.active_paper.title}</span>
-            <button type="button" onClick={exitPaperMode} title="論文モードを終了">
-              ✕
-            </button>
+        {(uiState.active_paper !== null || uiState.diary_mode) && (
+          <div className="mode-chips">
+            {uiState.active_paper !== null && (
+              <div className="paper-mode-badge">
+                <span>📄 読書中: {uiState.active_paper.title}</span>
+                <button type="button" onClick={exitPaperMode} title="論文モードを終了">
+                  ✕
+                </button>
+              </div>
+            )}
+            {uiState.diary_mode && (
+              <div className="diary-mode-badge">
+                <span>📔 日記モード</span>
+                <button type="button" onClick={toggleDiaryMode} title="日記モードを終了">
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -306,6 +319,15 @@ export default function App() {
             title="論文一覧を表示"
           >
             📚
+          </button>
+          <button
+            type="button"
+            className={uiState.diary_mode ? "diary-mode-toggle diary-mode-toggle-active" : "diary-mode-toggle"}
+            aria-pressed={uiState.diary_mode}
+            onClick={toggleDiaryMode}
+            title={uiState.diary_mode ? "日記モードを終了" : "日記モードを開始"}
+          >
+            📔
           </button>
           <textarea
             ref={textareaRef}

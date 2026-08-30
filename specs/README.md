@@ -6,7 +6,7 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015のADR-0012対応(会話履歴トリミング)も2026-08-30に実装完了(013の`get_ir_full_text`は対象外のトリミング設計だが、独立に進められたため013と並行実装できた)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・019・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015のADR-0012対応(会話履歴トリミング)も2026-08-30に実装完了(013の`get_ir_full_text`は対象外のトリミング設計だが、独立に進められたため013と並行実装できた)。019はGitHub Spec Kitの正式フロー(`/speckit-specify`〜`/speckit-implement`)で詳細化・実装した最初のspec(2026-08-30)。
 
 1. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
 2. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
@@ -18,11 +18,10 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 8. 010 (mobile-pwa) — 009に依存
 9. 011 (agent-registry)
 10. 012 (local-llm-cutover)
-11. 019 (diary-domain) — 詳細化未着手・優先度も未定。着想メモのみ
-12. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-14. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
-15. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
+11. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+13. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+14. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
 
 ## いつかやるリスト
 
@@ -50,7 +49,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 016 | [paper-structured-parsing](016-paper-structured-parsing/spec.draft.md) | 1 | 💤 スケルトンのみ(着手トリガー待ち) | 015を使ってみて図表QA・引用根拠が本当に必要になったら着手。GROBID/Docling等でのセクション構造化、citation grounding |
 | 017 | [chat-memory](017-chat-memory/spec.draft.md) | - | ✔️ 完了 | チャットからテーマ別に長期記憶を抽出・蓄積する。ログ層(`MemoryEvent`、追記のみ)+現在状態層(`memory/<slug>.md`、書き直し)の二層構造。ADR-0003の3段パイプライン(前処理=想起/メイン/後処理=抽出)を`/api/chat`に実装、`agent.deps_type`を自前の`ChatDeps`(dataclass)に差し替えて論文モードのstateと分離した。テーマ統合・分割・改名(明示指示での見直し)はv1未実装 |
 | 018 | [web-search-tool](018-web-search-tool/spec.draft.md) | - | ✔️ 完了 | 自前ホスト済みのSearXNGに`adapters/searxng/client.py`から直接HTTPで問い合わせる自前adapter方式(MCPは見送り、詳細はspec参照)。`web_search`ツールを常時登録。007/013/017など複数specから使われる横断インフラ |
-| 019 | [diary-domain](019-diary-domain/spec.draft.md) | - | 💤 スケルトンのみ | チャットで会話すると日記がつけられる。017と同じログ層+現在状態層の仕組みをキーが「テーマ」ではなく「日付」の場合として再利用できそうという着想。保存先ディレクトリは`memory/`と分けて`diary/`にする。入力欄のモードチップUI(paper/diary併存、日記はセッション単位トグル)はモックアップで確認済み |
+| 019 | [diary-domain](019-diary-domain/spec.draft.md、[正式spec](019-diary-domain/spec.md)) | - | ✔️ 完了 | チャットの「日記モード」トグルON中の会話を、日付ごとに1エントリへ自動記録する。017と同じログ層(`DiaryEvent`)+現在状態層(`DiaryRecord.content`)の二層構造だが、想起機能が範囲外なため現在状態はファイルでなくDBカラムのみ。`PaperModeState`を`ChatUIState`に汎用化し`diary_mode`を追加(論文モードと共存)。GitHub Spec Kitの正式フローで詳細化・実装した最初のspec |
 | 020 | [google-workspace-integration](020-google-workspace-integration/spec.draft.md) | - | 💤 スケルトンのみ | Google Calendar/Driveとの連携。用途未確定(Calendarは007のリマインド、Driveは文書取り込み元/バックアップ先候補)。公式MCP(Calendar)とコミュニティMCP(Drive候補)が混在しうる |
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |

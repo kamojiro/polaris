@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["DailyActivity", "collect_activity", "generate_daily_summary", "local_day_bounds_utc"]
+__all__ = ["DailyActivity", "collect_activity", "generate_daily_summary", "local_day_bounds_utc", "local_today"]
 
 
 def local_day_bounds_utc(day: date, *, tz_name: str) -> tuple[datetime, datetime]:
@@ -45,6 +45,16 @@ def local_day_bounds_utc(day: date, *, tz_name: str) -> tuple[datetime, datetime
     start_local = datetime.combine(day, time.min, tzinfo=tz)
     end_local = start_local + timedelta(days=1)  # 翌日0時ちょうど(排他的な上限)
     return start_local.astimezone(UTC), end_local.astimezone(UTC)
+
+
+def local_today(tz_name: str) -> date:
+    """指定タイムゾーンでの「今日」の暦日を返す(019-diary-domainが「今日」の判定に再利用する).
+
+    「1日」の区切りが生活時間の区切りであるべきという考え方は`local_day_bounds_utc`と同じ
+    (`research.md` Decision 5)。専用設定を増やさず、この関数の呼び出し側が
+    `settings.daily_summary.timezone`を渡す。
+    """
+    return datetime.now(ZoneInfo(tz_name)).date()
 
 
 class DailyActivity(NamedTuple):
