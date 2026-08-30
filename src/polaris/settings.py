@@ -14,6 +14,15 @@ class LLMSettings(BaseModel):
     api_key: str = ""
     base_url: str = "https://openrouter.ai/api/v1"
     model_id: str = "qwen/qwen3-30b-a3b:free"
+    # 実測(2026-08-30、specs/IDEAS.md記録の「toolのstreaming時ハング」不具合の原因調査)により、
+    # OpenRouter上でqwen/qwen3.6-35b-a3bを配信する`AkashML`プロバイダが、tool呼び出しの引数
+    # ストリーミング開始直後に生成を停止する不具合を高頻度(生SSEの直接検証で6回中4回)で
+    # 起こすと確認した。OpenRouterのゲートウェイはこれをエラーにせず`: OPENROUTER PROCESSING`の
+    # キープアライブコメントを送り続けるため、httpxの読み取りタイムアウトはリセットされ続け、
+    # 何もしなければクライアント側は無期限にハングする(pydantic-ai/自前コードのバグではない)。
+    # OpenRouterのprovider routing機能で当該プロバイダを除外することで解消する(除外後は
+    # 8回中8回とも1〜4秒でクリーンに完了、別プロバイダ`Parasail`に固定でルーティングされた)。
+    openrouter_ignore_providers: list[str] = ["AkashML"]
 
 
 class IngestSettings(BaseModel):
