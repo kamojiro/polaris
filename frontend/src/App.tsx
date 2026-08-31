@@ -77,25 +77,61 @@ function formatTimingsLine(timings: ToolTiming[]): string {
   return timings.map((t) => `${t.tool_name} ${t.duration_seconds.toFixed(1)}s`).join(" / ");
 }
 
+/**
+ * `navigator.clipboard`はセキュアコンテキスト(HTTPSまたはlocalhost)でのみ使える。
+ * `vite.config.ts`の`server.host: true`はLAN上の別デバイス(スマホ等)からのアクセスを
+ * 意図的に許可しており、その経路は平文HTTPになるため`navigator.clipboard`が
+ * 存在しない(コピーボタンを押しても何も起きないように見える不具合の原因、2026-08-31)。
+ * 非セキュアコンテキストでも動く`document.execCommand("copy")`(非推奨だが後方互換用に
+ * 現行ブラウザもまだ実装している)にフォールバックする。
+ */
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // セキュアコンテキストでも権限拒否等で失敗しうるため、フォールバックへ続行する。
+    }
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let succeeded = false;
+  try {
+    succeeded = document.execCommand("copy");
+  } catch {
+    succeeded = false;
+  }
+  document.body.removeChild(textarea);
+  return succeeded;
+}
+
 function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const succeeded = await copyText(text);
+    setState(succeeded ? "copied" : "failed");
+    setTimeout(() => setState("idle"), 1500);
   };
 
+  const label = state === "copied" ? "コピーしました" : state === "failed" ? "コピーに失敗しました" : "メッセージをコピー";
+
   return (
-    <button
-      type="button"
-      className="copy-button"
-      onClick={() => void handleCopy()}
-      aria-label={copied ? "コピーしました" : "メッセージをコピー"}
-    >
-      {copied ? (
+    <button type="button" className="copy-button" onClick={() => void handleCopy()} aria-label={label} title={label}>
+      {state === "copied" ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : state === "failed" ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
       ) : (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
