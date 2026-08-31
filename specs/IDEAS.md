@@ -4,7 +4,11 @@
 
 ## 既知の不具合(未対応)
 
-(現在なし。「toolのstreaming時ハング」は2026-08-30に原因判明・対応済み、下記「解決済みの不具合」参照)
+- **AG-UIの`TEXT_MESSAGE_CONTENT`イベントで"No active text message found"エラー**(2026-08-31発見、未再現・未解決): 通常のチャット中(日記モード等の特定モードではない)に、フロント(`@ag-ui/client`の`HttpAgent`)が`Cannot send 'TEXT_MESSAGE_CONTENT' event: No active text message found with ID '<uuid>'. Start a text message with 'TEXT_MESSAGE_START' first.`というエラーを出したという報告。これは`@ag-ui/client`側のプロトコル整合性チェック(`TEXT_MESSAGE_START`で開始していないメッセージIDへの`TEXT_MESSAGE_CONTENT`を拒否する)で、サーバー側(`pydantic_ai.ui.ag_ui._event_stream.AGUIEventStream`、`.venv`内のライブラリコード、Polaris自前のコードではない)が送るイベント列の順序不整合が原因と見られる。
+
+  `AGUIEventStream.before_response()`は「後続のモデル応答のpartが以前の応答のpartに紐付かないように」という理由(pydantic-ai issue #3316参照とコード内コメントにあり)で、ModelResponseが切り替わるたびに`new_message_id()`でメッセージIDをリセットしている。1ターン内でtool呼び出し→最終テキストのように複数のModelResponseにまたがる場合や、ストリーム再試行が絡む場合に、クライアント側が既に閉じた(またはまだ開始していない)メッセージIDへ`CONTENT`が送られる余地がありそうだが、詳細な発生条件はまだ特定できていない。
+
+  調査時点でのメモ: (a) 発生時は日記モードではなく通常のチャット中だったとの報告、(b) 同日実施した`ADR-0013`のchat_agent.py分割(`_INSTRUCTIONS`文字列のハッシュ一致を確認済み、ストリーミング経路自体は無変更)や日記rewriter修正はこの経路に触れていないため無関係と考えられる、(c) ライブブラウザでTODO一覧・論文一覧・日記モード切り替えを試したが再現しなかった。再発時は送信した具体的なメッセージ内容・直前のtool呼び出しの有無(あれば何のtool)をメモしてもらえると原因切り分けの手がかりになる。
 
 ## 解決済みの不具合
 
