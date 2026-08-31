@@ -256,6 +256,17 @@ openrouter_reasoning={"max_tokens": 3000})`を追加し、`build_chat_agent`の`
 `openrouter_reasoning={"enabled": False}`で完全無効化しているため、この上限設定と競合しない
 (それぞれ別のAgentインスタンス・別のmodel_settingsを持つため)。
 
+**実装時の訂正(2026-08-31、同日中)**: 当初`max_tokens=8000`/`openrouter_reasoning.max_tokens=3000`
+で運用したところ、「大阪のつけ麺店を表形式で詳しく比較して」のような**正当に長い応答が必要な
+質問**で同じ`"Model token limit (8000) exceeded before any response was generated"`エラーに
+実機で遭遇した。原因は、`openrouter_reasoning.max_tokens`がAnthropicの`budget_tokens`のような
+厳密なハード上限ではなく、OpenRouter経由のオープンウェイトモデル(Qwen系)に対しては
+プロバイダ側の実装依存のソフトな目安に留まること(reasoningだけで設定値を超えて消費することが
+実測で確認できた)。外側の`max_tokens`(真のハード上限)を`32000`、
+`openrouter_reasoning.max_tokens`を`4000`に引き上げ、正当な長文応答が余裕を持って収まるようにした。
+「対応手段の無い要求への迷走」というDecision 10の根本原因は既にtool提供で解消済みのため、
+この上限は暴走時の歯止めとして機能しつつ、日常的な長文応答を妨げない値まで緩めるのが妥当と判断した。
+
 ## Decision 12: `set_diary_mode`呼び出しターン自体が日記内容として記録される不具合の修正(2026-08-31追加)
 
 **Decision**: Decision 10で`set_diary_mode`を追加した直後の実機検証で、「日記モードになって」という

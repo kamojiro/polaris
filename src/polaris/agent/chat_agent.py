@@ -52,9 +52,16 @@ _INSTRUCTIONS = (
 # exceeded before any response was generated" という応答すら生成されないエラーになることを
 # 実機検証で確認した(2026-08-31、set_diary_modeツール追加のきっかけになった不具合)。
 # reasoning自体は複雑な判断に必要なため無効化せず、予算に上限だけ設けて歯止めをかける。
+#
+# 実装時の訂正(2026-08-31): 当初max_tokens=8000/reasoning.max_tokens=3000で運用したが、
+# 「日記の期間まとめ」「詳細な説明」のような正当に長い応答が必要なターンで同じエラーに
+# 実機で遭遇した。`openrouter_reasoning.max_tokens`はAnthropicのbudget_tokensのような
+# 厳密なハード上限ではなく、OpenRouter経由のオープンウェイトモデルに対しては
+# ソフトな目安に留まる(実測でreasoningだけで上限近くまで使うことがある)ため、外側の
+# `max_tokens`(真のハード上限)を、正当な長文応答が十分収まる値まで引き上げて対応した。
 _CHAT_MODEL_SETTINGS = OpenRouterModelSettings(
-    max_tokens=8000,
-    openrouter_reasoning={"max_tokens": 3000},
+    max_tokens=32000,
+    openrouter_reasoning={"max_tokens": 4000},
 )
 
 
