@@ -2,7 +2,7 @@
 
 ## ステータス
 
-採択
+採択・実装済み(2026-08-31)
 
 ## コンテキスト
 
@@ -15,16 +15,28 @@
 `chat_agent.py`を、ドメインごとのtool登録ファイルに分割する。
 
 ```
+agent/chat_state.py        — ChatDeps/ChatUIState/ActivePaper(下記「実装時の訂正」参照)
 agent/tools/paper.py       — save_paper/list_papers (002/014)
-agent/tools/paper_qa.py    — get_paper_full_text/exit_paper_mode、PaperModeState (015)
+agent/tools/paper_qa.py    — get_paper_full_text/exit_paper_mode、ActivePaper (015)
 agent/tools/todo.py        — add_todo/list_todos/update_todo/complete_todo/delete_todo (007)
 agent/tools/web_search.py  — web_search (018)
 agent/tools/news.py        — list_news (008)
 agent/tools/memory.py      — 記憶の動的instructions注入 (017)
-agent/chat_agent.py        — ChatDepsの定義 + 上記を集めてbuild_chat_agent()を組み立てるだけの薄い役割
+agent/tools/ir.py          — save_ir_document/get_ir_full_text/list_ir_documents (013)
+agent/tools/diary.py       — get_diary_range/set_diary_mode (019)
+agent/chat_agent.py        — 上記を集めてbuild_chat_agent()を組み立てるだけの薄い役割(ChatDeps/ChatUIStateはchat_state.pyから再エクスポート)
 ```
 
-各ファイルは自分のドメイン分の`_INSTRUCTIONS`断片も持ち、`build_chat_agent()`が結合して1つのinstructionsを組み立てる(LLMに渡る最終的な内容・実行時のエージェント構成は変えない、ファイル分割のみ)。
+各ファイルは自分のドメイン分の`_INSTRUCTIONS`断片(モジュール定数`INSTRUCTIONS`)も持ち、`build_chat_agent()`が結合して1つのinstructionsを組み立てる(LLMに渡る最終的な内容・実行時のエージェント構成は変えない、ファイル分割のみ)。
+
+### 実装時の訂正(2026-08-31実装)
+
+当初案は「013(IR)・019(diary)は対象外、`ChatDeps`は`chat_agent.py`が定義」だったが、実装時に2点訂正した。
+
+1. **対象ドメインに013・019を追加**: ADR起票後に013(IR)・019(diary)が実装され、`chat_agent.py`はコンテキストに書いた585行から860行まで育っていた。分割の動機(見通しの改善)はこの2ドメインにも当然当てはまるため、`agent/tools/ir.py`・`agent/tools/diary.py`も追加した。
+2. **`ChatDeps`/`ChatUIState`/`ActivePaper`は`chat_agent.py`ではなく専用の`agent/chat_state.py`に定義**: 当初案通り`chat_agent.py`に置くと循環importになる。`agent/tools/paper_qa.py`(`get_paper_full_text`)・`agent/tools/diary.py`(`set_diary_mode`)・`agent/tools/memory.py`(`_memory_instructions`)は`RunContext[ChatDeps]`を引数に取る`@agent.tool`/`@agent.instructions`関数を持ち、pydantic-aiが登録時に`get_type_hints`でシグネチャを実行時解決するため`ChatDeps`の実importが必要(`from __future__ import annotations`下でもTYPE_CHECKINGブロックに退避すると`NameError`になる、019の`diary_date_infer.py`で踏んだのと同種のバグ)。`chat_agent.py`がChatDepsを定義しつつ各`agent/tools/*.py`のtool登録関数もimportする構成だと、`agent/tools/*.py`側が`ChatDeps`を`chat_agent.py`から逆import する形になり循環する。そのため`ChatDeps`/`ChatUIState`/`ActivePaper`だけを依存の無い`chat_state.py`に切り出し、`chat_agent.py`・`agent/tools/*.py`の両方がそこから一方向にimportする形にした。外部からの参照(`api/app.py`の`from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent`)は`chat_agent.py`が再エクスポートすることで変更不要にした。
+
+分割前後でLLMに渡る最終的な`_INSTRUCTIONS`文字列がバイト単位で完全に一致することをハッシュ比較で確認済み(振る舞いのリグレッションが無いことの機械的な裏付け)。
 
 ## 検討した代替案
 
