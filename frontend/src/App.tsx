@@ -302,8 +302,6 @@ export default function App() {
           </div>
         )}
 
-        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
-
         <form className="composer" onSubmit={handleSubmit}>
           <input
             ref={fileInputRef}
@@ -363,7 +361,8 @@ export default function App() {
         </form>
       </div>
 
-      <Sidebar>
+      <Sidebar wide={uiState.diary_mode}>
+        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
         <NewsSidebar onSelect={handleSelectSidebarNews} />
       </Sidebar>
     </div>
