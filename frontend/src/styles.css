@@ -682,7 +682,7 @@ header p {
 
 /* 執筆中の日記パネル(019拡張 User Story 6)。.diary-mode-badgeと同系色でまとめる */
 .diary-panel {
-  margin-bottom: 0.75rem;
+  margin-top: 0.75rem;
   border-radius: 0.6rem;
   border: 1px solid #fde68a;
   overflow: hidden;

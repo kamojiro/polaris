@@ -362,8 +362,8 @@ export default function App() {
       </div>
 
       <Sidebar wide={uiState.diary_mode}>
-        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
         <NewsSidebar onSelect={handleSelectSidebarNews} />
+        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
       </Sidebar>
     </div>
   );
