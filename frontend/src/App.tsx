@@ -144,6 +144,12 @@ export default function App() {
   // compositionstart/compositionend でも独自に追跡して二重にガードする。
   const isComposingRef = useRef(false);
 
+  const handleToggleDiaryMode = () => {
+    toggleDiaryMode();
+    // トグル直後にそのままメッセージを打ち始められるよう、入力欄へフォーカスを移す。
+    textareaRef.current?.focus();
+  };
+
   const submit = () => {
     const text = input.trim();
     if (text === "" || isRunning) {
@@ -288,7 +294,7 @@ export default function App() {
             {uiState.diary_mode && (
               <div className="diary-mode-badge">
                 <span>📔 日記モード</span>
-                <button type="button" onClick={toggleDiaryMode} title="日記モードを終了">
+                <button type="button" onClick={handleToggleDiaryMode} title="日記モードを終了">
                   ✕
                 </button>
               </div>
@@ -328,7 +334,7 @@ export default function App() {
             type="button"
             className={uiState.diary_mode ? "diary-mode-toggle diary-mode-toggle-active" : "diary-mode-toggle"}
             aria-pressed={uiState.diary_mode}
-            onClick={toggleDiaryMode}
+            onClick={handleToggleDiaryMode}
             title={uiState.diary_mode ? "日記モードを終了" : "日記モードを開始"}
           >
             📔
