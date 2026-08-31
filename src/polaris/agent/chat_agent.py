@@ -48,6 +48,7 @@ import httpx
 from pydantic import BaseModel
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.common_tools.web_fetch import web_fetch_tool
+from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 # TodoScale は tool 関数の引数の型注釈として使われ、pydantic-ai が実行時に
 # シグネチャからスキーマを組み立てる(`from __future__ import annotations` で
@@ -149,14 +150,29 @@ _INSTRUCTIONS = """\
   「今が売り時か」等の投資助言(売買判断・価格予想)を求められても、判断そのものは
   行わず、事実の整理に留める旨を答えてください。
 - 「この日の日記を見せて」「先週の水曜どうだった」「今月の日記まとめて」のように過去の日記の
-  内容について尋ねられたら get_diary_range で該当期間を取得してから答えてください。日記の記録
-  自体はチャットからはできません(日記モード中の会話から自動的に記録されます)。
+  内容について尋ねられたら get_diary_range で該当期間を取得してから答えてください。
   get_diary_range が「期間が広すぎる」旨のメッセージを返した場合、範囲を分割して何度も
   呼び出し直す(全期間を律儀に遡って調べる)のではなく、その旨をそのままユーザーに伝えて
   期間を絞ってもらってください。
+- 「日記モードになって」「日記つけたい」のように言われたら set_diary_mode(enabled=True) を
+  呼んでください。確認は不要です。「日記モード終了」「日記モードから抜けて」のように言われたら
+  set_diary_mode(enabled=False) を呼んでください。日記モード中の会話内容自体は、あなたが
+  何もしなくても裏側で自動的にその日の日記として記録されます(記録用の別toolはありません)。
 - 回答はツールの結果だけを根拠にし、推測で情報を補わないでください。
 - 日本語で簡潔に答えてください。
 """
+
+# メインのチャットエージェントは(他の構造化抽出系エージェントと違い)reasoningを無効化しない
+# ままにしているが、上限を設けないと「対応手段の無い要求」に対してモデルが延々と思考し続け、
+# 1ターンの完了トークン予算(OpenRouterのprovider default、明示しないとルーティング先の
+# プロバイダごとに変動しうる)をreasoningだけで使い切り、"Model token limit (provider default)
+# exceeded before any response was generated" という応答すら生成されないエラーになることを
+# 実機検証で確認した(2026-08-31、set_diary_modeツール追加のきっかけになった不具合)。
+# reasoning自体は複雑な判断に必要なため無効化せず、予算に上限だけ設けて歯止めをかける。
+_CHAT_MODEL_SETTINGS = OpenRouterModelSettings(
+    max_tokens=8000,
+    openrouter_reasoning={"max_tokens": 3000},
+)
 
 
 class PaperSummary(BaseModel):
@@ -706,10 +722,18 @@ class DiaryRangeResult(BaseModel):
 
 
 def _register_diary_read_tools(agent: Agent[ChatDeps, str], diary_repo: DiaryRepository, *, settings: Settings) -> None:
-    """get_diary_range ツールを登録する(019-diary-domain User Story 5).
+    """get_diary_range・set_diary_mode ツールを登録する(019-diary-domain User Story 5、実運用フィードバックでの拡張).
 
-    書き込み(日記モード中の記録)はチャットのtoolを経由しない(`services/diary.py`のdocstring
-    参照、Decision 1)ため、ここには読み取りtoolのみを登録する。
+    日記モード中の記録自体(`record_diary_turn`)はチャットのtoolを経由しない(`services/diary.py`の
+    docstring参照、Decision 1)。しかしモードのON/OFF自体は、当初UIのトグルボタン専用としていたが、
+    チャットからも切り替えたいという要望があり、`exit_paper_mode`と同じ「state変更専用tool」
+    パターンで`set_diary_mode`を追加した。日記モードには論文モードのような「対象を特定する」
+    概念が無い(ON/OFFの2値のみ)ため、論文モードのtool群とは統合せず独立したtoolにする。
+
+    実機検証で、日記モードをチャットで切り替えられない設計だと、モデルが対応方法に迷い続けて
+    reasoning_tokensを大量消費し、`max_tokens`超過エラー("Model token limit (provider
+    default) exceeded")の一因になることを確認した。tool化するとその場でtool呼び出しに
+    短絡できるため、この問題も合わせて緩和される(`_CHAT_MODEL_SETTINGS`の上限設定と併用)。
 
     「今月」「先週」のような相対的な日付表現をLLMが正しくstart_date/end_dateへ変換できるよう、
     動的instructionsで「今日の日付」を毎ターン伝える(実機検証で、これが無いと「今月」を
@@ -752,6 +776,27 @@ def _register_diary_read_tools(agent: Agent[ChatDeps, str], diary_repo: DiaryRep
             entries=[DiaryDayResult(entry_date=r.entry_date, content=r.content) for r in records]
         )
 
+    @agent.tool
+    def set_diary_mode(ctx: RunContext[ChatDeps], enabled: bool) -> str:
+        """日記モードを開始/終了する(019-diary-domain).
+
+        日記モード中の会話内容は、あなたがtoolを呼ばなくても裏側で自動的にその日の日記として
+        記録される(このtoolはON/OFFの切り替えのみ担う)。
+
+        Args:
+            ctx: 実行コンテキスト(diary_modeのstateを保持)。
+            enabled: Trueで日記モードを開始、Falseで終了。
+
+        Returns:
+            結果を表す短い日本語メッセージ。
+
+        """
+        logger.info("tool call: set_diary_mode(enabled=%s)", enabled)
+        ctx.deps.state.diary_mode = enabled
+        if enabled:
+            return "日記モードを開始しました。今日あったことを話してください。"
+        return "日記モードを終了しました。"
+
 
 def _register_memory_instructions(agent: Agent[ChatDeps, str]) -> None:
     """想起した長期記憶(017-chat-memory)を動的instructionsとして注入する.
@@ -789,7 +834,13 @@ def build_chat_agent(
     # web_fetch はpydantic-ai同梱のツール(SSRF対策済みhttps取得+markdown変換)。
     # 具体的なURLの内容を尋ねられたとき、web_searchで近似せず直接読ませるために使う
     # (008拡張のニュースサイドバー「クリックで詳しく教えて」導線での実運用から着想)。
-    agent = Agent(model, deps_type=ChatDeps, instructions=_INSTRUCTIONS, tools=[web_fetch_tool()])
+    agent = Agent(
+        model,
+        deps_type=ChatDeps,
+        instructions=_INSTRUCTIONS,
+        tools=[web_fetch_tool()],
+        model_settings=_CHAT_MODEL_SETTINGS,
+    )
     _register_memory_instructions(agent)
     _register_paper_tools(
         agent,

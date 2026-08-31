@@ -215,6 +215,47 @@ Decision 1のとおりtool呼び出しではなく`on_complete`側のバック�
 ため、状態同期のタイミング調整が複雑になる。`updated_at`降順クエリなら、ターン完了後に同じ
 エンドポイントを叩き直すだけで常に正しいアンカーが取れるため、この複雑さを回避できる。
 
+## Decision 10: 日記モードのON/OFFをチャットからも切り替えられるようにする(`set_diary_mode`、2026-08-31追加)
+
+**Decision**: 当初、日記モードのON/OFFはUIのトグルボタン専用とし、チャットのtoolでは制御できない
+設計にしていた(v1〜User Story 6時点)。実運用フィードバックで、「日記モードになって」のように
+チャットで切り替えたいという要望が確認できたため、`exit_paper_mode`と同じ「state変更専用tool」
+パターンで`set_diary_mode(enabled: bool)`を追加した(`chat_agent.py`)。日記モードには論文モードの
+ような「対象を特定する」概念が無い(ON/OFFの2値のみ)ため、論文モードのtool群とは統合しない
+独立したtoolにする(将来複数モードを1つのtoolに統合する案も検討したが、モードごとに必要な引数の
+形が異なりすぎるため見送った)。
+
+**Rationale(副次的な不具合の解消)**: 実機検証で、日記モードを制御する手段がモデルに一切無い状態で
+「日記モードになって」と言われると、モデルが対応方法に迷い続けてreasoningトークンを大量消費し
+(実測: 3177トークン)、1ターンの完了トークン予算(OpenRouterのprovider default)をreasoningだけで
+使い切って"Model token limit (provider default) exceeded before any response was generated"
+というエラーになる不具合の一因になっていることを確認した。加えて、対応手段が無いのにモデルが
+「日記モードに入りました」と**実際にはstateを変えていないのに変えたかのような虚偽の確認**を
+返す不具合も確認した。`set_diary_mode`を追加してモデルに実際の対応手段を与えたところ、同じ会話を
+再現実験したら reasoning_tokens が 3177→132、1616→303 まで減少し(`_CHAT_MODEL_SETTINGS`の
+上限設定と合わせた効果)、確認応答も実際のstate変更を伴う正しいものになった。
+
+**Alternatives considered**: 「モードはUIのボタンでのみ変更できる」とシステムプロンプトに明記し、
+チャットからの切り替え要求には案内で応えるだけに留める案も検討した(reasoning消費は多少減らせる)。
+しかし実際にチャットから切り替えたいというユーザー要望があったため、案内だけで終わらせず実際に
+機能させる方を選んだ。
+
+## Decision 11: メインのチャットエージェントに完了トークン予算の上限を設ける(`_CHAT_MODEL_SETTINGS`、2026-08-31追加)
+
+**Decision**: `agent/chat_agent.py`に`_CHAT_MODEL_SETTINGS = OpenRouterModelSettings(max_tokens=8000,
+openrouter_reasoning={"max_tokens": 3000})`を追加し、`build_chat_agent`の`Agent(...)`に
+`model_settings=`として渡す。reasoning自体は無効化しない(メインエージェントは複雑な判断が
+必要なため意図的にreasoning有効のまま、`agent/memory_extract.py`等の構造化抽出系とは違う)。
+
+**Rationale**: Decision 10の不具合(対応手段の無い要求への迷走)は「モデルへの手段の提供」で
+大きく緩和できたが、根本的には「reasoning予算・完了予算がOpenRouterのprovider default(明示しない
+限りルーティング先プロバイダごとに変動しうる)に無制限に委ねられている」こと自体がリスクである
+ため、上限を明示して安全網とする。`OpenRouterReasoning`は`effort`(OpenAI形式)と`max_tokens`
+(Anthropic形式)が排他(`pydantic_ai/models/openrouter.py`のdocstring参照)なので、今回は
+`max_tokens`形式を選んだ。他の補助エージェント(`agent/memory_extract.py`等)は既に
+`openrouter_reasoning={"enabled": False}`で完全無効化しているため、この上限設定と競合しない
+(それぞれ別のAgentインスタンス・別のmodel_settingsを持つため)。
+
 ## 未解決のまま残す事項(実装時に決定)
 
 (v1実装時点の未解決事項はすべて実装時に解消済み。User Story 4-6追加分の未解決事項も実装時に解消: `GET /api/diary/recent`は`entry_date`昇順の配列+末尾がアンカーという形に決定、`get_diary_range`の62日超過時は日本語の案内メッセージ文字列を返す形に決定)
