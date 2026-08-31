@@ -102,3 +102,19 @@ def cspell(session: Session) -> None:
 def test(session: Session) -> None:
     """Run tests with Pytest."""
     session.run("pytest", *_targets(session))
+
+
+@session(
+    venv_backend="uv",
+    python=PYTHON_VERSIONS,
+    uv_groups=["dev"],
+    tags=["llm"],  # "ci" タグを持たないため `uv run nox`(オプション無し)では実行されない
+)
+def test_llm(session: Session) -> None:
+    """`llm`マーカーの付いたテスト(実LLM呼び出しを伴う)を実行する.
+
+    コストと非決定性があるため通常の `uv run nox` には含めない。明示的に
+    `uv run nox -s test_llm` で実行する(`pyproject.toml`の`addopts = "-m 'not llm'"`を
+    `-m llm`で上書きする)。
+    """
+    session.run("pytest", "-m", "llm", *_targets(session))

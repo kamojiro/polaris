@@ -96,3 +96,7 @@ skip-magic-trailing-comma = false
 [tool.pytest.ini_options]
 testpaths = ["tests", "src"]
 asyncio_mode = "auto"
+addopts = "-m 'not llm'"
+markers = [
+    "llm: 実LLM呼び出しを伴うテスト(コスト・非決定性があるため既定では除外。`uv run nox -s test_llm`で明示実行)",
+]

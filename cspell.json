@@ -2,6 +2,7 @@
   "version": "0.2",
   "language": "en",
   "words": [
+    "addopts",
     "agui",
     "aidan",
     "Akash",
@@ -79,6 +80,7 @@
     "pypdf",
     "pyright",
     "pytest",
+    "pytestmark",
     "qiita",
     "qwen",
     "racey",
