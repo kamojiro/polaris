@@ -38,6 +38,7 @@ from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_
 from polaris.db.daily_summary_repository import DailySummaryRepository
 from polaris.db.diary_repository import DiaryRepository
 from polaris.db.ir_repository import IrRepository
+from polaris.db.memory_housekeeping_repository import MemoryHousekeepingRepository
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
 from polaris.db.repository import PaperRepository
@@ -114,6 +115,7 @@ _news_repo = NewsRepository(_engine)  # 008-daily-digest-domain Phase A: 同上
 _daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notification: 同上(読み取り専用)
 _ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
 _diary_repo = DiaryRepository(_engine)  # 019-diary-domain: 同上
+_memory_housekeeping_repo = MemoryHousekeepingRepository(_engine)  # 024-memory-theme-housekeeping: 同上(読み取り専用)
 # Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
 _embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
@@ -282,6 +284,42 @@ def daily_summary_latest() -> DailySummaryResponse | None:
         return None
     return DailySummaryResponse(
         summary_date=record.summary_date, content=record.content, generated_at=record.generated_at
+    )
+
+
+class HousekeepingSuggestionResponse(BaseModel):
+    """記憶テーマの整理候補1件(024-memory-theme-housekeeping)."""
+
+    suggestion_type: str
+    target_themes: list[str]
+    detail: str
+
+
+class MemoryHousekeepingResponse(BaseModel):
+    """最新バッチの整理候補一式(024-memory-theme-housekeeping)."""
+
+    generated_at: datetime
+    suggestions: list[HousekeepingSuggestionResponse]
+
+
+@app.get("/api/memory-housekeeping/latest")
+def memory_housekeeping_latest() -> MemoryHousekeepingResponse | None:
+    """最新バッチの記憶テーマ整理候補を返す(候補0件、または未実行なら`null`).
+
+    生成はここでは行わない(CLI専用、cron駆動)。既読管理はフロント側のlocalStorageで行う
+    (`generated_at`を最終既読値と比較する、023の日次サマリーと同じ方式、spec確定事項).
+    """
+    suggestions = _memory_housekeeping_repo.list_latest()
+    if not suggestions:
+        return None
+    return MemoryHousekeepingResponse(
+        generated_at=suggestions[0].generated_at,
+        suggestions=[
+            HousekeepingSuggestionResponse(
+                suggestion_type=s.suggestion_type, target_themes=s.target_themes.split(","), detail=s.detail
+            )
+            for s in suggestions
+        ],
     )
 
 

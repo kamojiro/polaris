@@ -6,22 +6,21 @@ specにするほど固まっていない思いつきは[IDEAS.md](IDEAS.md)に�
 
 ## 実装順
 
-`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・019・023は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015のADR-0012対応(会話履歴トリミング)も2026-08-30に実装完了(013の`get_ir_full_text`は対象外のトリミング設計だが、独立に進められたため013と並行実装できた)。019はGitHub Spec Kitの正式フロー(`/speckit-specify`〜`/speckit-implement`)で詳細化・実装した最初のspec(2026-08-30)。011のADR-0013対応(`chat_agent.py`のドメイン別分割)も2026-08-31に実装完了(011本体の固定チーム型マルチエージェント化は引き続き保留)。
+`#`(採番順)とは別に、実際に着手する順番はこちら。フェーズ内は上から順に、依存関係も考慮済み。003・007・013・014・015・017・018・019・023・024は完了済みのため対象外(003/015の追加提案3件も2026-08-26に実装完了)。008もPhase Aが完了済み(Phase Bのみ009待ちで残る)。015のADR-0012対応(会話履歴トリミング)も2026-08-30に実装完了(013の`get_ir_full_text`は対象外のトリミング設計だが、独立に進められたため013と並行実装できた)。019・024はGitHub Spec Kitの正式フロー(`/speckit-specify`〜`/speckit-implement`)で詳細化・実装したspec(019: 2026-08-30、024: 2026-09-02)。011のADR-0013対応(`chat_agent.py`のドメイン別分割)も2026-08-31に実装完了(011本体の固定チーム型マルチエージェント化は引き続き保留)。
 
-1. 024 (memory-theme-housekeeping) — 詳細化未着手・優先度も未定。023のパターンを再利用する着想メモ
-2. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
-3. ~~004 (citation-relations)~~ — 見送り
-4. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
-5. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
-6. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
-7. 009 (dashboard) — 008 Phase B・010の依存元
-8. 010 (mobile-pwa) — 009に依存
-9. 011 (agent-registry) — 固定チーム型マルチエージェント化本体。ADR-0013のファイル分割とは別、引き続き着手トリガー待ち
-10. 012 (local-llm-cutover)
-11. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-12. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
-13. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
-14. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
+1. 025 (ir-tracking-expansion) — 詳細化未着手・優先度も未定。013への追加。Stage 1(既存追跡企業の新規開示チェック)は詳細化済み
+2. ~~004 (citation-relations)~~ — 見送り
+3. ~~005 (eval-harness)~~ — いつかやるリストへ(下記参照)
+4. 006 (chatlog-backfill) — 005に依存するため005が動くまで自動的に後回し
+5. 016 (paper-structured-parsing) — 015を使ってみて図表QA・引用根拠が必要になったら着手(スケルトンのみ、着手トリガー待ち)
+6. 009 (dashboard) — 008 Phase B・010の依存元
+7. 010 (mobile-pwa) — 009に依存
+8. 011 (agent-registry) — 固定チーム型マルチエージェント化本体。ADR-0013のファイル分割とは別、引き続き着手トリガー待ち
+9. 012 (local-llm-cutover)
+10. 020 (google-workspace-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+11. 021 (discord-integration) — 詳細化未着手・優先度も未定。着想メモのみ
+12. 022 (misskey-integration) — 詳細化未着手・優先度も未定。着想メモのみ(投稿は許可制の方針のみ決定済み)
+13. 026 (voice-input) — 詳細化未着手・優先度も未定。Stage 1(プッシュトゥトーク+STT、003に合流)のみ着想済み、Stage 2(常時リスニング+発話分類)は将来
 
 ## いつかやるリスト
 
@@ -54,7 +53,7 @@ spec自体は書けていて実装開始可能だが、直近では優先度を�
 | 021 | [discord-integration](021-discord-integration/spec.draft.md) | - | 💤 スケルトンのみ | Discord連携。通知先として使うか、代替フロントエンドとして使うか未確定 |
 | 022 | [misskey-integration](022-misskey-integration/spec.draft.md) | - | 💤 スケルトンのみ | Misskey連携。読み取りは自動、**投稿は許可制**にする方針のみ決定済み。elicitationまたは二段階tool構成で実現する想定 |
 | 023 | [daily-summary-notification](023-daily-summary-notification/spec.draft.md) | - | ✔️ 完了 | 1日の活動を横断要約し、フロントに通知的に表示する。チャットターンに紐づかない初めての処理で、ADR-0003のパイプラインには含めず`cron`ベースのバッチ(`cli/generate_daily_summary.py`)として実装。002/007/017の既存ドメイン+008(要約付きフィードのみ)を集計。013は未実装のため対象外(実装され次第追加可能な構造)。既読管理はフロントのlocalStorageのみ(DB/APIは持たない) |
-| 024 | [memory-theme-housekeeping](024-memory-theme-housekeeping/spec.draft.md) | - | 💤 スケルトンのみ | 017のテーマ整理を023と同じcron駆動で定期実行し、統合・分割・stale検出を「提案」として出す(自動適用はしない)。「現状調査・再現性テスト」は着想止まりでv1範囲外 |
+| 024 | [memory-theme-housekeeping](024-memory-theme-housekeeping/spec.draft.md、[正式spec](024-memory-theme-housekeeping/spec.md)) | - | ✔️ 完了 | 017の記憶テーマ(`memory/<slug>.md`)を023と同じcron駆動のバッチ(`cli/run_memory_housekeeping.py`)で棚卸しし、統合・分割・stale候補を「提案」として検出・DB保存する(v1は検出・表示のみ、自動適用はしない。017に再編ツール自体が無いため)。全テーマを1回のLLM呼び出しで横断評価。既読管理はフロントのlocalStorageのみ(023と同じ、DB/APIは持たない)。実行頻度は週1回想定(023の日次とは異なる)。GitHub Spec Kitの正式フローで詳細化・実装(2026-09-02) |
 | 025 | [ir-tracking-expansion](025-ir-tracking-expansion/spec.draft.md) | - | 💤 スケルトンのみ | 013に追跡機能を追加。Stage 1(既存追跡企業の新規開示を日次チェック、詳細化済み)→Stage 2(追跡対象企業自体の発見、将来)の段階的拡大設計 |
 | 026 | [voice-input](026-voice-input/spec.draft.md) | - | 💤 スケルトンのみ | 音声入力。Stage 1(プッシュトゥトーク+STT→既存チャット送信、003に合流)→Stage 2(常時リスニング+独り言/お願いの3分類、将来)の段階的拡大設計。STTエンジン(Web Speech API vs ローカルWhisper)は未決定 |
 

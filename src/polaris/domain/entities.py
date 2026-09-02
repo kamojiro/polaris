@@ -224,3 +224,21 @@ class DailySummaryRecord(SQLModel, table=True):
     summary_date: date = Field(index=True, unique=True)  # 1日1件
     content: str
     generated_at: datetime
+
+
+class MemoryHousekeepingSuggestion(SQLModel, table=True):
+    """記憶テーマの定期棚卸し(024-memory-theme-housekeeping)の整理提案1件.
+
+    `MemoryTheme`/`DailySummaryRecord`と同じく`Item`ハブは経由しない(複数テーマを横断した
+    提案であり、特定の知識アイテム1件に紐づかないため)。バッチ実行のたびに既存の全行が
+    削除され、今回の検出結果で完全に置き換えられる(`generated_at`は全行で共通、
+    このバッチの実行時刻)。既読管理はサーバー側に持たず、フロント側のlocalStorageで行う。
+    """
+
+    __tablename__ = "memory_housekeeping_suggestions"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    suggestion_type: str  # "merge" | "split" | "stale"
+    target_themes: str  # 対象テーマのslugをカンマ区切りで保持(シンプルな実装優先)
+    detail: str  # 提案の具体的な理由の説明(LLMが生成)
+    generated_at: datetime = Field(index=True)
