@@ -2,7 +2,15 @@
 
 ## ステータス
 
-💤 スケルトンのみ
+方向性3(Discordから読み取る)のみ✔️実装完了(2026-09-02)。方向性1(通知先)・方向性2
+(代替フロントエンド)は引き続き💤未着手。
+
+実装は下記「方向性3の設計たたき台」どおり: `adapters/discord/client.py`(自前httpxクライアント、
+`GET /channels/{channel_id}/messages`)、`GET /api/discord/recent`(永続化なし、都度ライブ取得)、
+`DiscordSidebar.tsx`(`NewsSidebar.tsx`と同型、クリックで`このDiscordメッセージについて
+詳しく教えて: {本文}`を送信)。`DiscordSettings.bot_token`/`channel_id`が未設定の場合は
+`/api/discord/recent`が空リストを返し、フロントはセクションごと非表示にする(未設定の
+利用者に空セクションを見せないための挙動、NewsSidebarとの唯一の表示上の差分)。
 
 ## 概要
 

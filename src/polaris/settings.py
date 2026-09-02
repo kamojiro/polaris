@@ -69,6 +69,20 @@ class SearxngSettings(BaseModel):
     timeout_seconds: float = 10.0
 
 
+class DiscordSettings(BaseModel):
+    """Discord連携(021-discord-integration 方向性3: 読み取り→サイドバー表示)の設定.
+
+    永続化はしない(サイドバー表示のたびにDiscord APIをライブに叩くだけ)。
+    `bot_token`/`channel_id`が未設定(空文字列)の場合、API側で機能自体を無効化する
+    (`GET /api/discord/recent`が空リストを返す)。
+    """
+
+    bot_token: str = ""
+    channel_id: str = ""
+    max_messages: int = 5
+    timeout_seconds: float = 10.0
+
+
 class MemorySettings(BaseModel):
     """チャットの長期記憶(017-chat-memory)の設定."""
 
@@ -201,6 +215,7 @@ class Settings(BaseSettings):
     news: NewsSettings = NewsSettings()
     daily_summary: DailySummarySettings = DailySummarySettings()
     ir: IrSettings = IrSettings()
+    discord: DiscordSettings = DiscordSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

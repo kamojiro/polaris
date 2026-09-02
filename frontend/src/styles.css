@@ -565,6 +565,87 @@ header p {
   font-size: 0.85em;
 }
 
+/* Discordサイドバー(021拡張): .news-sidebar*と同じ見た目 */
+.discord-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 3%);
+  font-size: 0.85rem;
+}
+
+.discord-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+.discord-sidebar-header h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  color: gray;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.discord-sidebar-refresh {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: gray;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.2rem 0.35rem;
+  border-radius: 0.4rem;
+}
+
+.discord-sidebar-refresh:hover {
+  background: rgb(0 0 0 / 8%);
+}
+
+.discord-sidebar-refresh:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.discord-sidebar-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-left: 3px solid #5865f2; /* Discordブランドカラー */
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.3rem 0 0.3rem 0.5rem;
+}
+
+.discord-sidebar-item:hover .discord-sidebar-content {
+  color: #2563eb;
+}
+
+.discord-sidebar-content {
+  display: -webkit-box;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.discord-sidebar-meta {
+  display: block;
+  margin-top: 0.15em;
+  color: gray;
+  font-size: 0.8em;
+}
+
 /* 015-paper-qa-chat: 各ターンのトークン使用量・コスト(assistantバブルの下に小さく表示) */
 .usage-line {
   align-self: flex-start;

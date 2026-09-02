@@ -7,6 +7,7 @@ import { MemoryHousekeepingBanner } from "./MemoryHousekeepingBanner";
 import { DiaryPanel } from "./DiaryPanel";
 import { IrList, type IrListResult } from "./IrList";
 import { NewsList, type NewsListResult } from "./NewsList";
+import { DiscordSidebar, type SidebarDiscordItem } from "./DiscordSidebar";
 import { NewsSidebar, type SidebarNewsItem } from "./NewsSidebar";
 import { PaperList, type PaperListResult } from "./PaperList";
 import { Sidebar } from "./Sidebar";
@@ -245,6 +246,10 @@ export default function App() {
     void sendMessage(`「${item.title}」について詳しく教えて ${item.source_url}`);
   };
 
+  const handleSelectDiscordMessage = (item: SidebarDiscordItem) => {
+    void sendMessage(`このDiscordメッセージについて詳しく教えて: ${item.content}`);
+  };
+
   return (
     <div className="app-layout">
       <div className="app">
@@ -401,6 +406,7 @@ export default function App() {
 
       <Sidebar wide={uiState.diary_mode}>
         <NewsSidebar onSelect={handleSelectSidebarNews} />
+        <DiscordSidebar onSelect={handleSelectDiscordMessage} />
         {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
       </Sidebar>
     </div>

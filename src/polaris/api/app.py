@@ -13,6 +13,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import httpx
 from ag_ui.core import BaseEvent, CustomEvent, MessagesSnapshotEvent, RunAgentInput, StateSnapshotEvent
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import StreamingResponse
@@ -20,6 +21,7 @@ from pydantic import BaseModel
 from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
+from polaris.adapters.discord.client import DiscordFetchError, fetch_recent_messages
 from polaris.adapters.embeddings.qwen import QwenEmbedder
 from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
 from polaris.agent.diary_date_infer import AgentDiaryDateInferrer, build_diary_date_infer_agent
@@ -321,6 +323,43 @@ def memory_housekeeping_latest() -> MemoryHousekeepingResponse | None:
             for s in suggestions
         ],
     )
+
+
+class DiscordMessageResponse(BaseModel):
+    """Discordサイドバーの1件分(021-discord-integration 方向性3)."""
+
+    id: str
+    content: str
+    author_name: str
+    created_at: datetime
+
+
+@app.get("/api/discord/recent")
+async def discord_recent() -> list[DiscordMessageResponse]:
+    """設定済みチャンネルの直近メッセージをDiscord APIからライブ取得して返す(永続化しない).
+
+    `settings.discord.bot_token`/`channel_id`が未設定なら空リストを返す(機能を使わない場合に
+    エラーにしない)。取得自体に失敗した場合も、アンビエントなサイドバー表示のための機能なので
+    500にはせず空リストで返す。
+    """
+    if not settings.discord.bot_token or not settings.discord.channel_id:
+        return []
+    async with httpx.AsyncClient() as client:
+        try:
+            messages = await fetch_recent_messages(
+                client=client,
+                bot_token=settings.discord.bot_token,
+                channel_id=settings.discord.channel_id,
+                limit=settings.discord.max_messages,
+                timeout_seconds=settings.discord.timeout_seconds,
+            )
+        except DiscordFetchError:
+            logger.warning("Discordメッセージの取得に失敗しました", exc_info=True)
+            return []
+    return [
+        DiscordMessageResponse(id=m.id, content=m.content, author_name=m.author_name, created_at=m.created_at)
+        for m in messages
+    ]
 
 
 class DiaryDayResponse(BaseModel):
