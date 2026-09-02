@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import httpx
 
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from pydantic_ai import Agent
 
     from polaris.adapters.searxng.client import SearxngResponse
-    from polaris.agent.chat_state import ChatDeps
     from polaris.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -59,8 +58,13 @@ def _format_search_results(query: str, response: SearxngResponse) -> str:
     return "\n\n".join(parts)
 
 
-def register(agent: Agent[ChatDeps, str], *, settings: Settings) -> None:
-    """web_search ツールを登録する(018-web-search-tool、自前ホスト済みSearXNG連携)."""
+def register(agent: Agent[Any, Any], *, settings: Settings) -> None:
+    """web_search ツールを登録する(018-web-search-tool、自前ホスト済みSearXNG連携).
+
+    `agent.tool_plain`はRunContext/depsに触れないため、deps_type/output_typeを問わず
+    任意のAgentに登録できる(021-discord-integrationの`agent/discord_title.py`が
+    `Agent[None, SidebarTitle]`に対して同じ関数を再利用している)。
+    """
     http_client = httpx.AsyncClient()
 
     @agent.tool_plain

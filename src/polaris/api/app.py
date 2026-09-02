@@ -26,6 +26,7 @@ from polaris.adapters.embeddings.qwen import QwenEmbedder
 from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
 from polaris.agent.diary_date_infer import AgentDiaryDateInferrer, build_diary_date_infer_agent
 from polaris.agent.diary_rewrite import AgentDiaryRewriter, build_diary_rewrite_agent
+from polaris.agent.discord_title import AgentDiscordTitler, build_discord_title_agent
 from polaris.agent.extract_ir_metadata import AgentIrMetadataExtractor, build_extract_ir_metadata_agent
 from polaris.agent.extract_metadata import AgentPaperMetadataExtractor, build_extract_metadata_agent
 from polaris.agent.memory_extract import (
@@ -131,6 +132,7 @@ _memory_rewriter = AgentMemoryRewriter(build_memory_rewrite_agent(settings))
 _diary_rewriter = AgentDiaryRewriter(build_diary_rewrite_agent(settings))
 _diary_date_inferrer = AgentDiaryDateInferrer(build_diary_date_infer_agent(settings))
 _sidebar_titler = AgentSidebarTitler(build_sidebar_title_agent(settings))
+_discord_titler = AgentDiscordTitler(build_discord_title_agent(settings))  # 021-discord-integration: 同上
 _agent = build_chat_agent(
     settings,
     _repo,
@@ -337,15 +339,34 @@ class DiscordMessageResponse(BaseModel):
     created_at: datetime
 
 
+async def _generate_discord_title(content: str) -> str | None:
+    """1件分の見出し生成を試み、失敗すればNoneを返す(呼び出し側で本文へのフォールバック用).
+
+    web_fetch/web_search を伴う判断タスクのため、無料枠モデルの同時実行下では
+    まれに失敗する(実機確認: 5件同時実行で毎回異なる1〜2件が
+    "Model token limit exceeded"/"Exceeded maximum output retries"で失敗)。
+    `asyncio.gather`が1件の例外でレスポンス全体を巻き込まないよう、ここで吸収する。
+    """
+    try:
+        result = await _discord_titler.title(content)
+    except Exception:
+        logger.warning("Discordメッセージの見出し生成に失敗しました(本文をそのまま使う)", exc_info=True)
+        return None
+    return result.display_title
+
+
 @app.get("/api/discord/recent")
 async def discord_recent() -> list[DiscordMessageResponse]:
     """設定済みチャンネルの直近メッセージをDiscord APIからライブ取得して返す(本文は永続化しない).
 
     `settings.discord.bot_token`/`channel_id`が未設定なら空リストを返す(機能を使わない場合に
     エラーにしない)。取得自体に失敗した場合も、アンビエントなサイドバー表示のための機能なので
-    500にはせず空リストで返す。表示用の短い見出し(`display_title`)は`news_picks`と同じ
-    `_sidebar_titler`で生成するが、メッセージidをキーにファイルキャッシュし、同じメッセージへの
-    LLM再呼び出しは避ける(`services/discord_title_cache.py`).
+    500にはせず空リストで返す。表示用の短い見出し(`display_title`)は`_discord_titler`
+    (`agent/discord_title.py`、web_fetch登録済み)が生成する。メッセージidをキーに
+    ファイルキャッシュし、同じメッセージへのLLM再呼び出し・ページ再取得は避ける
+    (`services/discord_title_cache.py`)。1件の見出し生成失敗が他の件・レスポンス全体を
+    巻き込まないよう、失敗したメッセージは本文をそのままdisplay_titleとして使い、
+    キャッシュにも書かない(次回のfetchで再度生成を試みる、`_generate_discord_title`参照)。
     """
     if not settings.discord.bot_token or not settings.discord.channel_id:
         return []
@@ -365,14 +386,16 @@ async def discord_recent() -> list[DiscordMessageResponse]:
     title_cache = read_discord_title_cache(settings.discord.title_cache_path)
     uncached = [m for m in messages if m.id not in title_cache]
     if uncached:
-        generated = await asyncio.gather(*(_sidebar_titler.title(title=m.content, summary="") for m in uncached))
-        for m, result in zip(uncached, generated, strict=True):
-            title_cache[m.id] = result.display_title
-        write_discord_title_cache(settings.discord.title_cache_path, title_cache)
+        generated = await asyncio.gather(*(_generate_discord_title(m.content) for m in uncached))
+        for m, display_title in zip(uncached, generated, strict=True):
+            if display_title is not None:
+                title_cache[m.id] = display_title
+        if any(display_title is not None for display_title in generated):
+            write_discord_title_cache(settings.discord.title_cache_path, title_cache)
 
     return [
         DiscordMessageResponse(
-            id=m.id, display_title=title_cache[m.id], content=m.content, author_name=m.author_name,
+            id=m.id, display_title=title_cache.get(m.id, m.content), content=m.content, author_name=m.author_name,
             created_at=m.created_at,
         )
         for m in messages
