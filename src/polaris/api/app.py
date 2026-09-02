@@ -48,6 +48,8 @@ from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
 from polaris.services.daily_summary import local_today
 from polaris.services.diary import record_diary_turn
+from polaris.services.discord_title_cache import read_cache as read_discord_title_cache
+from polaris.services.discord_title_cache import write_cache as write_discord_title_cache
 from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
 from polaris.services.progress import get_progress_lines
@@ -329,6 +331,7 @@ class DiscordMessageResponse(BaseModel):
     """Discordサイドバーの1件分(021-discord-integration 方向性3)."""
 
     id: str
+    display_title: str
     content: str
     author_name: str
     created_at: datetime
@@ -336,11 +339,13 @@ class DiscordMessageResponse(BaseModel):
 
 @app.get("/api/discord/recent")
 async def discord_recent() -> list[DiscordMessageResponse]:
-    """設定済みチャンネルの直近メッセージをDiscord APIからライブ取得して返す(永続化しない).
+    """設定済みチャンネルの直近メッセージをDiscord APIからライブ取得して返す(本文は永続化しない).
 
     `settings.discord.bot_token`/`channel_id`が未設定なら空リストを返す(機能を使わない場合に
     エラーにしない)。取得自体に失敗した場合も、アンビエントなサイドバー表示のための機能なので
-    500にはせず空リストで返す。
+    500にはせず空リストで返す。表示用の短い見出し(`display_title`)は`news_picks`と同じ
+    `_sidebar_titler`で生成するが、メッセージidをキーにファイルキャッシュし、同じメッセージへの
+    LLM再呼び出しは避ける(`services/discord_title_cache.py`).
     """
     if not settings.discord.bot_token or not settings.discord.channel_id:
         return []
@@ -356,8 +361,20 @@ async def discord_recent() -> list[DiscordMessageResponse]:
         except DiscordFetchError:
             logger.warning("Discordメッセージの取得に失敗しました", exc_info=True)
             return []
+
+    title_cache = read_discord_title_cache(settings.discord.title_cache_path)
+    uncached = [m for m in messages if m.id not in title_cache]
+    if uncached:
+        generated = await asyncio.gather(*(_sidebar_titler.title(title=m.content, summary="") for m in uncached))
+        for m, result in zip(uncached, generated, strict=True):
+            title_cache[m.id] = result.display_title
+        write_discord_title_cache(settings.discord.title_cache_path, title_cache)
+
     return [
-        DiscordMessageResponse(id=m.id, content=m.content, author_name=m.author_name, created_at=m.created_at)
+        DiscordMessageResponse(
+            id=m.id, display_title=title_cache[m.id], content=m.content, author_name=m.author_name,
+            created_at=m.created_at,
+        )
         for m in messages
     ]
 

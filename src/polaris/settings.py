@@ -72,7 +72,7 @@ class SearxngSettings(BaseModel):
 class DiscordSettings(BaseModel):
     """Discord連携(021-discord-integration 方向性3: 読み取り→サイドバー表示)の設定.
 
-    永続化はしない(サイドバー表示のたびにDiscord APIをライブに叩くだけ)。
+    メッセージ本体の永続化はしない(サイドバー表示のたびにDiscord APIをライブに叩くだけ)。
     `bot_token`/`channel_id`が未設定(空文字列)の場合、API側で機能自体を無効化する
     (`GET /api/discord/recent`が空リストを返す)。
     """
@@ -81,6 +81,10 @@ class DiscordSettings(BaseModel):
     channel_id: str = ""
     max_messages: int = 5
     timeout_seconds: float = 10.0
+    # LLM生成のdisplay_titleだけをメッセージid単位でキャッシュするJSONファイル
+    # (投稿後にメッセージ本文はほぼ変わらないため、同じメッセージへの再生成を避ける)。
+    # NewsRecordのようなDB化はせず、単純なファイルキャッシュに留める(YAGNI)。
+    title_cache_path: str = "data/discord_title_cache.json"
 
 
 class MemorySettings(BaseModel):

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export interface SidebarDiscordItem {
   id: string;
+  display_title: string;
   content: string;
   author_name: string;
   created_at: string;
@@ -67,7 +68,7 @@ export function DiscordSidebar({ onSelect }: DiscordSidebarProps) {
       </div>
       {items.map((item) => (
         <button key={item.id} type="button" className="discord-sidebar-item" onClick={() => onSelect(item)}>
-          <span className="discord-sidebar-content">{item.content}</span>
+          <span className="discord-sidebar-title">{item.display_title}</span>
           <span className="discord-sidebar-meta">{item.author_name}</span>
         </button>
       ))}

@@ -625,17 +625,17 @@ header p {
   padding: 0.3rem 0 0.3rem 0.5rem;
 }
 
-.discord-sidebar-item:hover .discord-sidebar-content {
+.discord-sidebar-item:hover .discord-sidebar-title {
   color: #2563eb;
 }
 
-.discord-sidebar-content {
+.discord-sidebar-title {
   display: -webkit-box;
   font-weight: 600;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
