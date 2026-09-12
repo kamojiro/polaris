@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { DailySummaryBanner } from "./DailySummaryBanner";
 import { MemoryHousekeepingBanner } from "./MemoryHousekeepingBanner";
 import { PaperResearchBanner } from "./PaperResearchBanner";
+import { PaperResearchHistoryModal } from "./PaperResearchHistoryModal";
 import { PaperResearchList } from "./PaperResearchList";
 import { DiaryPanel } from "./DiaryPanel";
 import { IrList, type IrListResult } from "./IrList";
@@ -177,6 +178,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isPaperResearchHistoryOpen, setIsPaperResearchHistoryOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // IME変換確定のEnterで誤送信しないためのフラグ。event.nativeEvent.isComposing だけだと
@@ -410,9 +412,13 @@ export default function App() {
       <Sidebar wide={uiState.diary_mode}>
         <NewsSidebar onSelect={handleSelectSidebarNews} />
         <DiscordSidebar onSelect={handleSelectDiscordMessage} />
-        <PaperResearchList />
+        <PaperResearchList onOpenHistory={() => setIsPaperResearchHistoryOpen(true)} />
         {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
       </Sidebar>
+
+      {isPaperResearchHistoryOpen && (
+        <PaperResearchHistoryModal onClose={() => setIsPaperResearchHistoryOpen(false)} />
+      )}
     </div>
   );
 }

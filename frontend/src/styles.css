@@ -674,32 +674,18 @@ header p {
   letter-spacing: 0.04em;
 }
 
-.paper-research-list-refresh {
+.paper-research-list-open-history {
   border: none;
   background: none;
   cursor: pointer;
   color: gray;
-  font-size: 0.9rem;
-  line-height: 1;
-  padding: 0.2rem 0.35rem;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 0.4rem;
 }
 
-.paper-research-list-refresh:hover {
+.paper-research-list-open-history:hover {
   background: rgb(0 0 0 / 8%);
-}
-
-.paper-research-list-refresh:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.paper-research-list-entry {
-  border-bottom: 1px solid rgb(0 0 0 / 7%);
-}
-
-.paper-research-list-entry:last-child {
-  border-bottom: none;
 }
 
 .paper-research-list-item {
@@ -734,6 +720,114 @@ header p {
 
 .paper-research-list-detail {
   margin: 0.2rem 0 0.5rem 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.5rem;
+  background: #ecfdf5;
+  color: #065f46;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* 関連論文調査の履歴モーダル(027拡張、2026-09-13): AG-UIの会話履歴を経由しない
+   chat非依存の一覧表示。コードベース初のモーダルパターン。 */
+.paper-research-history-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.paper-research-history-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 90vw);
+  max-height: 80vh;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 20%);
+}
+
+.paper-research-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid rgb(0 0 0 / 8%);
+}
+
+.paper-research-history-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.paper-research-history-header button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.4rem;
+}
+
+.paper-research-history-header button:hover {
+  background: rgb(0 0 0 / 8%);
+}
+
+.paper-research-history-body {
+  overflow-y: auto;
+  padding: 0.3rem 1.2rem 1rem;
+}
+
+.paper-research-history-loading,
+.paper-research-history-empty {
+  margin: 0.5rem 0;
+  color: gray;
+  font-size: 0.9rem;
+}
+
+.paper-research-history-entry {
+  border-bottom: 1px solid rgb(0 0 0 / 7%);
+}
+
+.paper-research-history-entry:last-child {
+  border-bottom: none;
+}
+
+.paper-research-history-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.6rem 0;
+}
+
+.paper-research-history-item:hover .paper-research-history-title {
+  color: #2563eb;
+}
+
+.paper-research-history-title {
+  display: block;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.paper-research-history-meta {
+  display: block;
+  margin-top: 0.15em;
+  color: gray;
+  font-size: 0.8em;
+}
+
+.paper-research-history-detail {
+  margin: 0.2rem 0 0.8rem;
   padding: 0.5rem 0.6rem;
   border-radius: 0.5rem;
   background: #ecfdf5;

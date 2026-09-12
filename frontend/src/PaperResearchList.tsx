@@ -1,39 +1,38 @@
 import { useCallback, useEffect, useState } from "react";
 
-interface PaperResearchItem {
+export interface PaperResearchItem {
   research_id: string;
   seed_title: string;
   result_summary: string;
   completed_at: string;
 }
 
+interface PaperResearchListProps {
+  onOpenHistory: () => void;
+}
+
 /**
- * 完了済みの関連論文調査(027-related-paper-research)を新しい順に一覧表示するSidebar内の
- * 1セクション。`PaperResearchBanner.tsx`(直近1件の新着通知)とは別に、過去分も含めて
- * 見返せるようにしたもの(2026-09-13追加、ユーザーからのフィードバックで着想)。
+ * 完了済みの関連論文調査(027-related-paper-research)のうち、最新1件だけを常時表示する
+ * Sidebar内の1セクション。`PaperResearchBanner.tsx`(新着通知、既読で消える)とは別に、
+ * 「今わかっていること」をアンビエントに見せる用途(2026-09-13追加)。
  *
- * `NewsSidebar.tsx`/`DiscordSidebar.tsx`と同じ「ページを開いた時点でアンビエントに取得」
- * パターンだが、行クリックの挙動だけ異なる: あちらはチャットへの引き渡し
- * (`sendMessage`)だが、こちらは統合結果をその場で展開表示する(チャットの会話には
- * 影響させない、単なる閲覧のため)。
+ * 過去分すべてを見るには「一覧」ボタンから`PaperResearchHistoryModal.tsx`を開く。
+ * 一覧はAG-UIの会話履歴(messages)を一切経由しないchat非依存のUIにしている
+ * (ユーザー要望: 「チャット履歴には加えずに出せるとなおいい」)。
  */
-export function PaperResearchList() {
-  const [items, setItems] = useState<PaperResearchItem[] | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export function PaperResearchList({ onOpenHistory }: PaperResearchListProps) {
+  const [latest, setLatest] = useState<PaperResearchItem | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
-    setIsLoading(true);
     try {
-      const res = await fetch("/api/paper-research");
+      const res = await fetch("/api/paper-research/latest");
       if (!res.ok) {
         return;
       }
-      setItems((await res.json()) as PaperResearchItem[]);
+      setLatest((await res.json()) as PaperResearchItem | null);
     } catch {
-      // アンビエントな一覧なので、取得に失敗しても静かに諦める。
-    } finally {
-      setIsLoading(false);
+      // アンビエントな表示なので、取得に失敗しても静かに諦める。
     }
   }, []);
 
@@ -41,7 +40,7 @@ export function PaperResearchList() {
     void load();
   }, [load]);
 
-  if (items === null || items.length === 0) {
+  if (latest === null) {
     return null;
   }
 
@@ -49,32 +48,15 @@ export function PaperResearchList() {
     <section className="paper-research-list">
       <div className="paper-research-list-header">
         <h2>関連論文調査</h2>
-        <button
-          type="button"
-          className="paper-research-list-refresh"
-          onClick={() => void load()}
-          disabled={isLoading}
-          title="再読み込み"
-        >
-          🔄
+        <button type="button" className="paper-research-list-open-history" onClick={onOpenHistory}>
+          一覧
         </button>
       </div>
-      {items.map((item) => {
-        const isExpanded = item.research_id === expandedId;
-        return (
-          <div key={item.research_id} className="paper-research-list-entry">
-            <button
-              type="button"
-              className="paper-research-list-item"
-              onClick={() => setExpandedId(isExpanded ? null : item.research_id)}
-            >
-              <span className="paper-research-list-title">{item.seed_title}</span>
-              <span className="paper-research-list-meta">{item.completed_at.slice(0, 10)}</span>
-            </button>
-            {isExpanded && <p className="paper-research-list-detail">{item.result_summary}</p>}
-          </div>
-        );
-      })}
+      <button type="button" className="paper-research-list-item" onClick={() => setExpanded((prev) => !prev)}>
+        <span className="paper-research-list-title">{latest.seed_title}</span>
+        <span className="paper-research-list-meta">{latest.completed_at.slice(0, 10)}</span>
+      </button>
+      {expanded && <p className="paper-research-list-detail">{latest.result_summary}</p>}
     </section>
   );
 }
