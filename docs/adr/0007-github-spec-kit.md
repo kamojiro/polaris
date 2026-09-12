@@ -34,7 +34,17 @@ Cowork(このADRを含む設計会話をしている側)では、この`speckit-
 - **Cowork側でspec-kitのテンプレート形式に厳密に沿わせたいとき**: `SKILL.md`は単なるMarkdownの指示書なので、正式なSkill呼び出しではなく、ファイルを直接読んでその手順どおりに振る舞う(手動再現)ことでも近い結果は得られる。`.specify/scripts/`配下の補助スクリプトもシェルから直接叩ける
 - Coworkへの正式移植(`save_skill`で複製)は、上記で困る場面が実際に出てきてから検討する。本家更新への追従が手動になるコストがあるため、今は見送り
 
+## 追記(2026-09-12): 仕上げ工程(`/speckit.plan`→`/speckit.tasks`→`/speckit.implement`)をやめる
+
+`019-diary-domain`で実際に正式フロー(`spec.md`/`plan.md`/`tasks.md`/`research.md`/`data-model.md`/`quickstart.md`/`checklists/`一式)を一度通してみたが、個人開発・この規模の機能追加には重すぎると感じた。`spec.draft.md`(Coworkでの会話ベース設計)が既に十分な合意形成の役割を果たしており、実装直前の計画はClaude Codeの**plan mode**(コーディング前に対話的に実装方針を詰める、Spec Kitに依存しない標準機能)で足りる。
+
+- 今後の運用: `spec.draft.md`が固まったら、Claude Code側はplan modeで実装方針を確認してからそのまま実装に入る。`/speckit.plan`/`/speckit.tasks`/`/speckit.implement`は使わない
+- 例外: 難易度が高く、plan modeの対話だけでは設計の合意が取りにくいと感じた場合に限り、speckitの正式フロー(またはそれに準じた書面計画)を個別に検討する。ただし頻度は稀と想定している
+- `/speckit.specify`/`/speckit.clarify`等、spec本体を整える系のコマンドについては本ADRの結論を変えない(そもそも`spec.draft.md`をCowork側で書く運用が既に確立している)。今回やめるのは実装直前の計画・タスク分解工程のみ
+- `.specify/`・`.claude/skills/speckit-*`自体は削除しない(将来「難易度が高いケース」で使う可能性が残るため)。単に既定の運用から外すだけ
+
 ## 関連
 
 - `README.md`
 - `docs/constitution.draft.md`
+- `specs/019-diary-domain`(正式フローを実際に通した唯一の事例、今回の判断の根拠)
