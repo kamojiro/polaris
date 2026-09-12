@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Session, func, or_, select
 
 from polaris.db.vector_store import save_embeddings as _save_embeddings
-from polaris.domain.entities import Chunk, Item, PaperRecord
+from polaris.domain.entities import Chunk, Item, PaperRecord, PaperResearchDiscoveredPaper
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -57,12 +57,19 @@ class PaperRepository:
             session.add(record)
             session.commit()
 
-    def list_papers(self, *, limit: int | None = None) -> list[tuple[Item, PaperRecord]]:
+    def list_papers(
+        self, *, limit: int | None = None, include_discovered: bool = False
+    ) -> list[tuple[Item, PaperRecord]]:
         """保存済みの論文を作成日時の降順で返す.
 
         `limit` を指定すると SQL の LIMIT で件数を絞る(全件を毎回 DB から読んで
         LLM に渡すと、件数が増えるほど DB 負荷・トークン量とも際限なく増えるため、
         絞り込みは呼び出し側の Python ではなくここで行う)。
+
+        `include_discovered=False`(既定)の場合、027-related-paper-researchが
+        自動取り込みした論文(`PaperResearchDiscoveredPaper`に出自がある論文)を
+        除外する。ユーザーが自分で保存したつもりのない論文が「保存した論文一覧」に
+        混ざらないようにするため(2026-09-12にユーザー確認)。
         """
         with Session(self._engine, expire_on_commit=False) as session:
             query = (
@@ -70,16 +77,22 @@ class PaperRepository:
                 .join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
                 .order_by(Item.created_at.desc())  # type: ignore[union-attr]
             )
+            if not include_discovered:
+                query = query.where(Item.id.not_in(select(PaperResearchDiscoveredPaper.item_id)))  # type: ignore[attr-defined]
             if limit is not None:
                 query = query.limit(limit)
             rows = session.exec(query).all()
             return list(rows)
 
-    def list_papers_created_between(self, start: datetime, end: datetime) -> list[tuple[Item, PaperRecord]]:
+    def list_papers_created_between(
+        self, start: datetime, end: datetime, *, include_discovered: bool = False
+    ) -> list[tuple[Item, PaperRecord]]:
         """`Item.created_at`が`[start, end)`に入る論文を返す(023-daily-summary-notification).
 
         `start`/`end`はUTC(DB保存値と同じタイムゾーン)。日付境界(JST等)への変換は
-        呼び出し側(services/daily_summary.py)の責務とする。
+        呼び出し側(services/daily_summary.py)の責務とする。`include_discovered`は
+        `list_papers`と同じ(既定で027の自動取り込み論文を除外、日次要約が調査論文で
+        埋まらないようにする)。
         """
         with Session(self._engine, expire_on_commit=False) as session:
             query = (
@@ -88,6 +101,8 @@ class PaperRepository:
                 .where(Item.created_at >= start, Item.created_at < end)  # type: ignore[operator]
                 .order_by(Item.created_at.asc())  # type: ignore[union-attr]
             )
+            if not include_discovered:
+                query = query.where(Item.id.not_in(select(PaperResearchDiscoveredPaper.item_id)))  # type: ignore[attr-defined]
             return list(session.exec(query).all())
 
     def search_papers(self, query: str, *, limit: int = 5) -> list[tuple[Item, PaperRecord]]:
@@ -113,10 +128,16 @@ class PaperRepository:
             rows = session.exec(query_stmt).all()
             return list(rows)
 
-    def count_papers(self) -> int:
-        """保存済みの論文の総数を返す(一覧の省略表示に使う軽量なカウントのみのクエリ)."""
+    def count_papers(self, *, include_discovered: bool = False) -> int:
+        """保存済みの論文の総数を返す(一覧の省略表示に使う軽量なカウントのみのクエリ).
+
+        `include_discovered`は`list_papers`と同じ(既定で027の自動取り込み論文を
+        除外し、一覧の表示件数と一致させる)。
+        """
         with Session(self._engine, expire_on_commit=False) as session:
             query = select(func.count()).select_from(Item).join(PaperRecord, PaperRecord.item_id == Item.id)  # type: ignore[arg-type]
+            if not include_discovered:
+                query = query.where(Item.id.not_in(select(PaperResearchDiscoveredPaper.item_id)))  # type: ignore[attr-defined]
             return session.exec(query).one()
 
     def update_item(self, item: Item) -> None:

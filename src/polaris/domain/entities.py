@@ -242,3 +242,69 @@ class MemoryHousekeepingSuggestion(SQLModel, table=True):
     target_themes: str  # 対象テーマのslugをカンマ区切りで保持(シンプルな実装優先)
     detail: str  # 提案の具体的な理由の説明(LLMが生成)
     generated_at: datetime = Field(index=True)
+
+
+class PaperResearchRecord(SQLModel, table=True):
+    """関連論文調査(027-related-paper-research ユーザーストーリー1)の調査依頼1件.
+
+    `MemoryTheme`/`DailySummaryRecord`と同じく`Item`ハブは経由しない(調査という
+    「行為」の記録であり、特定の知識アイテム1件を表すものではないため)。
+    このコードベース初のstatus列キュー(`status`: "pending" → "in_progress" →
+    "done"/"failed")。`claim_next_pending`/`reclaim_stale`が状態を管理する
+    (`db/paper_research_repository.py`参照)。`result_summary`に統合結果の本文
+    (LLM生成の日本語)が入る。既読管理はサーバー側に持たず、フロント側の
+    localStorageで行う(023/024と同じ)。
+    """
+
+    __tablename__ = "paper_research_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    seed_item_id: str = Field(foreign_key="items.id", index=True)
+    seed_title: str  # 受付時に非正規化(バナーがitems結合なしで表示できる)
+    status: str = Field(index=True)  # "pending" | "in_progress" | "done" | "failed"
+    attempts: int = 0
+    result_summary: str | None = None
+    error: str | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+
+
+class PaperDeepAnalysisRecord(SQLModel, table=True):
+    """関連論文調査の精読結果(027-related-paper-research)、論文1本につき1行.
+
+    `item_id`にunique制約があり、他の調査から再利用できるキャッシュとして機能する
+    (同じ論文を別の調査が再度精読対象にしても、このテーブルにヒットすればLLM抽出も
+    取り込みもしない)。`Item`が無い(arXiv IDもオープンアクセスPDFも無い)論文には
+    この行を作らない(外部キーを張れないため)。
+    """
+
+    __tablename__ = "paper_deep_analysis_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True, unique=True)
+    problem: str  # この論文が取り組む課題
+    solution: str  # この論文が示した解決・知見
+    created_at: datetime
+
+
+class PaperResearchDiscoveredPaper(SQLModel, table=True):
+    """関連論文調査が自動取り込みした論文の出自(027-related-paper-research)、論文1本につき1行.
+
+    ユーザーが自分で`save_paper`した論文と区別するためだけに存在する。1調査で
+    最大`paper_research.max_deep_read`本が`items`に自動追加されるため、出自を
+    残さないと`list_papers`(「今まで保存した論文は?」)・論文一覧UI・023の日次要約が
+    調査で取り込んだ論文で埋まってしまう(2026-09-12にユーザー確認)。`items`に
+    区別列を足すのはマイグレーション機構が無いこの環境で最も痛い変更のため、
+    新規テーブルで出自を持つ方式にした。`item_id`はunique(同じ論文が別の調査で
+    再発見されても行は増えない、最初に発見した調査が記録に残る)。ユーザーが後から
+    その論文を明示的に`save_paper`したら、この行は削除される(以降ライブラリの
+    一員として扱う)。
+    """
+
+    __tablename__ = "paper_research_discovered_papers"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    item_id: str = Field(foreign_key="items.id", index=True, unique=True)
+    research_id: str = Field(foreign_key="paper_research_records.id", index=True)
+    discovered_at: datetime

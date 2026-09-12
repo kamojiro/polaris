@@ -2,10 +2,16 @@
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+from sqlmodel import Session
 
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
-from polaris.domain.entities import Item, ItemType, PaperRecord
+from polaris.domain.entities import Item, ItemType, PaperRecord, PaperResearchDiscoveredPaper
+
+if TYPE_CHECKING:
+    from sqlalchemy import Engine
 
 
 def _make_paper(
@@ -145,3 +151,70 @@ def test_search_papers_limit_and_order(tmp_path: Path) -> None:
 
     assert len(results) == 2  # noqa: PLR2004
     assert [record.arxiv_id for _, record in results] == ["3000.00002", "3000.00001"]
+
+
+def _mark_discovered(engine: Engine, item_id: str, *, research_id: str = "research-1") -> None:
+    with Session(engine, expire_on_commit=False) as session:
+        session.add(
+            PaperResearchDiscoveredPaper(
+                id=f"discovered-{item_id}",
+                item_id=item_id,
+                research_id=research_id,
+                discovered_at=datetime.now(UTC),
+            )
+        )
+        session.commit()
+
+
+def test_list_papers_excludes_discovered_by_default(tmp_path: Path) -> None:
+    """027の自動取り込みで出自のある論文は list_papers から除外される(2026-09-12)."""
+    engine = create_db_engine(str(tmp_path / "test.db"))
+    repo = PaperRepository(engine)
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+    _mark_discovered(engine, item.id)
+
+    assert repo.list_papers() == []
+    included = repo.list_papers(include_discovered=True)
+    assert [got_item.id for got_item, _ in included] == [item.id]
+
+
+def test_count_papers_excludes_discovered_by_default(tmp_path: Path) -> None:
+    """出自のある論文は count_papers からも除外され、一覧の件数と一致する."""
+    engine = create_db_engine(str(tmp_path / "test.db"))
+    repo = PaperRepository(engine)
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+    _mark_discovered(engine, item.id)
+
+    assert repo.count_papers() == 0
+    assert repo.count_papers(include_discovered=True) == 1
+
+
+def test_list_papers_created_between_excludes_discovered_by_default(tmp_path: Path) -> None:
+    """023の日次要約が調査で自動取り込みした論文で埋まらないよう、期間検索でも除外される."""
+    engine = create_db_engine(str(tmp_path / "test.db"))
+    repo = PaperRepository(engine)
+    now = datetime.now(UTC)
+    item, record = _make_paper(created_at=now)
+    repo.save_paper(item, record)
+    _mark_discovered(engine, item.id)
+
+    start, end = now - timedelta(minutes=1), now + timedelta(minutes=1)
+    assert repo.list_papers_created_between(start, end) == []
+    included = repo.list_papers_created_between(start, end, include_discovered=True)
+    assert [got_item.id for got_item, _ in included] == [item.id]
+
+
+def test_search_papers_still_finds_discovered_papers(tmp_path: Path) -> None:
+    """search_papers は除外しない(調査で取り込んだ論文についても聞けるように)."""
+    engine = create_db_engine(str(tmp_path / "test.db"))
+    repo = PaperRepository(engine)
+    item, record = _make_paper()
+    repo.save_paper(item, record)
+    _mark_discovered(engine, item.id)
+
+    results = repo.search_papers("1706.03762")
+
+    assert len(results) == 1
+    assert results[0][0].id == item.id
