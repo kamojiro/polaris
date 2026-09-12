@@ -690,19 +690,8 @@ header p {
 
 .paper-research-list-item {
   display: block;
-  width: 100%;
-  text-align: left;
-  border: none;
   border-left: 3px solid #10b981;
-  background: none;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
   padding: 0.4rem 0 0.4rem 0.6rem;
-}
-
-.paper-research-list-item:hover .paper-research-list-title {
-  color: #2563eb;
 }
 
 .paper-research-list-title {
@@ -716,16 +705,6 @@ header p {
   margin-top: 0.15em;
   color: gray;
   font-size: 0.8em;
-}
-
-.paper-research-list-detail {
-  margin: 0.2rem 0 0.5rem 0.6rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 0.5rem;
-  background: #ecfdf5;
-  color: #065f46;
-  white-space: pre-wrap;
-  line-height: 1.5;
 }
 
 /* 関連論文調査の履歴モーダル(027拡張、2026-09-13): AG-UIの会話履歴を経由しない
@@ -743,7 +722,7 @@ header p {
 .paper-research-history-modal {
   display: flex;
   flex-direction: column;
-  width: min(560px, 90vw);
+  width: min(880px, 92vw);
   max-height: 80vh;
   background: white;
   border-radius: 0.75rem;

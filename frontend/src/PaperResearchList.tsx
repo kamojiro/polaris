@@ -16,13 +16,14 @@ interface PaperResearchListProps {
  * Sidebar内の1セクション。`PaperResearchBanner.tsx`(新着通知、既読で消える)とは別に、
  * 「今わかっていること」をアンビエントに見せる用途(2026-09-13追加)。
  *
- * 過去分すべてを見るには「一覧」ボタンから`PaperResearchHistoryModal.tsx`を開く。
- * 一覧はAG-UIの会話履歴(messages)を一切経由しないchat非依存のUIにしている
+ * タイトル・日付のみの表示で、本文(result_summary)はここでは見せない(2026-09-13、
+ * ユーザー要望「サイドバーの関連論文調査は本文を見れなくていい」)。全文を見るには
+ * 「一覧」ボタンから`PaperResearchHistoryModal.tsx`を開く。一覧はAG-UIの会話履歴
+ * (messages)を一切経由しないchat非依存のUIにしている
  * (ユーザー要望: 「チャット履歴には加えずに出せるとなおいい」)。
  */
 export function PaperResearchList({ onOpenHistory }: PaperResearchListProps) {
   const [latest, setLatest] = useState<PaperResearchItem | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -52,11 +53,10 @@ export function PaperResearchList({ onOpenHistory }: PaperResearchListProps) {
           一覧
         </button>
       </div>
-      <button type="button" className="paper-research-list-item" onClick={() => setExpanded((prev) => !prev)}>
+      <div className="paper-research-list-item">
         <span className="paper-research-list-title">{latest.seed_title}</span>
         <span className="paper-research-list-meta">{latest.completed_at.slice(0, 10)}</span>
-      </button>
-      {expanded && <p className="paper-research-list-detail">{latest.result_summary}</p>}
+      </div>
     </section>
   );
 }
