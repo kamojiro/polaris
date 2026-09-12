@@ -107,6 +107,8 @@ OpenRouter経由のQwenモデルも、Anthropicと同様`cache_control: {"type":
 
 - 「この論文について」の検知・論文特定は、専用のStructureステップを設けず`get_paper_full_text(paper: str)`という1つのtoolに寄せた。LLMがユーザーの発話からarXiv ID/URL、またはタイトルの一部を抜き出して引数に渡す(007のTODOツールと同じ「LLMに直接引数を選ばせる」方針)。バックエンド側は`extract_arxiv_id`で正規化を試みた上で`PaperRepository.search_papers()`(新規、arxiv_id/source_url完全一致 or タイトル部分一致)に投げる。0件/複数件ヒット時は例外を投げず、案内メッセージを返す(007のtoolと同じ方針)
 - 全文の取得元は`PaperRecord.pdf_path`から`services/paper_full_text.py::load_full_text()`が都度pypdfで再抽出する方式にした。既存Ingest済みデータのスキーマ変更・再Ingestが一切不要で、実データ12本(35k〜151k文字)がそのまま使える。PDFが無い/読めない場合は`repo.list_chunks()`の連結にフォールバックする
+
+  **改訂(2026-09-13)**: `list_chunks()`連結フォールバックは、チャンクが元々オーバーラップ付きで分割されている(embedding用の切り方)ため、単純連結すると境界部分が重複した「文書もどき」になる欠陥がある。フォールバックという発想自体は妥当だが、チャンクからの再構成ではなく**Ingest時に成功した抽出結果を1つの連続テキストとして別途永続化しておき、それをそのまま使う**方式に直す。具体的には、PDFと同じ`pdf_dir`に抽出済み全文をテキストファイルとして保存し(`{arxiv_id}.txt`等、pdf_pathと対になる`text_path`を`PaperRecord`に追加)、`load_full_text()`のフォールバックは`list_chunks()`連結ではなくこのファイルを読むように変更する。DB肥大化を避けるため保存先はDBカラムではなくファイルにする(`pdf_path`と同じ扱い)。この変更により、chunksテーブルは`get_paper_full_text`の現在唯一の実用途を失い、ADR-0011のEmbedding関連コードと同様に「将来の008 Phase B再開のために温存されるだけの状態」になる(下記ADR-0011参照)
 - 上限は`settings.chat.max_full_text_chars`(既定200,000文字)。実測した保存済み論文の最大(151k文字)を上回る値にしてあり、現状は誰も切り詰められない
 - チャンク/Embeddingパイプライン(002)は変更していない。`get_paper_full_text`はベクトル検索を一切経由しない
 - 実LLM(本番モデル`qwen/qwen3.6-35b-a3b`、GPU embedder込みで`build_chat_agent`を組み立て)でE2E確認済み: タイトルの一部だけの指定から`get_paper_full_text`が1回だけ呼ばれて全文ベースの回答が返ること、同じ論文について続けて質問した2ターン目で`get_paper_full_text`が再度呼ばれず会話履歴の全文で回答すること(受け入れ条件の核心部分)、存在しない論文名では例外にならず案内文が返ることを確認

@@ -33,6 +33,10 @@
 
 悪い面: 将来`008`のPhase Bやライブラリ横断検索が本当に必要になったとき、既存の保存済み論文に対してembeddingの再計算(再Ingest相当の処理)が必要になる。Ingest自体は冪等に作られているため、技術的な再実行の難度は高くない想定だが、実データでの検証はまだしていない。
 
+## 追記(2026-09-13): `Chunk`テーブルも実用途を失う見込み
+
+`015-paper-qa-chat`の`get_paper_full_text`が現状唯一の実用途としていた「PDF再抽出失敗時に`list_chunks()`を連結して全文の代わりにする」フォールバックは、チャンクがオーバーラップ付き分割のため単純連結だと境界が重複するという欠陥があり、`specs/015-paper-qa-chat/spec.draft.md`の改訂(2026-09-13)で、Ingest時に抽出済み全文を別途テキストファイルとして永続化する方式に置き換える予定。これが実装されると、`Chunk`テーブルは`EmbeddingRecord`/`vector_store.py`と同じく「将来のFTS5全文検索・008 Phase Bでの再開のために温存されるだけ」の状態になる。本ADRの「`Chunk`テーブル自体は残す」という決定は変えないが、その根拠が「全文再構成フォールバックで現役」から「将来のFTS5/Phase B再開用の温存」に変わる点を記録しておく。
+
 ## 関連
 
 - 関連spec: `specs/002-papers-ingest-full`(Embedding生成ステップの一時停止)、`specs/015-paper-qa-chat`(embedding不要という判断の先例)、`specs/013-ir-analysis-domain`(同様の判断の先例)、`specs/008-daily-digest-domain`(Phase Bでの将来的な再開候補)
