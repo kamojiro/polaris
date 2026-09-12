@@ -743,6 +743,56 @@ header p {
   flex-shrink: 0;
 }
 
+/* 関連論文調査(027): 023の寒色(indigo)・024の暖色(amber)と区別できる緑系のアクセント */
+.paper-research-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.9rem;
+}
+
+.paper-research-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.paper-research-banner-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.paper-research-banner-details {
+  line-height: 1.5;
+}
+
+.paper-research-banner-details summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.paper-research-banner-details p {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+}
+
+.paper-research-banner button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+  flex-shrink: 0;
+}
+
 /* 論文モード(015拡張): AG-UIのstateで同期した「今読んでいる論文」バッジ */
 .paper-mode-badge {
   display: flex;

@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { DailySummaryBanner } from "./DailySummaryBanner";
 import { MemoryHousekeepingBanner } from "./MemoryHousekeepingBanner";
+import { PaperResearchBanner } from "./PaperResearchBanner";
 import { DiaryPanel } from "./DiaryPanel";
 import { IrList, type IrListResult } from "./IrList";
 import { NewsList, type NewsListResult } from "./NewsList";
@@ -320,6 +321,7 @@ export default function App() {
 
         <DailySummaryBanner />
         <MemoryHousekeepingBanner />
+        <PaperResearchBanner />
 
         {error !== null && <div className="error">{error}</div>}
         {uploadError !== null && <div className="error">{uploadError}</div>}

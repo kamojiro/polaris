@@ -330,6 +330,33 @@ def memory_housekeeping_latest() -> MemoryHousekeepingResponse | None:
     )
 
 
+class PaperResearchResponse(BaseModel):
+    """直近に完了した関連論文調査の結果(027-related-paper-research)."""
+
+    research_id: str
+    seed_title: str
+    result_summary: str
+    completed_at: datetime
+
+
+@app.get("/api/paper-research/latest")
+def paper_research_latest() -> PaperResearchResponse | None:
+    """直近に完了した関連論文調査を返す(未完了・未実行なら`null`).
+
+    生成はここでは行わない(CLI専用、cron駆動)。既読管理はフロント側のlocalStorageで行う
+    (`completed_at`を最終既読値と比較する、023/024と同じ方式).
+    """
+    record = _paper_research_repo.get_latest_done()
+    if record is None or record.result_summary is None or record.completed_at is None:
+        return None
+    return PaperResearchResponse(
+        research_id=record.id,
+        seed_title=record.seed_title,
+        result_summary=record.result_summary,
+        completed_at=record.completed_at,
+    )
+
+
 class DiscordMessageResponse(BaseModel):
     """Discordサイドバーの1件分(021-discord-integration 方向性3)."""
 
