@@ -35,6 +35,7 @@ from polaris.agent.structure_paper import StructuredPaper
 from polaris.db.diary_repository import DiaryRepository
 from polaris.db.ir_repository import IrRepository
 from polaris.db.news_repository import NewsRepository
+from polaris.db.paper_research_repository import PaperResearchRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
@@ -95,6 +96,7 @@ async def test_chat_model_settings_allow_long_structured_answer(tmp_path: Path) 
         ir_repo=IrRepository(engine),
         ir_extractor=_FakeIrExtractor(),
         diary_repo=DiaryRepository(engine),
+        research_repo=PaperResearchRepository(engine),
     )
     deps = ChatDeps(state=ChatUIState())
 

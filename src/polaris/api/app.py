@@ -43,6 +43,7 @@ from polaris.db.ir_repository import IrRepository
 from polaris.db.memory_housekeeping_repository import MemoryHousekeepingRepository
 from polaris.db.memory_repository import MemoryRepository
 from polaris.db.news_repository import NewsRepository
+from polaris.db.paper_research_repository import PaperResearchRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
@@ -122,6 +123,7 @@ _daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notif
 _ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
 _diary_repo = DiaryRepository(_engine)  # 019-diary-domain: 同上
 _memory_housekeeping_repo = MemoryHousekeepingRepository(_engine)  # 024-memory-theme-housekeeping: 同上(読み取り専用)
+_paper_research_repo = PaperResearchRepository(_engine)  # 027-related-paper-research: 同上
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
 _ir_extractor = AgentIrMetadataExtractor(build_extract_ir_metadata_agent(settings))
@@ -142,6 +144,7 @@ _agent = build_chat_agent(
     ir_repo=_ir_repo,
     ir_extractor=_ir_extractor,
     diary_repo=_diary_repo,
+    research_repo=_paper_research_repo,
 )
 
 _upload_dir = Path(settings.ingest.upload_dir)

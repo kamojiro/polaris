@@ -17,7 +17,7 @@ from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from .chat_state import ChatDeps, ChatUIState
 from .model import build_model
-from .tools import diary, ir, memory, news, paper, paper_qa, todo, web_search
+from .tools import diary, ir, memory, news, paper, paper_qa, paper_research, todo, web_search
 
 if TYPE_CHECKING:
     from polaris.agent.extract_ir_metadata import IrMetadataExtractor
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from polaris.db.diary_repository import DiaryRepository
     from polaris.db.ir_repository import IrRepository
     from polaris.db.news_repository import NewsRepository
+    from polaris.db.paper_research_repository import PaperResearchRepository
     from polaris.db.repository import PaperRepository
     from polaris.db.todo_repository import TodoRepository
     from polaris.settings import Settings
@@ -39,8 +40,8 @@ _INSTRUCTIONS_FOOTER = (
 
 _INSTRUCTIONS = (
     f"{_INSTRUCTIONS_HEADER}\n\n"
-    f"{paper.INSTRUCTIONS}\n{todo.INSTRUCTIONS}\n{paper_qa.INSTRUCTIONS}\n{web_search.INSTRUCTIONS}\n"
-    f"{news.INSTRUCTIONS}\n{ir.INSTRUCTIONS}\n{diary.INSTRUCTIONS}\n"
+    f"{paper.INSTRUCTIONS}\n{todo.INSTRUCTIONS}\n{paper_qa.INSTRUCTIONS}\n{paper_research.INSTRUCTIONS}\n"
+    f"{web_search.INSTRUCTIONS}\n{news.INSTRUCTIONS}\n{ir.INSTRUCTIONS}\n{diary.INSTRUCTIONS}\n"
     f"{_INSTRUCTIONS_FOOTER}\n"
 )
 
@@ -75,8 +76,9 @@ def build_chat_agent(
     ir_repo: IrRepository,
     ir_extractor: IrMetadataExtractor,
     diary_repo: DiaryRepository,
+    research_repo: PaperResearchRepository,
 ) -> Agent[ChatDeps, str]:
-    """設定とリポジトリ・Structure/メタデータ抽出・TODO/ニュース/IR/日記リポジトリ依存からチャットエージェントを組み立てる."""
+    """設定とリポジトリ・Structure/メタデータ抽出・TODO/ニュース/IR/日記/関連論文調査リポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
     # web_fetch はpydantic-ai同梱のツール(SSRF対策済みhttps取得+markdown変換)。
     # 具体的なURLの内容を尋ねられたとき、web_searchで近似せず直接読ませるために使う
@@ -99,6 +101,7 @@ def build_chat_agent(
     todo.register_read(agent, todo_repo)
     todo.register_write(agent, todo_repo)
     paper_qa.register(agent, repo, settings=settings)
+    paper_research.register(agent, research_repo, paper_repo=repo, settings=settings)
     web_search.register(agent, settings=settings)
     news.register(agent, news_repo)
     ir.register(agent, ir_repo, settings=settings, ir_extractor=ir_extractor)
