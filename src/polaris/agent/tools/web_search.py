@@ -18,7 +18,7 @@ import httpx
 
 from polaris.adapters.searxng.client import SearxngSearchError
 from polaris.adapters.searxng.client import search as searxng_search
-from polaris.services.progress import set_progress
+from polaris.progress import set_progress
 
 if TYPE_CHECKING:
     from pydantic_ai import Agent

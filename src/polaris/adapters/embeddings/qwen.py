@@ -20,7 +20,7 @@ os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 import torch
 from sentence_transformers import SentenceTransformer
 
-from polaris.services.progress import set_progress
+from polaris.progress import set_progress
 
 logger = logging.getLogger(__name__)
 

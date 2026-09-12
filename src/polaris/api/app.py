@@ -47,13 +47,13 @@ from polaris.db.paper_research_repository import PaperResearchRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.progress import get_progress_lines
 from polaris.services.daily_summary import local_today
 from polaris.services.diary import record_diary_turn
 from polaris.services.discord_title_cache import read_cache as read_discord_title_cache
 from polaris.services.discord_title_cache import write_cache as write_discord_title_cache
 from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
-from polaris.services.progress import get_progress_lines
 from polaris.settings import Settings
 
 if TYPE_CHECKING:

@@ -2,7 +2,7 @@
 
 `services/ingest_paper.py`と同じ「repoとagentを受け取って組み立てる」パターン。
 CLI(`cli/ingest_news.py`)から1日1回呼ばれる想定で、チャットのターン内実行ではないため
-`services/progress.py`(進捗表示)は使わない。
+`progress.py`(進捗表示)は使わない。
 
 トピック分類は行わない: source_labelはフィード単位で静的に決まる(spec の対立軸の
 定義方針)ため、記事単位の追加LLM分類は不要と判断した。

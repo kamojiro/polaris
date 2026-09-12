@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from polaris.adapters.edinet.client import fetch_edinet_document_pdf
 from polaris.adapters.pdf.extractor import PdfExtractionError, extract_pdf_text
 from polaris.domain.entities import IrRecord, Item, ItemType
-from polaris.services.progress import set_progress
+from polaris.progress import set_progress
 
 if TYPE_CHECKING:
     import httpx

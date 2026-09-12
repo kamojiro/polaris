@@ -82,6 +82,17 @@ def erd(session: Session) -> None:
     venv_backend="uv",
     python=PYTHON_VERSIONS,
     uv_groups=["dev"],
+    tags=["architecture", "ci"],
+)
+def imports(session: Session) -> None:
+    """大枠のアーキテクチャ制約(層構造)をimport-linterで強制する(ADR-0014)."""
+    session.run("lint-imports")
+
+
+@session(
+    venv_backend="uv",
+    python=PYTHON_VERSIONS,
+    uv_groups=["dev"],
     tags=["typecheck", "ci"],
 )
 def typecheck(session: Session) -> None:

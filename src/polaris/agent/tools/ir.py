@@ -16,9 +16,9 @@ from typing import TYPE_CHECKING
 import httpx
 from pydantic import BaseModel
 
+from polaris.progress import set_progress
 from polaris.services.ingest_ir import ingest_ir_document
 from polaris.services.ir_full_text import load_ir_full_text
-from polaris.services.progress import set_progress
 
 if TYPE_CHECKING:
     from pydantic_ai import Agent

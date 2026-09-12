@@ -40,6 +40,7 @@ from polaris.adapters.arxiv.client import fetch_arxiv_metadata, fetch_arxiv_pdf
 from polaris.adapters.pdf.downloader import fetch_pdf
 from polaris.adapters.pdf.extractor import PdfExtractionError, extract_pdf_text
 from polaris.domain.entities import Chunk, Item, ItemType, PaperRecord
+from polaris.progress import set_progress
 from polaris.services.chunking import ChunkDraft, split_into_chunks
 from polaris.services.paper_source import (
     ArxivSource,
@@ -47,7 +48,6 @@ from polaris.services.paper_source import (
     UrlSource,
     resolve_source,
 )
-from polaris.services.progress import set_progress
 
 if TYPE_CHECKING:
     from polaris.adapters.arxiv.parser import ArxivMetadata

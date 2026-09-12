@@ -25,8 +25,8 @@ from pydantic_ai import RunContext  # noqa: TC002
 
 from polaris.adapters.arxiv.parser import extract_arxiv_id
 from polaris.agent.chat_state import ActivePaper, ChatDeps
+from polaris.progress import set_progress
 from polaris.services.paper_full_text import load_full_text
-from polaris.services.progress import set_progress
 
 if TYPE_CHECKING:
     from pydantic_ai import Agent

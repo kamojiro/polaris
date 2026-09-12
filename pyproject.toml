@@ -36,6 +36,7 @@ explicit = true
 
 [dependency-groups]
 dev = [
+    "import-linter>=2.15",
     "nodeenv>=1.9.1",
     "nox>=2025.10.16",
     "nox-uv>=0.6.3",
@@ -103,4 +104,43 @@ asyncio_mode = "auto"
 addopts = "-m 'not llm'"
 markers = [
     "llm: 実LLM呼び出しを伴うテスト(コスト・非決定性があるため既定では除外。`uv run nox -s test_llm`で明示実行)",
+]
+
+# ADR-0014: 大枠のアーキテクチャ制約をCIで強制する。実際のimport関係を調査した上で
+# 設計した層構造(2026-09-13)。`polaris.settings`/`polaris.progress`は横断的に使われる
+# 依存の無いユーティリティのため、意図的にどの層にも含めない(誰からimportされても違反にならない)。
+[tool.importlinter]
+root_packages = ["polaris"]
+
+[[tool.importlinter.contracts]]
+name = "レイヤー構造(cli|api -> agent -> services -> adapters|db -> domain)"
+type = "layers"
+layers = [
+    "polaris.cli | polaris.api",
+    "polaris.agent",
+    "polaris.services",
+    "polaris.adapters | polaris.db",
+    "polaris.domain",
+]
+# servicesはagentのProtocol型(PaperStructurer等)をTYPE_CHECKING配下でのみ参照する
+# (実行時には呼ばれない、依存性注入のための型注釈)。実行時の依存方向は
+# agent -> services のまま保たれている。grimp(import-linterの解析エンジン)は
+# TYPE_CHECKINGブロックの有無を区別しないため、既知の型専用importだけを個別に除外する
+# (ワイルドカードにしないのは、services->agentの実行時importこそこの契約が本来
+# 検知すべき違反のため、方向ごと丸ごと除外しない判断、2026-09-13)。
+ignore_imports = [
+    "polaris.services.daily_summary -> polaris.agent.daily_summary",
+    "polaris.services.diary -> polaris.agent.diary_rewrite",
+    "polaris.services.ingest_ir -> polaris.agent.extract_ir_metadata",
+    "polaris.services.ingest_news -> polaris.agent.structure_news",
+    "polaris.services.ingest_paper -> polaris.agent.extract_metadata",
+    "polaris.services.ingest_paper -> polaris.agent.structure_paper",
+    "polaris.services.memory -> polaris.agent.memory_extract",
+    "polaris.services.memory -> polaris.agent.memory_recall",
+    "polaris.services.memory_housekeeping -> polaris.agent.memory_housekeeping",
+    "polaris.services.paper_research -> polaris.agent.extract_problem_solution",
+    "polaris.services.paper_research -> polaris.agent.paper_triage",
+    "polaris.services.paper_research -> polaris.agent.research_keywords",
+    "polaris.services.paper_research -> polaris.agent.research_synthesis",
+    "polaris.services.paper_research_discovery -> polaris.agent.research_keywords",
 ]
