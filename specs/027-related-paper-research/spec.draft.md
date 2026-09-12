@@ -84,12 +84,16 @@ class PaperDeepAnalysisRecord(SQLModel, table=True):
     created_at: datetime
 ```
 
-## 未決定事項
+## 未決定事項(2026-09-12実装完了時点で解決)
 
-- 2hop・キーワード検索の絞り込みパラメータ(何件に制限するか)は実装時にチューニングが要る
-- Semantic Scholar上にしか無くarXiv IDが取れない論文(会議論文等)の全文取得手段(既存パイプラインはarXiv/PDF前提)
-- `research_arxiv(query)`(IDEAS.mdの旧候補)との役割分担(こちらは引用チェイニング起点、あちらは能動的キーワード検索起点。将来的に共通化する余地はあるが今は別物として進める)
-- cron実行の頻度・1回あたりの消化件数
+- ~~2hop・キーワード検索の絞り込みパラメータ~~ → `settings.paper_research.*`(`references_limit`/`citations_limit`/`hop2_seed_count`/`hop2_citations_limit`/`search_limit`/`max_candidates`)として全て設定値に出した。既定値のままだが実機でチューニング可能
+- ~~Semantic Scholar上にしか無くarXiv IDが取れない論文の全文取得手段~~ → `openAccessPdf.url`が空文字列でなければ014のURL取り込み経路に渡す。どちらも無い場合は取り込まず、abstractのみで統合段に持ち込む(`services/paper_research.py::_deep_read_one`)
+- `research_arxiv(query)`(IDEAS.mdの旧候補)との役割分担は未着手のまま(将来spec)
+- ~~cron実行の頻度・1回あたりの消化件数~~ → `settings.paper_research.max_records_per_run`(既定1件)。頻度はcrontab側の設定のみで表現し、コード側に頻度用の設定値は持たない(023/024と同じ判断)。推奨は`*/30 * * * *`(`cli/run_paper_research.py`のdocstring参照)
+
+## 実装状況
+
+✔️ ユーザーストーリー1、実装完了(2026-09-12)。Semantic ScholarのAPIキーは必須(無認証は実測で不安定、`docs/adr`は無いがコード内コメントに実測値を記録)。ADR-0011(Ingest時Embedding生成の一時停止)をこの作業で初めてコードへ全面適用した。調査で自動取り込みされた論文は`PaperResearchDiscoveredPaper`で出自を持ち、`list_papers`等のライブラリ表示からは除外される(2026-09-12にユーザー確認、spec本文には記載が無かった追加要件)。ストーリー2〜4は引き続き未着手。
 
 ## 依存
 
