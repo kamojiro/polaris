@@ -76,33 +76,9 @@ flowchart LR
 
 現在登録されているドメイン(2026-09-13時点、`agent/chat_agent.py`参照): `memory`・`paper`・`todo`(読み書き分離)・`paper_qa`・`paper_research`・`web_search`・`news`・`ir`・`diary`、加えてpydantic-ai同梱の`web_fetch_tool()`。
 
-## ③ 現在登録されているtool一覧(2026-09-13時点)
+## ③ 現在登録されているtool一覧
 
-LLMから見える`@agent.tool`/`@agent.tool_plain`関数のみ(`@agent.instructions`の動的instructions関数は挙動を変えるだけでtoolとしては呼ばれないため、ここには含めない)。役割の文はコード側のdocstring1行目そのまま(LLMにもそのまま渡る説明文)。
-
-| ドメイン(`agent/tools/`) | tool | 種別 | 役割 |
-| --- | --- | --- | --- |
-| `paper.py` | `save_paper` | plain | arXiv/PDF直リンクURL/アップロード済みPDFからメタデータ・本文を取得し、チャンク分割まで行って保存する |
-| `paper.py` | `list_papers` | plain | 保存済みの論文一覧を直近分だけ返す(総件数も併せて返す) |
-| `paper_qa.py` | `get_paper_full_text` | tool(state) | 保存済み論文の本文全文を取得し、会話に取り込む(論文モードに入る) |
-| `paper_qa.py` | `exit_paper_mode` | tool(state) | 論文モードを終了する |
-| `paper_research.py` | `research_related_papers` | tool(state) | 論文を起点に引用チェイニングで関連論文を集める調査を、キューに1件追加する(027) |
-| `todo.py` | `add_todo` | plain | 新しいTODOを追加する |
-| `todo.py` | `list_todos` | plain | TODO一覧を返す(既定では未完了のみ、熟成度順) |
-| `todo.py` | `update_todo` | plain | 既存TODOのタイトル・詳細メモ・時間スケールを更新する |
-| `todo.py` | `complete_todo` | plain | TODOを完了にする |
-| `todo.py` | `delete_todo` | plain | TODOを削除する(物理削除) |
-| `news.py` | `list_news` | plain | 取り込み済みのニュース記事一覧を返す(情報源ラベルごとにグルーピング表示) |
-| `ir.py` | `save_ir_document` | plain | EDINETのdocIDからIR文書(有価証券報告書等)のPDFを取得し保存する |
-| `ir.py` | `list_ir_documents` | plain | 保存済みのIR文書一覧を直近分だけ返す |
-| `ir.py` | `get_ir_full_text` | plain | 保存済みIR文書の本文全文を取得し、会話に取り込む |
-| `diary.py` | `get_diary_range` | plain | 指定期間の日記エントリを返す |
-| `diary.py` | `set_diary_mode` | tool(state) | 日記モードを開始/終了する(019) |
-| `web_search.py` | `web_search` | plain | Webを検索する(最新情報や、保存済みデータには無い一般的な事柄を調べる) |
-| `memory.py` | (toolなし) | — | `_memory_instructions`のみ登録(想起結果を動的instructionsとして差し込む、toolとしては何も公開しない) |
-| (chat_agent.py直接) | `web_fetch` | pydantic-ai同梱 | 具体的なURLの内容を直接取得する(SSRF対策済み、SearXNGでの近似ではなく直接読ませたいときに使う) |
-
-「tool(state)」は`RunContext[ChatDeps]`経由で論文モード/日記モードのstateを読み書きするtool、「plain」は`@agent.tool_plain`(depsに触れない)。
+個々のtoolはドメインが増えるたびに変わる(=変更頻度が高い)ため、①・②と違って常設ドキュメント化しない(ADR-0014と同じ判断)。`uv run python scripts/audit_agent_tools.py`をオンデマンドで実行して最新の一覧を得ること。
 
 ## 関連
 
