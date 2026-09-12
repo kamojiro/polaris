@@ -17,6 +17,8 @@ ADRは不変の決定履歴であり、「今のコードの状態」を示す�
 1. **DBテーブル一覧**: `domain/entities.py`のSQLModelから**Mermaid記法のER図**を自動生成する。ツールはGraphviz依存の`eralchemy`ではなく、Mermaid出力に対応した`paracelsus`(またはeralchemy2のMermaidモード)を使う。生成物(`docs/erd.md`)はpre-commit/CIで再生成し、コミット差分としてレビューできるようにする
 2. **どのコードがどのテーブルに書き込むか**: 常設ドキュメント化しない。`session.add`/`.update()`/insert相当の呼び出しをASTで走査し、テーブル名と紐づけて一覧化する自作の小スクリプト(`scripts/audit_table_writes.py`想定)をオンデマンドで実行する運用にする
 3. **あるアクションでドメインモデルがどう経由・変化するか**: 常設ドキュメント化しない。必要になった都度、Claude CodeにMermaidシーケンス図をその場で出力させる(コミットしない、使い捨て)。将来的に型情報ベースの独自トレーサーを検討する余地は残す
+
+   **改訂(2026-09-13)**: 個別アクションの詳細トレース(例: `save_paper`ツール1回分の呼び出し順)は引き続き使い捨てのままとするが、**チャットエージェントの全体像**(ADR-0003の3段パイプライン、`agent/tools/`のドメイン別tool登録の仕組み)は例外的に常設ドキュメント化する(`docs/chat-agent-flow.md`)。理由: 個別アクションのトレースは変更頻度が高く追従コストに見合わないが、パイプライン構造・tool登録の骨格自体はADR-0013で固定化されており、ARCHITECTURE.mdのコンテナ図が`agent`コンテナの中身(チャットエージェント1つがどう組み立てられているか)まで踏み込んでいないため、補完する価値がある。
 4. **大枠で何を不変として扱うか**: `import-linter`でモジュール間の禁止依存関係をコード化しCIで強制する(例: `domain`層は`services`/`agent`/`api`層をimportしない、`services`層は`agent`/`api`層をimportしない、といった一方向の依存ルール)。加えて、更新頻度が低い前提でMermaidのC4図を1枚だけ`ARCHITECTURE.md`に置く
 
 ## 検討した代替案
@@ -31,11 +33,15 @@ ADRは不変の決定履歴であり、「今のコードの状態」を示す�
 
 悪い面: `paracelsus`/`import-linter`の導入・pre-commit/CI組み込みという初期セットアップコストが発生する。`import-linter`の禁止ルール自体は現状のimport関係を調査した上で個別に設計する必要があり、本ADRの時点では未着手(下記未決定事項)。
 
-## 未決定事項
+## 未決定事項(2026-09-13実装完了時点で解決)
 
-- `import-linter`の具体的な禁止ルール一覧(現状のモジュール間import関係を`import-linter`の`layers`/`independence`等のcontract形式でどう表現するかは、着手時に既存コードを読んで設計する)
-- `docs/erd.md`の再生成をpre-commitとCIのどちらで担うか(両方でもよい)
-- `ARCHITECTURE.md`のC4図の詳細度(コンテキスト図止まりか、コンテナ図まで含めるか)
+- ~~`import-linter`の具体的な禁止ルール一覧~~ → 実際のimport関係を調査した`layers`契約(`cli|api → agent → services → adapters|db → domain`)として`pyproject.toml`に実装した。`services`が`agent`のProtocol型をTYPE_CHECKING配下でのみ参照する14箇所は`ignore_imports`に個別列挙(ワイルドカードにはしない、方向ごと丸ごと除外すると本来検知すべき実行時違反も見逃すため)
+- ~~`docs/erd.md`の再生成をpre-commitとCIのどちらで担うか~~ → pre-commit/CI自体を導入せず、`uv run nox`(このプロジェクトの唯一のチェック窓口)の`erd`セッションとして実装。デフォルト実行に含まれる
+- ~~`ARCHITECTURE.md`のC4図の詳細度~~ → コンテナ図まで含めた(コンテキスト図+コンテナ図の2枚)
+
+## 実装状況
+
+✔️ 実装完了(2026-09-13)。決定した4項目のうち、1(ER図自動生成)・2(テーブル書き込み監査スクリプト)・4(import-linter+ARCHITECTURE.md)を実装した。3(ドメインモデル遷移のオンデマンド生成)はコード実装不要の運用習慣のため対象外のまま。ただし3は上記の通り一部改訂し、チャットエージェントの全体像のみ`docs/chat-agent-flow.md`として例外的に常設ドキュメント化した。
 
 ## 関連
 
