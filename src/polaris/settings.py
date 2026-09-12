@@ -202,6 +202,51 @@ class IrSettings(BaseModel):
     metadata_head_chars: int = 4000
 
 
+class SemanticScholarSettings(BaseModel):
+    """Semantic Scholar Academic Graph API(027-related-paper-research)への接続設定.
+
+    無認証アクセスは実測で成功2回・429が5回(2026-09-12、共有プールのレート制限)と
+    非常に不安定なため、APIキーを必須にする。`api_key`が未設定(空文字列)の場合、
+    `research_related_papers`ツール側で機能自体を無効化する(discord.bot_tokenと同じ
+    ゲート方式)。キーがあっても429は起こりうる前提で、全リクエストに指数バックオフ
+    (`max_attempts`/`backoff_base_seconds`/`backoff_max_seconds`)を掛ける。
+    """
+
+    api_key: str = ""
+    base_url: str = "https://api.semanticscholar.org/graph/v1"
+    timeout_seconds: float = 20.0
+    # 指数バックオフの試行回数(2s→4s→8sの間隔で待つ、1回の待ちはbackoff_max_secondsで打ち切り)。
+    max_attempts: int = 4
+    backoff_base_seconds: float = 2.0
+    backoff_max_seconds: float = 30.0
+    # リトライとは別に、成功時もリクエスト間に挟む最小間隔(そもそも429を出させないための予防側)。
+    min_interval_seconds: float = 1.0
+
+
+class PaperResearchSettings(BaseModel):
+    """関連論文調査(027-related-paper-research ユーザーストーリー1)の設定.
+
+    引用チェイニング(発見)の絞り込みパラメータはspecが「実装時にチューニングが要る」と
+    明記した未決定事項のため、すべて設定値として外に出す。
+    """
+
+    # 想起(memory.recall_model_id)と同じ「軽い判定は軽いモデル」という判断。
+    triage_model_id: str = "qwen/qwen3-8b"
+    references_limit: int = 30
+    citations_limit: int = 30
+    hop2_seed_count: int = 5   # 2hopを広げる1hop論文の数(被引用数上位)
+    hop2_citations_limit: int = 10
+    search_limit: int = 10
+    max_candidates: int = 60
+    triage_batch_size: int = 10
+    max_deep_read: int = 8
+    # chat.max_full_text_chars(200k)より絞る: 1調査で最大max_deep_read本読むため。
+    analysis_max_chars: int = 60_000
+    max_records_per_run: int = 1
+    stale_in_progress_minutes: int = 120
+    max_record_attempts: int = 2
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -211,8 +256,9 @@ class Settings(BaseSettings):
     DB_PATH: str = "data/polaris.db"
     LOG_LEVEL: str = "INFO"
     LOG_PATH: str = "data/polaris.log"
-    # Embeddingのバッチ進捗・GPUメモリ診断ログはリクエストごとに数十行出て他のログに
+    # Ingestパイプラインのステージ進行ログはリクエストごとに数十行出て他のログに
     # 埋もれやすいため、専用ファイルに分けて追いやすくする(コンソール/LOG_PATHにも引き続き出る)。
+    # 名称はADR-0011適用前(Embeddingのバッチ進捗・GPUメモリ診断ログ用)の経緯のまま。
     GPU_LOG_PATH: str = "data/gpu.log"
 
     llm: LLMSettings = LLMSettings()
@@ -224,6 +270,8 @@ class Settings(BaseSettings):
     daily_summary: DailySummarySettings = DailySummarySettings()
     ir: IrSettings = IrSettings()
     discord: DiscordSettings = DiscordSettings()
+    semantic_scholar: SemanticScholarSettings = SemanticScholarSettings()
+    paper_research: PaperResearchSettings = PaperResearchSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",
