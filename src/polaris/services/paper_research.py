@@ -291,8 +291,15 @@ async def run_paper_research_batch(
     ingester: PaperIngester,
     http_client: httpx.AsyncClient,
     settings: Settings,
+    max_records: int | None = None,
 ) -> PaperResearchBatchResult:
-    """キューのstale回収→多重起動ガード→`max_records_per_run`件の処理、を1回のバッチとして行う."""
+    """キューのstale回収→多重起動ガード→`max_records`件の処理、を1回のバッチとして行う.
+
+    `max_records`を省略した場合は`settings.paper_research.max_records_per_run`を使う
+    (CLIの`--max-records`でデバッグ時だけ上書きできるようにするための引数)。
+    """
+    if max_records is None:
+        max_records = settings.paper_research.max_records_per_run
     now = datetime.now(UTC)
     reclaimed = research_repo.reclaim_stale(
         now=now,
@@ -306,7 +313,7 @@ async def run_paper_research_batch(
         return PaperResearchBatchResult(reclaimed=reclaimed, processed=0, done=0, failed=0)
 
     processed = done = failed = 0
-    for _ in range(settings.paper_research.max_records_per_run):
+    for _ in range(max_records):
         record = research_repo.claim_next_pending(now=datetime.now(UTC))
         if record is None:
             break
