@@ -1,8 +1,8 @@
 """ingest_paper_from_url(フルパイプライン)の純ロジックテスト.
 
-実LLM・実Embeddingモデルは使わず、フェイクの EmbeddingModel / PaperStructurer /
-PaperMetadataExtractor を注入する。arXiv・URL直リンクのメタデータ取得・PDF
-ダウンロードは respx でモックする。
+実LLMは使わず、フェイクの PaperStructurer / PaperMetadataExtractor を注入する。
+arXiv・URL直リンクのメタデータ取得・PDFダウンロードは respx でモックする。
+Embedding生成はADR-0011により行わない。
 """
 
 from datetime import UTC, datetime
@@ -27,17 +27,6 @@ _FIXTURE_DIR = Path(__file__).parent.parent / "adapters"
 _METADATA_XML = (_FIXTURE_DIR / "fixture_1706.03762.xml").read_text(encoding="utf-8")
 _PDF_BYTES = (_FIXTURE_DIR / "fixtures" / "attention.pdf").read_bytes()
 _URL = "https://arxiv.org/abs/1706.03762"
-_EMBEDDING_DIM = 4
-
-
-class _FakeEmbedder:
-    """固定ベクトルを返すだけのフェイク Embedding モデル."""
-
-    model_id = "fake-embedder"
-
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """テキスト数と同じ数だけ固定ベクトルを返す."""
-        return [[0.1, 0.2, 0.3, 0.4] for _ in texts]
 
 
 class _FakeStructurer:
@@ -69,8 +58,6 @@ def _make_settings(tmp_path: Path) -> Settings:
         ingest=IngestSettings(
             pdf_dir=str(tmp_path / "pdfs"),
             upload_dir=str(tmp_path / "uploads"),
-            embedding_model_id="fake-embedder",
-            embedding_dim=_EMBEDDING_DIM,
             chunk_chars=200,
             chunk_overlap_chars=20,
         ),
@@ -78,7 +65,7 @@ def _make_settings(tmp_path: Path) -> Settings:
 
 
 def _make_repo(tmp_path: Path) -> PaperRepository:
-    engine = create_db_engine(str(tmp_path / "test.db"), embedding_dim=_EMBEDDING_DIM)
+    engine = create_db_engine(str(tmp_path / "test.db"))
     return PaperRepository(engine)
 
 
@@ -95,8 +82,8 @@ def _mock_arxiv_pdf(*, status_code: int = 200) -> None:
         respx.get("https://arxiv.org/pdf/1706.03762").mock(return_value=httpx.Response(status_code))
 
 
-async def test_ingest_paper_persists_item_record_chunks_and_embeddings(tmp_path: Path) -> None:
-    """フルパイプラインで Item / PaperRecord / Chunk / Embedding がすべて永続化される."""
+async def test_ingest_paper_persists_item_record_and_chunks(tmp_path: Path) -> None:
+    """フルパイプラインで Item / PaperRecord / Chunk が永続化される(Embeddingは生成しない、ADR-0011)."""
     repo = _make_repo(tmp_path)
     settings = _make_settings(tmp_path)
 
@@ -108,7 +95,6 @@ async def test_ingest_paper_persists_item_record_chunks_and_embeddings(tmp_path:
                 _URL,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -125,11 +111,6 @@ async def test_ingest_paper_persists_item_record_chunks_and_embeddings(tmp_path:
     stored_chunks = repo.list_chunks(result.item.id)
     assert len(stored_chunks) == len(result.chunks)
 
-    with repo._engine.connect() as conn:
-        rows = conn.exec_driver_sql("SELECT count(*) FROM embeddings").fetchone()
-    assert rows is not None
-    assert rows[0] == len(result.chunks)
-
 
 async def test_ingest_paper_falls_back_to_abstract_when_pdf_fails(tmp_path: Path) -> None:
     """PDF取得に失敗しても abstract ベースで1チャンクとして続行する."""
@@ -144,7 +125,6 @@ async def test_ingest_paper_falls_back_to_abstract_when_pdf_fails(tmp_path: Path
                 _URL,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -170,7 +150,6 @@ async def test_ingest_paper_is_idempotent(tmp_path: Path) -> None:
                 _URL,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -179,7 +158,6 @@ async def test_ingest_paper_is_idempotent(tmp_path: Path) -> None:
                 _URL,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -205,7 +183,6 @@ async def test_ingest_paper_normalizes_source_url_to_abs(tmp_path: Path) -> None
                 pasted_url,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -261,7 +238,7 @@ async def test_ingest_paper_switches_to_winner_on_concurrent_insert_conflict(tmp
         created_at=now,
         source_ref="paper:winner-rec",
     )
-    engine = create_db_engine(str(tmp_path / "test.db"), embedding_dim=_EMBEDDING_DIM)
+    engine = create_db_engine(str(tmp_path / "test.db"))
     repo = _RaceyRepository(engine, winner_item, winner_record)
     settings = _make_settings(tmp_path)
 
@@ -273,7 +250,6 @@ async def test_ingest_paper_switches_to_winner_on_concurrent_insert_conflict(tmp
                 _URL,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -299,7 +275,6 @@ async def test_ingest_paper_rejects_non_arxiv_url(tmp_path: Path) -> None:
                 "not a url or id",
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -321,7 +296,6 @@ async def test_ingest_paper_from_pdf_url(tmp_path: Path) -> None:
                 pdf_url,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -352,7 +326,6 @@ async def test_ingest_paper_from_pdf_url_is_idempotent(tmp_path: Path) -> None:
                 pdf_url,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -361,7 +334,6 @@ async def test_ingest_paper_from_pdf_url_is_idempotent(tmp_path: Path) -> None:
                 pdf_url,
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,
@@ -390,7 +362,6 @@ async def test_ingest_paper_from_pdf_url_raises_when_extraction_fails(tmp_path: 
                     pdf_url,
                     repo=repo,
                     http_client=client,
-                    embedder=_FakeEmbedder(),
                     structurer=_FakeStructurer(),
                     extractor=_FakeExtractor(),
                     settings=settings,
@@ -412,7 +383,6 @@ async def test_ingest_paper_from_upload(tmp_path: Path) -> None:
             f"upload://{upload_id}",
             repo=repo,
             http_client=client,
-            embedder=_FakeEmbedder(),
             structurer=_FakeStructurer(),
             extractor=_FakeExtractor(),
             settings=settings,
@@ -438,7 +408,6 @@ async def test_ingest_paper_from_upload_missing_file_raises(tmp_path: Path) -> N
                 "upload://does-not-exist",
                 repo=repo,
                 http_client=client,
-                embedder=_FakeEmbedder(),
                 structurer=_FakeStructurer(),
                 extractor=_FakeExtractor(),
                 settings=settings,

@@ -22,7 +22,6 @@ from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.discord.client import DiscordFetchError, fetch_recent_messages
-from polaris.adapters.embeddings.qwen import QwenEmbedder
 from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
 from polaris.agent.diary_date_infer import AgentDiaryDateInferrer, build_diary_date_infer_agent
 from polaris.agent.diary_rewrite import AgentDiaryRewriter, build_diary_rewrite_agent
@@ -97,9 +96,11 @@ logging.basicConfig(
         ),
     ],
 )
-# Ingestパイプライン(ステージ進行)とEmbeddingのバッチ進捗・GPUメモリ診断ログは
-# 量が多く他のログに埋もれやすいので、専用ファイルに分けて追いやすくする
-# (root loggerへの伝播はそのままなので、コンソール・LOG_PATH にも引き続き出る)。
+# Ingestパイプライン(ステージ進行)のログは量が多く他のログに埋もれやすいので、
+# 専用ファイルに分けて追いやすくする(root loggerへの伝播はそのままなので、
+# コンソール・LOG_PATH にも引き続き出る)。ADR-0011によりEmbedding生成は
+# 行わなくなったため、現在は ingest_paper のみが対象(ファイル名・設定は
+# 過去の経緯のまま GPU_LOG_PATH)。
 _gpu_log_path = Path(settings.GPU_LOG_PATH)
 _gpu_log_path.parent.mkdir(parents=True, exist_ok=True)
 _gpu_log_handler = RotatingFileHandler(
@@ -109,7 +110,7 @@ _gpu_log_handler = RotatingFileHandler(
     encoding="utf-8",
 )
 _gpu_log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-for _logger_name in ("polaris.services.ingest_paper", "polaris.adapters.embeddings.qwen"):
+for _logger_name in ("polaris.services.ingest_paper",):
     logging.getLogger(_logger_name).addHandler(_gpu_log_handler)
 
 _engine = create_db_engine(settings.DB_PATH, embedding_dim=settings.ingest.embedding_dim)
@@ -121,8 +122,6 @@ _daily_summary_repo = DailySummaryRepository(_engine)  # 023-daily-summary-notif
 _ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
 _diary_repo = DiaryRepository(_engine)  # 019-diary-domain: 同上
 _memory_housekeeping_repo = MemoryHousekeepingRepository(_engine)  # 024-memory-theme-housekeeping: 同上(読み取り専用)
-# Embedding モデルはプロセス起動時に 1 度だけロードする(初回は数十秒かかる)。
-_embedder = QwenEmbedder(settings.ingest.embedding_model_id)
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
 _ir_extractor = AgentIrMetadataExtractor(build_extract_ir_metadata_agent(settings))
@@ -136,7 +135,6 @@ _discord_titler = AgentDiscordTitler(build_discord_title_agent(settings))  # 021
 _agent = build_chat_agent(
     settings,
     _repo,
-    embedder=_embedder,
     structurer=_structurer,
     extractor=_extractor,
     todo_repo=_todo_repo,

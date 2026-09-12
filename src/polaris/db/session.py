@@ -14,7 +14,11 @@ if TYPE_CHECKING:
 
 
 def create_db_engine(db_path: str, *, embedding_dim: int = 1024) -> Engine:
-    """SQLite の Engine を作り、通常テーブルと Embedding 用 vec0 テーブルを用意して返す."""
+    """SQLite の Engine を作り、通常テーブルと Embedding 用 vec0 テーブルを用意して返す.
+
+    ADR-0011により Ingest 時の Embedding 生成は一時停止しているが、既存の
+    保存済みベクトルを読める状態に保つため vec0 テーブル自体は作り続ける。
+    """
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     engine = create_engine(f"sqlite:///{path}")

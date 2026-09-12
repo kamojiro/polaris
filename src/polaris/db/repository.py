@@ -147,5 +147,9 @@ class PaperRepository:
             return list(rows)
 
     def save_embeddings(self, records: list[EmbeddingRecord]) -> None:
-        """Chunk の Embedding をまとめて sqlite-vec の vec0 テーブルへ保存する."""
+        """Chunk の Embedding をまとめて sqlite-vec の vec0 テーブルへ保存する.
+
+        ADR-0011により Ingest 時の Embedding 生成は一時停止しており、現在
+        どこからも呼ばれていない(再開時の手戻りを減らすためコードは残す)。
+        """
         _save_embeddings(self._engine, records)

@@ -20,7 +20,6 @@ from .model import build_model
 from .tools import diary, ir, memory, news, paper, paper_qa, todo, web_search
 
 if TYPE_CHECKING:
-    from polaris.adapters.embeddings import EmbeddingModel
     from polaris.agent.extract_ir_metadata import IrMetadataExtractor
     from polaris.agent.extract_metadata import PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer
@@ -69,7 +68,6 @@ def build_chat_agent(
     settings: Settings,
     repo: PaperRepository,
     *,
-    embedder: EmbeddingModel,
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
     todo_repo: TodoRepository,
@@ -78,7 +76,7 @@ def build_chat_agent(
     ir_extractor: IrMetadataExtractor,
     diary_repo: DiaryRepository,
 ) -> Agent[ChatDeps, str]:
-    """設定とリポジトリ・Embedding/Structure/メタデータ抽出・TODO/ニュース/IR/日記リポジトリ依存からチャットエージェントを組み立てる."""
+    """設定とリポジトリ・Structure/メタデータ抽出・TODO/ニュース/IR/日記リポジトリ依存からチャットエージェントを組み立てる."""
     model = build_model(settings)
     # web_fetch はpydantic-ai同梱のツール(SSRF対策済みhttps取得+markdown変換)。
     # 具体的なURLの内容を尋ねられたとき、web_searchで近似せず直接読ませるために使う
@@ -95,7 +93,6 @@ def build_chat_agent(
         agent,
         repo,
         settings=settings,
-        embedder=embedder,
         structurer=structurer,
         extractor=extractor,
     )

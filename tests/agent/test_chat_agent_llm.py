@@ -16,7 +16,7 @@
 渡していたが、それだと`_INSTRUCTIONS`が言及するweb_search等のtoolが実際には
 登録されておらず、モデルが「toolを呼び出したつもり」のJSON文字列をテキスト出力として
 返してしまい(本来toolを実際に呼べば起きない現象)、意図と無関係な理由で失敗した。
-`tests/services/test_ingest_paper.py`と同じフェイクEmbedder/Structurer/Extractorパターンで
+`tests/services/test_ingest_paper.py`と同じフェイクStructurer/Extractorパターンで
 実際に`build_chat_agent()`を組み立て、本番と同じtool群(web_search含む)を登録した上で
 検証する。
 """
@@ -42,23 +42,12 @@ from polaris.settings import IngestSettings, Settings
 
 pytestmark = pytest.mark.llm
 
-_EMBEDDING_DIM = 4
 _LONG_ANSWER_PROMPT = (
     "大阪でつけ麺食べたいんだけど、有名店を5つくらい挙げて、それぞれの特徴と選び方の"
     "ポイントを詳しく表形式で整理して説明して"
 )
 # 空応答や極端な短文(エラーメッセージ相当)ではないことだけを確認する最低限のしきい値。
 _MIN_OUTPUT_CHARS = 200
-
-
-class _FakeEmbedder:
-    """使われない想定のフェイク Embedding モデル(save_paperを呼ばないため未呼び出しで終わる)."""
-
-    model_id = "fake-embedder"
-
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """テキスト数と同じ数だけ固定ベクトルを返す(このテストでは呼ばれない想定)."""
-        return [[0.1, 0.2, 0.3, 0.4] for _ in texts]
 
 
 class _FakeStructurer:
@@ -94,12 +83,11 @@ async def test_chat_model_settings_allow_long_structured_answer(tmp_path: Path) 
     本番と同じ`build_chat_agent()`(web_search等の実toolを含む)で組み立てたエージェントに
     長文が必要な質問を投げ、"Model token limit exceeded"にならず完了することを確認する。
     """
-    engine = create_db_engine(str(tmp_path / "test.db"), embedding_dim=_EMBEDDING_DIM)
-    settings = Settings(ingest=IngestSettings(embedding_dim=_EMBEDDING_DIM))
+    engine = create_db_engine(str(tmp_path / "test.db"))
+    settings = Settings(ingest=IngestSettings())
     agent = build_chat_agent(
         settings,
         PaperRepository(engine),
-        embedder=_FakeEmbedder(),
         structurer=_FakeStructurer(),
         extractor=_FakeExtractor(),
         todo_repo=TodoRepository(engine),

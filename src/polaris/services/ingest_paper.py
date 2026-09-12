@@ -6,16 +6,20 @@
 新設した)。
 
 arXiv経路: メタデータ取得(arXiv API) → PDF取得・本文抽出 → Structure(要約/venue生成)
-→ チャンク分割 → Embedding生成 → 永続化。PDF取得・本文抽出に失敗しても abstract
+→ チャンク分割 → 永続化。PDF取得・本文抽出に失敗しても abstract
 のみで続行し、Item/PaperRecordの登録自体は失わない(spec のエラーハンドリング方針)。
 arxiv_id で重複を防ぎ、メタデータのみ登録済み(チャンク未生成)の場合はそこから
 再開する(部分的成功からの冪等な再実行)。
 
 URL/アップロード経路: title/abstract の供給元(arXiv API相当)が無いため、
 PDF取得 → 本文抽出 → メタデータ抽出(LLM 1回でsummaryも同時生成)→ 永続化 →
-チャンク分割 → Embedding生成、の順になる。本文抽出に失敗した場合はabstract相当の
+チャンク分割、の順になる。本文抽出に失敗した場合はabstract相当の
 フォールバックが無い(Item.titleを埋める手段が無い)ため、Ingest全体を失敗させる。
 source_url で重複を防ぐ(arxiv_idを持たないため)。
+
+Embedding生成は行わない(ADR-0011「論文Ingest時のEmbedding生成を一時停止する」、
+2026-09-12に027-related-paper-researchの作業として実装)。Chunkテーブル自体・
+`db/vector_store.py`・`adapters/embeddings/`は再開時の手戻りを減らすため残っている。
 """
 
 from __future__ import annotations
@@ -35,7 +39,7 @@ from sqlalchemy.exc import IntegrityError
 from polaris.adapters.arxiv.client import fetch_arxiv_metadata, fetch_arxiv_pdf
 from polaris.adapters.pdf.downloader import fetch_pdf
 from polaris.adapters.pdf.extractor import PdfExtractionError, extract_pdf_text
-from polaris.domain.entities import Chunk, EmbeddingRecord, Item, ItemType, PaperRecord
+from polaris.domain.entities import Chunk, Item, ItemType, PaperRecord
 from polaris.services.chunking import ChunkDraft, split_into_chunks
 from polaris.services.paper_source import (
     ArxivSource,
@@ -47,7 +51,6 @@ from polaris.services.progress import set_progress
 
 if TYPE_CHECKING:
     from polaris.adapters.arxiv.parser import ArxivMetadata
-    from polaris.adapters.embeddings import EmbeddingModel
     from polaris.agent.extract_metadata import ExtractedPaper, PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer, StructuredPaper
     from polaris.db.repository import PaperRepository
@@ -173,16 +176,15 @@ async def _run_structure(
     return structured
 
 
-async def _chunk_and_embed(
+def _chunk_and_save(
     body_text: str,
     *,
     from_pdf: bool,
     item: Item,
-    embedder: EmbeddingModel,
     repo: PaperRepository,
     settings: Settings,
 ) -> list[Chunk]:
-    """本文をチャンク分割し、Embeddingを生成してどちらも永続化する."""
+    """本文をチャンク分割して永続化する(Embedding生成はADR-0011により行わない)."""
     if from_pdf:
         chunk_drafts = split_into_chunks(
             body_text,
@@ -198,15 +200,6 @@ async def _chunk_and_embed(
     ]
     repo.save_chunks(chunks)
     logger.info("チャンク分割完了: %d チャンク", len(chunks))
-
-    logger.info("Embedding開始: %d チャンク (model=%s)", len(chunks), embedder.model_id)
-    set_progress("embedding", f"Embedding生成中: 0/{len(chunks)} チャンク完了")
-    vectors = await embedder.embed_batch([chunk.text for chunk in chunks])
-    embedding_records = [
-        EmbeddingRecord(chunk_id=chunk.id, vector=vector, model=embedder.model_id)
-        for chunk, vector in zip(chunks, vectors, strict=True)
-    ]
-    repo.save_embeddings(embedding_records)
     return chunks
 
 
@@ -234,7 +227,6 @@ async def _ingest_arxiv(
     *,
     repo: PaperRepository,
     http_client: httpx.AsyncClient,
-    embedder: EmbeddingModel,
     structurer: PaperStructurer,
     settings: Settings,
 ) -> IngestResult:
@@ -288,11 +280,10 @@ async def _ingest_arxiv(
             "成功(PDF)" if from_pdf else "失敗のため abstract で続行",
             len(body_text),
         )
-        chunks = await _chunk_and_embed(
+        chunks = _chunk_and_save(
             body_text,
             from_pdf=from_pdf,
             item=item,
-            embedder=embedder,
             repo=repo,
             settings=settings,
         )
@@ -322,7 +313,6 @@ async def _ingest_from_pdf(
     pdf_bytes: bytes,
     *,
     source_url: str,
-    embedder: EmbeddingModel,
     extractor: PaperMetadataExtractor,
     repo: PaperRepository,
     settings: Settings,
@@ -372,11 +362,10 @@ async def _ingest_from_pdf(
     item, record = _build_pdf_records(extracted, source_url=source_url, pdf_path=pdf_path)
     repo.save_paper(item, record)
 
-    chunks = await _chunk_and_embed(
+    chunks = _chunk_and_save(
         text,
         from_pdf=True,
         item=item,
-        embedder=embedder,
         repo=repo,
         settings=settings,
     )
@@ -395,7 +384,6 @@ async def ingest_paper_from_url(
     *,
     repo: PaperRepository,
     http_client: httpx.AsyncClient,
-    embedder: EmbeddingModel,
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
     settings: Settings,
@@ -408,7 +396,6 @@ async def ingest_paper_from_url(
             source.arxiv_id,
             repo=repo,
             http_client=http_client,
-            embedder=embedder,
             structurer=structurer,
             settings=settings,
         )
@@ -430,7 +417,6 @@ async def ingest_paper_from_url(
         return await _ingest_from_pdf(
             pdf_bytes,
             source_url=source.url,
-            embedder=embedder,
             extractor=extractor,
             repo=repo,
             settings=settings,
@@ -449,7 +435,6 @@ async def ingest_paper_from_url(
     result = await _ingest_from_pdf(
         pdf_bytes,
         source_url=f"sha256:{digest}",
-        embedder=embedder,
         extractor=extractor,
         repo=repo,
         settings=settings,

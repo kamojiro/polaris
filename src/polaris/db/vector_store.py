@@ -2,6 +2,12 @@
 
 Embedding は SQLModel の table クラスでは表現できない sqlite-vec の vec0 仮想
 テーブルに格納するため、この層だけ生 SQL(`exec_driver_sql`)で扱う。
+
+ADR-0011により Ingest 時の Embedding 生成は一時停止しており、`save_embeddings`
+は現在どこからも呼ばれていない(意図的な一時停止であり削除ではないため、
+再開時の手戻りを減らすためコードは残す)。`register_vec_extension`/
+`create_vector_table` は既存の保存済みベクトルを読める状態に保つため
+`db/session.py` から引き続き呼ばれる。
 """
 
 from __future__ import annotations

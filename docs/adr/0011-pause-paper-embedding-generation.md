@@ -20,6 +20,8 @@
 
 論文Ingest時のChunk embedding生成(`services/ingest_paper.py`のembedding生成ステップ、およびGPU上でのembeddingモデルロード)を一時停止する。`Chunk`テーブル自体(セクション分割されたテキスト、全文再構成フォールバックやFTS5用途で使う)は残す。`save_embeddings()`・`vector_store.py`のコード自体も削除せず残す(再開時の手戻りを減らすため)。
 
+**実装(2026-09-12)**: 採択時点ではコードに未反映のまま(`_chunk_and_embed`が無条件で生成、`api/app.py`が`QwenEmbedder`を実ロード)だったが、`027-related-paper-research`(関連論文の全文取り込みでembeddingを走らせたくない)の作業として、この決定を全面適用した。`_chunk_and_embed`は`_chunk_and_save`に名称変更してEmbedding生成部分を削除し、`api/app.py`の`QwenEmbedder`起動時ロードも削除した。`Chunk`テーブル・`db/vector_store.py`・`adapters/embeddings/`・`settings.ingest.embedding_model_id`/`embedding_dim`は本ADR通りすべて残っている(`create_db_engine`のvec0テーブル作成も含む)。
+
 ## 検討した代替案
 
 - 現状維持(生成し続ける): 「そのうち使うかもしれない」という理由だけでGPUコスト・OOMリスク・コードの複雑度を払い続けることになり、このプロジェクトが他の箇所(004/005/XBRL構造化解析/Interestベクトル等)で一貫して採用してきた「使う機能が具体化してから作る」というYAGNI方針と矛盾する

@@ -1,9 +1,9 @@
 """論文Ingestツール(save_paper/list_papers、ADR-0013で chat_agent.py から分割).
 
 論文ツール(save_paper/list_papers)は 002-papers-ingest-full 以降、PDF取得・
-本文抽出・チャンク分割・Embedding生成までのフルパイプラインを実行する。
-014-paper-url-pdf-ingest で arXiv 以外(PDF直リンクURL、`upload://<id>` 経由の
-ローカルPDF)にも対応した。
+本文抽出・チャンク分割までのフルパイプラインを実行する(Embedding生成はADR-0011
+により行わない)。014-paper-url-pdf-ingest で arXiv 以外(PDF直リンクURL、
+`upload://<id>` 経由のローカルPDF)にも対応した。
 """
 
 from __future__ import annotations
@@ -20,7 +20,6 @@ from polaris.services.paper_source import InvalidPaperUrlError
 if TYPE_CHECKING:
     from pydantic_ai import Agent
 
-    from polaris.adapters.embeddings import EmbeddingModel
     from polaris.agent.chat_state import ChatDeps
     from polaris.agent.extract_metadata import PaperMetadataExtractor
     from polaris.agent.structure_paper import PaperStructurer
@@ -68,7 +67,6 @@ def register(
     repo: PaperRepository,
     *,
     settings: Settings,
-    embedder: EmbeddingModel,
     structurer: PaperStructurer,
     extractor: PaperMetadataExtractor,
 ) -> None:
@@ -77,7 +75,7 @@ def register(
 
     @agent.tool_plain
     async def save_paper(url: str) -> str:
-        """arXiv/PDF直リンクURL/アップロード済みPDFからメタデータ・本文を取得し、チャンク分割・Embedding生成まで行って保存する.
+        """arXiv/PDF直リンクURL/アップロード済みPDFからメタデータ・本文を取得し、チャンク分割まで行って保存する.
 
         Args:
             url: arXiv の論文 URL/ID(例: https://arxiv.org/abs/2401.12345)、
@@ -94,7 +92,6 @@ def register(
                 url,
                 repo=repo,
                 http_client=http_client,
-                embedder=embedder,
                 structurer=structurer,
                 extractor=extractor,
                 settings=settings,

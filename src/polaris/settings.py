@@ -31,6 +31,10 @@ class IngestSettings(BaseModel):
     Embedding モデルは ADR-0001 / spec.draft.md で決定済み(Qwen3-Embedding-0.6B、
     sentence-transformers 経由でローカルロード)。チャンク分割の粒度は未確定のため、
     設定値で調整できるようにしておく。
+
+    ADR-0011により Ingest 時の Embedding 生成は一時停止しており、
+    `embedding_model_id`/`embedding_dim`は現在どこからも参照されていない
+    (`embedding_dim`のみ`create_db_engine`のvec0テーブル次元指定に残る)。
     """
 
     pdf_dir: str = "data/pdfs"
