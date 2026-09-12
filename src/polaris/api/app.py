@@ -63,6 +63,8 @@ if TYPE_CHECKING:
     from fastapi.responses import Response
     from pydantic_ai.run import AgentRunResult
 
+    from polaris.domain.entities import PaperResearchRecord
+
 # 進捗メッセージが変化していないかの内部チェック間隔。クライアントへの問い合わせではなく
 # サーバー内でのポーリングなので、間隔を詰めてもネットワーク負荷は発生しない。
 _PROGRESS_CHECK_INTERVAL_S = 0.2
@@ -331,7 +333,7 @@ def memory_housekeeping_latest() -> MemoryHousekeepingResponse | None:
 
 
 class PaperResearchResponse(BaseModel):
-    """直近に完了した関連論文調査の結果(027-related-paper-research)."""
+    """完了した関連論文調査1件分(027-related-paper-research)."""
 
     research_id: str
     seed_title: str
@@ -339,15 +341,13 @@ class PaperResearchResponse(BaseModel):
     completed_at: datetime
 
 
-@app.get("/api/paper-research/latest")
-def paper_research_latest() -> PaperResearchResponse | None:
-    """直近に完了した関連論文調査を返す(未完了・未実行なら`null`).
+# サイドバーの調査履歴一覧に表示する上限件数。paper.pyのlist_papersと同じ理由
+# (件数が増えるほどDB負荷・レスポンスサイズが際限なく増えないよう、絞り込みはここで行う)。
+_RECENT_PAPER_RESEARCH_LIMIT = 20
 
-    生成はここでは行わない(CLI専用、cron駆動)。既読管理はフロント側のlocalStorageで行う
-    (`completed_at`を最終既読値と比較する、023/024と同じ方式).
-    """
-    record = _paper_research_repo.get_latest_done()
-    if record is None or record.result_summary is None or record.completed_at is None:
+
+def _to_paper_research_response(record: PaperResearchRecord) -> PaperResearchResponse | None:
+    if record.result_summary is None or record.completed_at is None:
         return None
     return PaperResearchResponse(
         research_id=record.id,
@@ -355,6 +355,30 @@ def paper_research_latest() -> PaperResearchResponse | None:
         result_summary=record.result_summary,
         completed_at=record.completed_at,
     )
+
+
+@app.get("/api/paper-research/latest")
+def paper_research_latest() -> PaperResearchResponse | None:
+    """直近に完了した関連論文調査を返す(未完了・未実行なら`null`)。通知バナー用.
+
+    生成はここでは行わない(CLI専用、cron駆動)。既読管理はフロント側のlocalStorageで行う
+    (`completed_at`を最終既読値と比較する、023/024と同じ方式).
+    """
+    record = _paper_research_repo.get_latest_done()
+    if record is None:
+        return None
+    return _to_paper_research_response(record)
+
+
+@app.get("/api/paper-research")
+def paper_research_list() -> list[PaperResearchResponse]:
+    """完了済みの関連論文調査を新しい順に返す(サイドバーの調査履歴一覧用、直近`_RECENT_PAPER_RESEARCH_LIMIT`件).
+
+    生成はここでは行わない(CLI専用、cron駆動)。`GET /api/paper-research/latest`が
+    「新着通知」用なのに対し、こちらは過去分も含めた一覧の閲覧用(2026-09-13追加)。
+    """
+    records = _paper_research_repo.list_done(limit=_RECENT_PAPER_RESEARCH_LIMIT)
+    return [response for record in records if (response := _to_paper_research_response(record)) is not None]
 
 
 class DiscordMessageResponse(BaseModel):

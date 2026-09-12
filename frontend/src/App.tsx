@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { DailySummaryBanner } from "./DailySummaryBanner";
 import { MemoryHousekeepingBanner } from "./MemoryHousekeepingBanner";
 import { PaperResearchBanner } from "./PaperResearchBanner";
+import { PaperResearchList } from "./PaperResearchList";
 import { DiaryPanel } from "./DiaryPanel";
 import { IrList, type IrListResult } from "./IrList";
 import { NewsList, type NewsListResult } from "./NewsList";
@@ -409,6 +410,7 @@ export default function App() {
       <Sidebar wide={uiState.diary_mode}>
         <NewsSidebar onSelect={handleSelectSidebarNews} />
         <DiscordSidebar onSelect={handleSelectDiscordMessage} />
+        <PaperResearchList />
         {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
       </Sidebar>
     </div>

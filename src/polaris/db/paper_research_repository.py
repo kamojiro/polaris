@@ -149,6 +149,18 @@ class PaperResearchRepository:
             )
             return session.exec(query).first()
 
+    def list_done(self, *, limit: int | None = None) -> list[PaperResearchRecord]:
+        """完了済みの調査を完了日時の降順で返す(`GET /api/paper-research`の一覧表示用)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            query = (
+                select(PaperResearchRecord)
+                .where(PaperResearchRecord.status == _STATUS_DONE)
+                .order_by(PaperResearchRecord.completed_at.desc())  # type: ignore[union-attr]
+            )
+            if limit is not None:
+                query = query.limit(limit)
+            return list(session.exec(query).all())
+
 
 class PaperDeepAnalysisRepository:
     """PaperDeepAnalysisRecord(精読結果のキャッシュ)の保存・取得を担う."""

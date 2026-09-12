@@ -146,6 +146,34 @@ def test_get_latest_done_returns_most_recently_completed(tmp_path: Path) -> None
     assert latest.id == "res-new"
 
 
+def test_list_done_returns_newest_first_and_excludes_pending_or_failed(tmp_path: Path) -> None:
+    """一覧表示は完了済みだけを完了日時の降順で返す(未完了・失敗は含まない)."""
+    repo = PaperResearchRepository(create_db_engine(str(tmp_path / "test.db")))
+    repo.save(_make_record("res-old", seed_item_id="item-a", status="in_progress"))
+    repo.save(_make_record("res-new", seed_item_id="item-b", status="in_progress"))
+    repo.save(_make_record("res-pending", seed_item_id="item-c"))
+    repo.save(_make_record("res-failed", seed_item_id="item-d", status="in_progress"))
+    repo.mark_done("res-old", result_summary="古い方", completed_at=_NOW)
+    repo.mark_done("res-new", result_summary="新しい方", completed_at=_NOW + timedelta(hours=1))
+    repo.mark_failed("res-failed", error="失敗", completed_at=_NOW + timedelta(hours=2))
+
+    done = repo.list_done()
+
+    assert [record.id for record in done] == ["res-new", "res-old"]
+
+
+def test_list_done_respects_limit(tmp_path: Path) -> None:
+    """limitを指定すると、新しい順に指定件数だけ返る."""
+    repo = PaperResearchRepository(create_db_engine(str(tmp_path / "test.db")))
+    for i in range(3):
+        repo.save(_make_record(f"res-{i}", seed_item_id=f"item-{i}", status="in_progress"))
+        repo.mark_done(f"res-{i}", result_summary=f"結果{i}", completed_at=_NOW + timedelta(hours=i))
+
+    done = repo.list_done(limit=2)
+
+    assert [record.id for record in done] == ["res-2", "res-1"]
+
+
 def test_deep_analysis_upsert_by_item_id(tmp_path: Path) -> None:
     """PaperDeepAnalysisRepository.saveはitem_idでupsertする(既存を置き換える)."""
     repo = PaperDeepAnalysisRepository(create_db_engine(str(tmp_path / "test.db")))
