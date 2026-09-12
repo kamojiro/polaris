@@ -87,6 +87,9 @@ max-positional-args = 5
 # SQLModel の table=True クラスはクラス定義時に実際の型が必要なため、
 # `from __future__ import annotations` で遅延評価にしない(TC003 を意図的に無視する)。
 "src/polaris/domain/entities.py" = ["TC003"]
+# scripts/ はパッケージ化しないオンデマンド実行スクリプト置き場(INP001)。
+# 標準出力への報告がそのまま目的のCLIツールのため print を許可する(T201)。
+"scripts/**/*.py" = ["INP001", "T201"]
 
 [tool.ruff.format]
 indent-style = "space"
