@@ -97,9 +97,59 @@ async def test_fetch_references_filters_null_nested_papers() -> None:
     assert papers[0].paper_id == "p1"
 
 
+async def test_fetch_references_filters_papers_with_null_paper_id() -> None:
+    """citedPaper自体は非nullでも、内側のpaperId/citationCountがnullな要素は除外する(実機ラン、2026-09-12).
+
+    S2が完全に解決できなかった参照文献はこの形で返ってくる(paperId/citationCountの
+    みnull、title等は入っていることもある)。
+    """
+    unresolved = {
+        "paperId": None,
+        "title": "Some Unresolved Reference",
+        "abstract": None,
+        "year": None,
+        "citationCount": None,
+        "externalIds": None,
+        "openAccessPdf": None,
+    }
+    body = {"offset": 0, "data": [{"citedPaper": unresolved}, {"citedPaper": _paper_json("p1")}]}
+    with respx.mock:
+        respx.get(f"{_BASE_URL}/paper/seed/references").mock(return_value=httpx.Response(200, json=body))
+        async with httpx.AsyncClient() as client:
+            papers = await fetch_references("seed", limit=30, client=client, settings=_settings())
+
+    assert len(papers) == 1
+    assert papers[0].paper_id == "p1"
+
+
+async def test_paper_with_null_citation_count_defaults_to_zero() -> None:
+    """paperIdはあるがcitationCountがnullの場合は0として扱う(単独のnullフィールドも許容する)."""
+    body = {"offset": 0, "data": [{"citedPaper": {**_paper_json("p1"), "citationCount": None}}]}
+    with respx.mock:
+        respx.get(f"{_BASE_URL}/paper/seed/references").mock(return_value=httpx.Response(200, json=body))
+        async with httpx.AsyncClient() as client:
+            papers = await fetch_references("seed", limit=30, client=client, settings=_settings())
+
+    assert len(papers) == 1
+    assert papers[0].citation_count == 0
+
+
 async def test_search_papers_parses_flat_data() -> None:
     """searchは`data`配列がフラット(ネストなし)な形で返る."""
     body = {"total": 1, "offset": 0, "data": [_paper_json("p3")]}
+    with respx.mock:
+        respx.get(f"{_BASE_URL}/paper/search").mock(return_value=httpx.Response(200, json=body))
+        async with httpx.AsyncClient() as client:
+            papers = await search_papers("transformer", limit=10, client=client, settings=_settings())
+
+    assert len(papers) == 1
+    assert papers[0].paper_id == "p3"
+
+
+async def test_search_papers_filters_items_with_null_paper_id() -> None:
+    """data配列の要素自体にpaperIdが無いものは除外する(references/citationsと同じ実機事象への備え)."""
+    unresolved = {"paperId": None, "title": "Unresolved", "citationCount": None}
+    body = {"total": 2, "offset": 0, "data": [unresolved, _paper_json("p3")]}
     with respx.mock:
         respx.get(f"{_BASE_URL}/paper/search").mock(return_value=httpx.Response(200, json=body))
         async with httpx.AsyncClient() as client:

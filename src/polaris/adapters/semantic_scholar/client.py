@@ -14,10 +14,13 @@ Semantic Scholarは無認証だと共有プールのレート制限にかかり�
   (内側に `abstract` を含むことを確認済み)
 - `openAccessPdf` は存在してもキーが `url: ""` の空文字列で返ることがある
   (`{"url": "", "status": null, "license": null, "disclaimer": "..."}`)
-- `GET /paper/arXiv:{arxiv_id}`(単体取得)・`GET /paper/search`(検索)は429により
-  未検証。ドキュメント上想定される形(単体オブジェクト/`{"data": [...]}`のフラット)を
-  前提にしつつ、寛容なパース(pydanticの未知フィールド無視、ネストしたnull要素の除外)
-  に留める
+- `GET /paper/arXiv:{arxiv_id}`(単体取得)・`GET /paper/search`(検索)はキー取得後に
+  実データで確認済み
+- **`citedPaper`/`citingPaper`オブジェクト自体は非nullでも、内側の`paperId`/
+  `citationCount`が`null`で返ることがある**(実機ラン、2026-09-12: `references`の
+  30件中6件がこの形でS2が完全に解決できなかった参照文献だった)。識別子が無いと
+  重複排除も追加のAPI呼び出し(citations等)もできないため、パース時点で
+  `paperId`が無い要素はネスト先ごと`None`として扱い、丸ごと除外する
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ from email.utils import parsedate_to_datetime
 from typing import TYPE_CHECKING, Any
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from polaris.settings import SemanticScholarSettings
@@ -71,6 +74,12 @@ class SemanticScholarPaper(BaseModel):
     external_ids: dict[str, Any] | None = Field(default=None, alias="externalIds")
     open_access_pdf: _OpenAccessPdf | None = Field(default=None, alias="openAccessPdf")
 
+    @field_validator("citation_count", mode="before")
+    @classmethod
+    def _default_citation_count(cls, value: int | None) -> int:
+        """`citationCount`が`null`で返ることがあるため0扱いにする(実機ラン、2026-09-12)."""
+        return value if value is not None else 0
+
     @property
     def arxiv_id(self) -> str | None:
         """`externalIds.ArXiv`があればarXiv IDを返す(無ければNone)."""
@@ -80,16 +89,39 @@ class SemanticScholarPaper(BaseModel):
         return value if isinstance(value, str) else None
 
 
+def _drop_if_unidentified(value: dict[str, Any] | None) -> dict[str, Any] | None:
+    """`paperId`が無い(S2が解決できなかった)論文はNoneに正規化する(パース前のバリデータで使う).
+
+    `citedPaper`/`citingPaper`オブジェクト自体は非nullでも、内側の`paperId`が`null`で
+    返ることがある(実機ラン、2026-09-12)。識別子が無いと`SemanticScholarPaper`として
+    構築できない(構築しようとすると`paperId: null`でバリデーションエラーになる)上、
+    重複排除にも使えないため、パース前の生dictの時点で弾く。
+    """
+    if value is None or not value.get("paperId"):
+        return None
+    return value
+
+
 class _ReferenceItem(BaseModel):
     """`/references`の`data`配列1件分(参照先論文は`citedPaper`にネストする、nullもありうる)."""
 
     cited_paper: SemanticScholarPaper | None = Field(default=None, alias="citedPaper")
+
+    @field_validator("cited_paper", mode="before")
+    @classmethod
+    def _drop_unidentified(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        return _drop_if_unidentified(value)
 
 
 class _CitationItem(BaseModel):
     """`/citations`の`data`配列1件分(引用元論文は`citingPaper`にネストする、nullもありうる)."""
 
     citing_paper: SemanticScholarPaper | None = Field(default=None, alias="citingPaper")
+
+    @field_validator("citing_paper", mode="before")
+    @classmethod
+    def _drop_unidentified(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        return _drop_if_unidentified(value)
 
 
 class _ReferencesResponse(BaseModel):
@@ -101,9 +133,16 @@ class _CitationsResponse(BaseModel):
 
 
 class _SearchResponse(BaseModel):
-    """`/paper/search`のレスポンス(未検証のため、要素のnullも許容する寛容なパース)."""
+    """`/paper/search`のレスポンス(要素のnull・paperId欠落も許容する寛容なパース)."""
 
     data: list[SemanticScholarPaper | None] = []
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def _drop_unidentified_items(cls, value: list[dict[str, Any] | None] | None) -> list[dict[str, Any] | None]:
+        if value is None:
+            return []
+        return [_drop_if_unidentified(item) for item in value]
 
 
 def _parse_retry_after(value: str | None) -> float | None:
