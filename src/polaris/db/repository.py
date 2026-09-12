@@ -35,6 +35,17 @@ class PaperRepository:
                 return None
             return item, record
 
+    def find_by_item_id(self, item_id: str) -> tuple[Item, PaperRecord] | None:
+        """item_id で既存レコードを検索する(027-related-paper-research: 調査依頼のseed_item_idから引く用途)."""
+        with Session(self._engine, expire_on_commit=False) as session:
+            record = session.exec(select(PaperRecord).where(PaperRecord.item_id == item_id)).first()
+            if record is None:
+                return None
+            item = session.get(Item, item_id)
+            if item is None:
+                return None
+            return item, record
+
     def find_by_source_url(self, source_url: str) -> tuple[Item, PaperRecord] | None:
         """source_url で既存レコードを検索する(arxiv_id を持たない論文の重複防止に使う)."""
         with Session(self._engine, expire_on_commit=False) as session:
