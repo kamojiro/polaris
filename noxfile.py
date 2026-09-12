@@ -62,6 +62,26 @@ def lint(session: Session) -> None:
     venv_backend="uv",
     python=PYTHON_VERSIONS,
     uv_groups=["dev"],
+    tags=["docs", "ci"],
+)
+def erd(session: Session) -> None:
+    """`domain/entities.py`のSQLModelからER図(`docs/erd.md`)を再生成する(ADR-0014).
+
+    `fix`(ruffの自動修正)と同じ「自動生成して差分はコミットレビューで見る」方針。
+    チェックのみ(CI的にfailさせたい)場合は `uv run nox -s erd -- --check` で
+    `paracelsus inject --check` に切り替わる。
+    """
+    check = "--check" in session.posargs
+    args = ["inject", "docs/erd.md", "sqlmodel:SQLModel", "--import-module", "polaris.domain.entities:*"]
+    if check:
+        args.append("--check")
+    session.run("paracelsus", *args)
+
+
+@session(
+    venv_backend="uv",
+    python=PYTHON_VERSIONS,
+    uv_groups=["dev"],
     tags=["typecheck", "ci"],
 )
 def typecheck(session: Session) -> None:

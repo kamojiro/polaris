@@ -39,6 +39,7 @@ dev = [
     "nodeenv>=1.9.1",
     "nox>=2025.10.16",
     "nox-uv>=0.6.3",
+    "paracelsus>=0.15.0",
     "pyright>=1.1.407",
     "pytest>=9.0.0",
     "pytest-asyncio>=1.3.0",
