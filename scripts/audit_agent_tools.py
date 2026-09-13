@@ -2,7 +2,7 @@
 
 `docs/chat-agent-flow.md`の①(1ターンの処理パイプライン)・②(tool登録の仕組み)は
 変更頻度が低い骨格のため常設ドキュメント化しているが、個々のtool一覧はドメインが
-増えるたびに変わる(`audit_table_writes.py`のテーブル書き込み元一覧と同じ理由)ため
+増えるたびに変わる(`audit_table_usage.py`のrepositoryメソッド呼び出し元一覧と同じ理由)ため
 オンデマンド実行に留める。`uv run python scripts/audit_agent_tools.py`で実行する。
 
 `agent/tools/*.py`内の`@agent.tool`/`@agent.tool_plain`が付いた関数を対象にする
