@@ -255,17 +255,17 @@ async def run_one_research(
         if outcome is not None:
             outcomes.append(outcome)
 
-    summary: str | None = None
-    for outcome in outcomes:
-        summary = await synthesizer.fold(
+    if outcomes:
+        outline = await synthesizer.outline(
             seed_title=seed_item.title,
-            previous=summary,
-            paper_title=outcome.paper_title,
-            problem=outcome.problem,
-            solution=outcome.solution,
+            outcomes=[(outcome.paper_title, outcome.problem) for outcome in outcomes],
         )
-
-    if summary is None:
+        summary = await synthesizer.synthesize(
+            seed_title=seed_item.title,
+            outline=outline,
+            outcomes=[(outcome.paper_title, outcome.problem, outcome.solution) for outcome in outcomes],
+        )
+    else:
         summary = f"『{seed_item.title}』に関連する論文で、精読に値すると判定されたものは見つかりませんでした。"
 
     logger.info(

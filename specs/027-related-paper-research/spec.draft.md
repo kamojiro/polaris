@@ -110,6 +110,8 @@ class PaperDeepAnalysisRecord(SQLModel, table=True):
 
 10本規模(課題/解決の短文×10)なら合計しても数百〜千数百語程度でどちらのstepも十分コンテキストに収まるため、セクションごとに個別のLLM呼び出しを分ける本格的なAutoSurveyまでは不要と判断。指示文は「各論文の課題/解決を漏らさず反映すること」を明示し、「簡潔に」は前置き・結びの除去程度に限定する。
 
+**実装完了(2026-09-13)**: `agent/research_synthesis.py`を`fold()`(refine方式)から`outline()`/`synthesize()`(2段階)に作り直した。`ResearchSynthesizer` Protocolは`outline(seed_title, outcomes: Sequence[tuple[title, problem]])`と`synthesize(seed_title, outline, outcomes: Sequence[tuple[title, problem, solution]])`の2メソッドに変更。`AgentResearchSynthesizer`はStep A用・Step B用の2つの`Agent`インスタンスを受け取る(`build_research_outline_agent`/`build_research_synthesis_agent`)。`services/paper_research.py::run_one_research`は精読ループ内で`fold()`を呼ぶのをやめ、全`outcomes`が確定した後に`outline()`→`synthesize()`を1回ずつ呼ぶ形に変更した。テスト(`tests/services/test_paper_research.py::test_synthesis_uses_outline_then_synthesize_exactly_once`)でoutline/synthesizeがちょうど1回ずつ呼ばれること、Step Aにsolutionが漏れないこと、Step Bに全論文が渡ることを確認済み。
+
 **根拠明示(2026-09-13、`alphaXiv/OpenResearch`のsystem promptから着想)**: 現状の「文章の最後に参考論文を列挙する」という弱い紐付けをやめ、**各主張の直後にその出典論文を明示する**形式に変更する(例: 「〜という手法が提案されている(出典: 論文X)」)。OpenResearchのsystem promptが「実質的な主張には直後にクリック可能な参照を添える、推論は観測と区別する」という規律を明示的に持っており、この考え方をStep Bの指示文に組み込む。
 
 ## 依存

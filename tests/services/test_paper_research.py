@@ -82,23 +82,19 @@ class _FakeExtractor:
 
 
 class _FakeSynthesizer:
-    """foldの呼び出し引数を記録し、累積した文字列を返すフェイク."""
+    """outline/synthesizeの呼び出し引数を記録し、渡された論文タイトルを含む文字列を返すフェイク."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[str | None, str, str, str]] = []
+        self.outline_calls: list[list[tuple[str, str]]] = []
+        self.synthesize_calls: list[tuple[str, list[tuple[str, str, str]]]] = []
 
-    async def fold(
-        self,
-        *,
-        seed_title: str,  # noqa: ARG002
-        previous: str | None,
-        paper_title: str,
-        problem: str,
-        solution: str,
-    ) -> str:
-        self.calls.append((previous, paper_title, problem, solution))
-        prefix = f"{previous}\n" if previous else ""
-        return f"{prefix}[{paper_title}]"
+    async def outline(self, *, seed_title: str, outcomes: Sequence[tuple[str, str]]) -> str:  # noqa: ARG002
+        self.outline_calls.append(list(outcomes))
+        return "outline: " + ", ".join(title for title, _ in outcomes)
+
+    async def synthesize(self, *, seed_title: str, outline: str, outcomes: Sequence[tuple[str, str, str]]) -> str:  # noqa: ARG002
+        self.synthesize_calls.append((outline, list(outcomes)))
+        return "\n".join(f"[{title}]" for title, _problem, _solution in outcomes)
 
 
 class _FakeKeywordExtractor:
@@ -368,8 +364,8 @@ async def test_paper_without_arxiv_or_pdf_reaches_synthesis_without_cache_row(tm
             )
 
     assert "(abstractのみ)" in summary
-    fold_titles = [call[1] for call in synthesizer.calls]
-    assert any("(abstractのみ)" in title for title in fold_titles)
+    synthesize_titles = [title for title, _problem, _solution in synthesizer.synthesize_calls[0][1]]
+    assert any("(abstractのみ)" in title for title in synthesize_titles)
 
 
 async def test_one_candidate_ingest_failure_does_not_abort_research(tmp_path: Path) -> None:
@@ -410,6 +406,58 @@ async def test_one_candidate_ingest_failure_does_not_abort_research(tmp_path: Pa
     # p-new(2000.00002)は正常に取り込まれ、統合結果に含まれる。
     assert summary  # 空文字列や「見つかりませんでした」ではないこと
     assert "見つかりませんでした" not in summary
-    assert "New Paper" in [call[1] for call in synthesizer.calls]
+    assert "New Paper" in [title for title, _problem, _solution in synthesizer.synthesize_calls[0][1]]
     assert "https://arxiv.org/abs/2000.00002" in ingester.called_urls
     assert discovered_repo.list_item_ids()  # 新規取り込みされた論文の出自が記録されている
+
+
+async def test_synthesis_uses_outline_then_synthesize_exactly_once(tmp_path: Path) -> None:
+    """統合は1論文ずつのfold()ではなく、outline→synthesizeの2段階を1回ずつ呼ぶ(2026-09-13改訂)."""
+    paper_repo, _research_repo, deep_repo, discovered_repo, settings = _setup(tmp_path)
+    seed = _make_seed(paper_repo)
+
+    triager, extractor, synthesizer, keyword_extractor = (
+        _FakeTriager(),
+        _FakeExtractor(),
+        _FakeSynthesizer(),
+        _FakeKeywordExtractor(),
+    )
+    ingester = _FakeIngester(paper_repo, fail_url_substring="2000.00004")
+    record = PaperResearchRecord(
+        id="res-1", seed_item_id=seed.id, seed_title=seed.title, status="in_progress", created_at=_NOW
+    )
+
+    with respx.mock:
+        _mock_semantic_scholar()
+        async with httpx.AsyncClient() as client:
+            summary = await run_one_research(
+                record,
+                deep_repo=deep_repo,
+                discovered_repo=discovered_repo,
+                paper_repo=paper_repo,
+                triager=triager,
+                extractor=extractor,
+                synthesizer=synthesizer,
+                keyword_extractor=keyword_extractor,
+                ingester=ingester,
+                http_client=client,
+                settings=settings,
+            )
+
+    # 1論文ごとにfold()するのではなく、outline/synthesizeともちょうど1回ずつ呼ばれる。
+    assert len(synthesizer.outline_calls) == 1
+    assert len(synthesizer.synthesize_calls) == 1
+
+    # Step A(outline)には(title, problem)のペアのみが渡り、solutionは含まれない。
+    outline_input = synthesizer.outline_calls[0]
+    assert all(len(pair) == 2 for pair in outline_input)  # noqa: PLR2004
+    outline_titles = [title for title, _problem in outline_input]
+
+    # Step B(synthesize)には全論文の(title, problem, solution)が渡り、Step Aと同じ論文集合。
+    synth_outline_arg, synth_outcomes = synthesizer.synthesize_calls[0]
+    synth_titles = [title for title, _problem, _solution in synth_outcomes]
+    assert set(synth_titles) == set(outline_titles)
+    assert synth_outline_arg.startswith("outline: ")  # _FakeSynthesizer.outline()の戻り値がそのまま渡っている
+
+    # 最終summaryはsynthesize()の戻り値であり、outline()の戻り値ではない。
+    assert summary == "\n".join(f"[{title}]" for title in synth_titles)

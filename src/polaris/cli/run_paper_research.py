@@ -31,7 +31,11 @@ from polaris.agent.extract_problem_solution import (
 )
 from polaris.agent.paper_triage import AgentPaperTriager, build_paper_triage_agent
 from polaris.agent.research_keywords import AgentResearchKeywordExtractor, build_research_keywords_agent
-from polaris.agent.research_synthesis import AgentResearchSynthesizer, build_research_synthesis_agent
+from polaris.agent.research_synthesis import (
+    AgentResearchSynthesizer,
+    build_research_outline_agent,
+    build_research_synthesis_agent,
+)
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
 from polaris.db.paper_research_repository import (
     PaperDeepAnalysisRepository,
@@ -93,7 +97,9 @@ async def _run(settings: Settings, *, max_records: int | None) -> None:
     metadata_extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
     triager = AgentPaperTriager(build_paper_triage_agent(settings))
     problem_solution_extractor = AgentPaperProblemSolutionExtractor(build_extract_problem_solution_agent(settings))
-    synthesizer = AgentResearchSynthesizer(build_research_synthesis_agent(settings))
+    synthesizer = AgentResearchSynthesizer(
+        build_research_outline_agent(settings), build_research_synthesis_agent(settings)
+    )
     keyword_extractor = AgentResearchKeywordExtractor(build_research_keywords_agent(settings))
 
     async with httpx.AsyncClient() as http_client:
