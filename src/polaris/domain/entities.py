@@ -55,6 +55,9 @@ class PaperRecord(SQLModel, table=True):
     abstract: str = ""
     source_url: str | None = None
     pdf_path: str | None = None
+    # 015-paper-qa-chat改訂(2026-09-13): Ingest時に抽出した全文を`pdf_path`と対で
+    # 保存する(get_paper_full_textのフォールバックがchunks連結の代わりにこれを読む)。
+    text_path: str | None = None
     ingested_at: datetime
 
 

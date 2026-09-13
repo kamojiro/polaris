@@ -171,9 +171,7 @@ async def _deep_read_one(
 
     assert record is not None  # item is not None の分岐は常にrecordも伴う  # noqa: S101
     try:
-        full_text = await load_full_text(
-            item, record, repo=paper_repo, max_chars=settings.paper_research.analysis_max_chars
-        )
+        full_text = await load_full_text(item, record, max_chars=settings.paper_research.analysis_max_chars)
         extracted = await extractor.extract(title=item.title, body_text=full_text.text)
     except Exception:
         logger.warning("課題/解決の抽出に失敗しました: item_id=%s", item.id, exc_info=True)

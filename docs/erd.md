@@ -108,6 +108,7 @@ erDiagram
     DATETIME ingested_at
     VARCHAR pdf_path "nullable"
     VARCHAR source_url "nullable"
+    VARCHAR text_path "nullable"
     VARCHAR venue "nullable"
     INTEGER year "nullable"
   }

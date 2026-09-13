@@ -98,7 +98,9 @@ def _build_metadata_records(metadata: ArxivMetadata) -> tuple[Item, PaperRecord]
     return item, record
 
 
-def _build_pdf_records(extracted: ExtractedPaper, *, source_url: str, pdf_path: Path) -> tuple[Item, PaperRecord]:
+def _build_pdf_records(
+    extracted: ExtractedPaper, *, source_url: str, pdf_path: Path, text_path: Path
+) -> tuple[Item, PaperRecord]:
     """メタデータ抽出(URL/アップロード経路)結果から Item / PaperRecord を組み立てる(まだ保存しない)."""
     now = datetime.now(UTC)
     record = PaperRecord(
@@ -112,6 +114,7 @@ def _build_pdf_records(extracted: ExtractedPaper, *, source_url: str, pdf_path: 
         abstract=extracted.abstract,
         source_url=source_url,
         pdf_path=str(pdf_path),
+        text_path=str(text_path),
         ingested_at=now,
     )
     item = Item(
@@ -126,6 +129,17 @@ def _build_pdf_records(extracted: ExtractedPaper, *, source_url: str, pdf_path: 
     return item, record
 
 
+async def _save_full_text(pdf_path: Path, text: str) -> Path:
+    """抽出済み全文を`pdf_path`と対になるテキストファイルとして永続化する(015改訂 2026-09-13).
+
+    `get_paper_full_text`のフォールバックがchunks連結の代わりにこのファイルを読む
+    (`services/paper_full_text.py`参照)。
+    """
+    text_path = pdf_path.with_suffix(".txt")
+    await asyncio.to_thread(text_path.write_text, text, encoding="utf-8")
+    return text_path
+
+
 async def _fetch_body_text(
     record: PaperRecord,
     arxiv_id: str,
@@ -138,7 +152,7 @@ async def _fetch_body_text(
     ダウンロードまたは抽出に失敗した場合は warning ログを出し、abstract を
     本文の代わりに返す。戻り値の bool は PDF 本文の抽出に成功したかどうかで、
     False の場合は呼び出し側が abstract をチャンク分割せず単一チャンクとして扱う。
-    成功時は `record.pdf_path` を更新する(呼び出し側で永続化する)。
+    成功時は `record.pdf_path`/`record.text_path` を更新する(呼び出し側で永続化する)。
     """
     pdf_dir = Path(settings.ingest.pdf_dir)
     await asyncio.to_thread(pdf_dir.mkdir, parents=True, exist_ok=True)
@@ -157,6 +171,8 @@ async def _fetch_body_text(
         return record.abstract, False
 
     record.pdf_path = str(pdf_path)
+    text_path = await _save_full_text(pdf_path, text)
+    record.text_path = str(text_path)
     return text, True
 
 
@@ -359,7 +375,8 @@ async def _ingest_from_pdf(
     finally:
         set_progress("stage", None)
 
-    item, record = _build_pdf_records(extracted, source_url=source_url, pdf_path=pdf_path)
+    text_path = await _save_full_text(pdf_path, text)
+    item, record = _build_pdf_records(extracted, source_url=source_url, pdf_path=pdf_path, text_path=text_path)
     repo.save_paper(item, record)
 
     chunks = _chunk_and_save(

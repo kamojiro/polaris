@@ -81,7 +81,7 @@ def register(agent: Agent[ChatDeps, str], repo: PaperRepository, *, settings: Se
         item, record = matches[0]
         set_progress("stage", "論文の全文を読み込み中…")
         try:
-            full_text = await load_full_text(item, record, repo=repo, max_chars=settings.chat.max_full_text_chars)
+            full_text = await load_full_text(item, record, max_chars=settings.chat.max_full_text_chars)
         finally:
             set_progress("stage", None)
         ctx.deps.state.active_paper = ActivePaper(item_id=item.id, title=item.title)

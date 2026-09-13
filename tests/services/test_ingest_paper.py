@@ -106,6 +106,8 @@ async def test_ingest_paper_persists_item_record_and_chunks(tmp_path: Path) -> N
     assert result.record.arxiv_id == "1706.03762"
     assert result.record.pdf_path is not None
     assert Path(result.record.pdf_path).exists()  # noqa: ASYNC240 - テストなのでブロッキング呼び出しで問題ない
+    assert result.record.text_path is not None
+    assert Path(result.record.text_path).read_text(encoding="utf-8")  # noqa: ASYNC240
     assert len(result.chunks) > 1  # 22個の見出しを含む本文なので複数チャンクになるはず
 
     stored_chunks = repo.list_chunks(result.item.id)
@@ -132,6 +134,7 @@ async def test_ingest_paper_falls_back_to_abstract_when_pdf_fails(tmp_path: Path
 
     assert result.created is True
     assert result.record.pdf_path is None
+    assert result.record.text_path is None
     assert len(result.chunks) == 1
     assert result.chunks[0].section is None
     assert result.chunks[0].text == result.record.abstract
@@ -308,6 +311,8 @@ async def test_ingest_paper_from_pdf_url(tmp_path: Path) -> None:
     assert result.record.source_url == pdf_url
     assert result.record.pdf_path is not None
     assert Path(result.record.pdf_path).exists()  # noqa: ASYNC240 - テストなのでブロッキング呼び出しで問題ない
+    assert result.record.text_path is not None
+    assert Path(result.record.text_path).read_text(encoding="utf-8")  # noqa: ASYNC240
     assert len(result.chunks) > 0
 
 
