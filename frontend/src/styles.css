@@ -1152,3 +1152,14 @@ header p {
 .composer button.diary-mode-toggle-active {
   background: #fde68a;
 }
+
+/* 音声入力(Web Speech API)ボタン。録音中は他のトグル系ボタンと区別できる目立つ色にする */
+.composer button.mic-button {
+  background: #e5e7eb;
+  color: #111827;
+  padding: 0.65rem 0.9rem;
+}
+
+.composer button.mic-button-active {
+  background: #fca5a5;
+}

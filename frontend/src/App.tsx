@@ -16,6 +16,7 @@ import { PaperList, type PaperListResult } from "./PaperList";
 import { Sidebar } from "./Sidebar";
 import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
+import { useSpeechRecognition } from "./useSpeechRecognition";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -185,6 +186,20 @@ export default function App() {
   // Safari で compositionend 直後の keydown でも true になり損ねることがあるため、
   // compositionstart/compositionend でも独自に追跡して二重にガードする。
   const isComposingRef = useRef(false);
+
+  // 音声入力(Web Speech API、Chrome前提)。認識結果を入力欄に差し込むだけで、
+  // 送信するかどうかは他の入力方法と同じくユーザーの明示的な送信操作に委ねる。
+  const { isSupported: isSpeechSupported, isListening, toggle: toggleListening } = useSpeechRecognition(
+    (transcript) => {
+      setInput((prev) => (prev.trim() === "" ? transcript : `${prev} ${transcript}`));
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          autoResize(textareaRef.current);
+          textareaRef.current.focus();
+        }
+      });
+    },
+  );
 
   const handleToggleDiaryMode = () => {
     toggleDiaryMode();
@@ -385,6 +400,18 @@ export default function App() {
           >
             📔
           </button>
+          {isSpeechSupported && (
+            <button
+              type="button"
+              className={isListening ? "mic-button mic-button-active" : "mic-button"}
+              aria-pressed={isListening}
+              disabled={isRunning}
+              onClick={toggleListening}
+              title={isListening ? "音声入力を停止" : "音声入力を開始"}
+            >
+              {isListening ? "⏹️" : "🎙️"}
+            </button>
+          )}
           <textarea
             ref={textareaRef}
             value={input}
