@@ -1,12 +1,12 @@
-# 018. Web検索tool(SearXNG連携)
+# 018. Web検索tool(SearXNG連携→Tavily移行)
 
 ## ステータス
 
-✔️ 完了
+🔧 改修中(2026-09-14、SearXNGからTavilyへの移行を決定。詳細は「移行: SearXNG→Tavily」参照)
 
 ## 概要
 
-チャットエージェント(および将来の前処理/後処理パイプライン)から使える汎用Web検索toolを追加する。自前ホスト済みのSearXNGインスタンスを検索バックエンドとして使う。接続方式はMCPではなく**自前のHTTPクライアント(adapter)**にする(2026-08-23、方針転換。詳細は背景・判断参照)。
+チャットエージェント(および将来の前処理/後処理パイプライン)から使える汎用Web検索toolを追加する。~~自前ホスト済みのSearXNGインスタンスを検索バックエンドとして使う。~~ **2026-09-14よりTavily APIに移行**。接続方式はMCPではなく**自前のHTTPクライアント(adapter)**にする(2026-08-23、方針転換。詳細は背景・判断参照。この方針自体はTavily移行後も変えない)。
 
 ## 背景・判断
 
@@ -58,6 +58,16 @@ SearXNGはコンテナで運用中。`settings.searxng_url`は環境に応じて
 - `git stash`で018の変更を完全に外したorigin/main(`0227e0f`)でも同じ手順(`agent.run_stream_events()`を直接呼ぶ)で再現した(4回中3回ハング)。よって**018が原因ではなく、`qwen/qwen3-30b-a3b:free`(OpenRouter無料枠)がツール呼び出しの空引数(`args=''`)をストリーミングで送ってきた際、pydantic-ai側がその完了を検知できず待ち続ける、既存の潜在バグ**と判断した(non-deterministicで、モデル側のストリーミング実装の揺れに起因すると見られる)
 - `list_papers`/`list_todos`/`exit_paper_mode`など、引数無し(または全省略可能)で呼ばれうる既存ツールすべてに影響しうる。018のE2E検証は、このバグの影響を受けない`agent.run()`(非streaming)経由での確認に切り替えて実施した(下記参照)
 - このバグ自体の修正(pydantic-ai側のツール呼び出し完了検知ロジックの調査、または全ツールに`ctx`等のダミー引数を持たせる回避策の検討)は018のスコープ外とし、別途対応が必要な既知の問題として記録するに留める
+
+## 移行: SearXNG→Tavily(2026-09-14決定)
+
+SearXNGでの検索結果の質(関連度・情報の新しさ)が不十分だったため、検索バックエンドをTavily(LLM向けに作られた検索API)に切り替える。
+
+- **背景**: 実機調査で判明した事実に記録した通り、SearXNGは`number_of_results`が信用できない・スニペットの情報密度にばらつきがある等の課題があった。加えて実運用で検索結果の質そのもの(知りたいことに対する関連度)が不足しているという指摘があり、自前ホストのメタ検索エンジンでは限界と判断
+- **設計方針**: 既存の「自前adapter(`httpx`直叩き)+ chat_agentからは`web_search(query)`という同じインターフェースで呼ぶ」という構造自体は変えない。`adapters/searxng/client.py`を`adapters/tavily/client.py`に置き換え、`SearchResult`のような既存の返り値pydanticモデルの形はできるだけ保つことで、`chat_agent.py`側(`_register_web_search_tools()`・`_format_search_results()`)への影響を最小化する
+- **設定変更**: `SearxngSettings(base_url, max_results, timeout_seconds)`を`TavilySettings`に置き換える。TavilyはAPIキー認証が必要なホスト型サービスのため、既存の`.env`ネスト設定パターン(`LLM__MODEL_ID`等)に倣い`TAVILY__API_KEY`のような形で環境変数管理する。SearXNGと違い**キーは秘密情報**なので、026のモデルパスと同様、値そのものをリポジトリにコミットしない(`.env`はすでにgitignore対象)
+- **インフラ影響**: 自前ホストのSearXNGコンテナは、移行完了後は他に利用箇所が無ければ停止・撤去できる見込み(現時点で018以外にSearXNGを直接使っている箇所は無い、上記「利用箇所」参照)
+- **未確認事項**: Tavilyの料金体系・無料枠のレート制限、日本語クエリでの精度、`answers`/`infoboxes`相当の即答機能の有無(Tavilyは`include_answer`オプションでLLM向け要約回答を返せる模様だが実機未検証)。実装時に確認する
 
 ## 未決定事項
 
