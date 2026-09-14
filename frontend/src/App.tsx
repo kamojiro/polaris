@@ -18,7 +18,7 @@ import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 import { useSpeechRecognition } from "./useSpeechRecognition";
 import { useWakeWord } from "./useWakeWord";
-import { BroadcastIcon, MicLineIcon, PlusIcon, WaveformIcon } from "./icons";
+import { BroadcastIcon, MicLineIcon, PlusIcon } from "./icons";
 
 const HANDS_FREE_PLACEHOLDER = "『かもも』と話しかけてください…";
 const DEFAULT_PLACEHOLDER = "arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)";
@@ -578,7 +578,7 @@ export default function App() {
                       : "音声入力を開始"
                 }
               >
-                <WaveformIcon />
+                {isHandsFreeEnabled ? <BroadcastIcon /> : <MicLineIcon />}
               </button>
               {isWakeWordAvailable && (
                 <button
