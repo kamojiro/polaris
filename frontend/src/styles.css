@@ -27,8 +27,11 @@ body {
   max-width: 840px;
   min-width: 0;
   /* .app-layout の上下padding(1.5rem×2)を差し引き、ページ全体の高さが
-     ちょうど100vhに収まるようにする(差し引かないと常に縦スクロールが出てしまう)。 */
-  min-height: calc(100vh - 3rem);
+     ちょうど100vhに収まるようにする。min-height(下限のみ)だと.messages(flex:1)を
+     内部スクロールさせられず、メッセージが増えるとページ全体が縦に伸びてしまう
+     (2026-09-14実機報告)。heightで上限も固定し、.sidebarのmax-heightと同じ
+     「親の高さを固定して子をoverflow-y:autoさせる」パターンに揃える。 */
+  height: calc(100vh - 3rem);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
