@@ -1144,20 +1144,30 @@ header p {
 .composer button.composer-voice-chevron {
   background: #e5e7eb;
   color: #111827;
-}
-
-.composer button.composer-plus-button,
-.composer button.composer-voice-button {
-  padding: 0.65rem 0.9rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
+.composer button.composer-plus-button {
+  padding: 0.65rem 0.9rem;
+}
+
+/* モックアップ通り円形の単独アイコンボタンにする(他のcomposerボタンと違い角丸長方形にしない)。 */
+.composer button.composer-voice-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+}
+
 /* シェブロンは音声ボタン本体より小さく、隣接して1つの分割ボタンに見えるようにする */
 .composer button.composer-voice-chevron {
-  padding: 0.65rem 0.4rem;
-  font-size: 0.8rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0.75rem;
   line-height: 1;
 }
 
@@ -1212,4 +1222,9 @@ header p {
 .composer-menu button.composer-menu-item-active {
   color: #b45309;
   font-weight: 600;
+}
+
+/* モックアップに合わせ「話す」項目のマイクアイコンだけオレンジにする(文字色は変えない)。 */
+.composer-menu button.composer-menu-item-speak svg {
+  color: #ea580c;
 }

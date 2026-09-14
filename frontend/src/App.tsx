@@ -522,6 +522,24 @@ export default function App() {
               </div>
             )}
           </div>
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(event) => {
+              setInput(event.target.value);
+              autoResize(event.target);
+            }}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
+            }}
+            placeholder={isHandsFreeEnabled ? HANDS_FREE_PLACEHOLDER : DEFAULT_PLACEHOLDER}
+            rows={1}
+            disabled={isRunning}
+          />
           {isSpeechSupported && (
             <div className="composer-menu-group" ref={voiceMenuRef}>
               <button
@@ -562,7 +580,7 @@ export default function App() {
               )}
               {isVoiceMenuOpen && (
                 <div className="composer-menu composer-menu-right">
-                  <button type="button" onClick={handleSelectPushToTalk}>
+                  <button type="button" className="composer-menu-item-speak" onClick={handleSelectPushToTalk}>
                     <MicLineIcon /> 話す
                   </button>
                   <button type="button" onClick={handleSelectHandsFree}>
@@ -572,24 +590,6 @@ export default function App() {
               )}
             </div>
           )}
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(event) => {
-              setInput(event.target.value);
-              autoResize(event.target);
-            }}
-            onKeyDown={handleKeyDown}
-            onCompositionStart={() => {
-              isComposingRef.current = true;
-            }}
-            onCompositionEnd={() => {
-              isComposingRef.current = false;
-            }}
-            placeholder={isHandsFreeEnabled ? HANDS_FREE_PLACEHOLDER : DEFAULT_PLACEHOLDER}
-            rows={1}
-            disabled={isRunning}
-          />
           <button type="submit" disabled={isRunning || input.trim() === ""}>
             送信
           </button>
