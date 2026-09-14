@@ -226,6 +226,11 @@ export default function App() {
   // 何らかの理由でisRunning中に検知イベントが届いても新しいターンを開始せず
   // 待ち受けだけ再開する(defense in depth、本質的な直し方は1つ目)。
   const [isHandsFreeEnabled, setIsHandsFreeEnabled] = useState(false);
+  // 音声ボタンの見た目・初回クリック時の挙動が「今どちらのモードを指しているか」
+  // (実際に接続中かどうかとは別、2026-09-14要望: 見た目のデフォルトは常時待受にしつつ
+  // ページ読み込み時に自動でマイク許可を求めない)。展開メニューで明示的に選ぶか、
+  // アイドル状態でメインボタンを押した(=このモードを実行した)ときに切り替わる。
+  const [voiceMode, setVoiceMode] = useState<"speak" | "handsfree">("handsfree");
   const pendingRearmRef = useRef(false);
   const { isAvailable: isWakeWordAvailable, isArmed: isWakeWordArmed, rearm: rearmWakeWord } = useWakeWord({
     enabled: isHandsFreeEnabled,
@@ -285,11 +290,17 @@ export default function App() {
       setIsHandsFreeEnabled(false);
       return;
     }
+    if (voiceMode === "handsfree") {
+      // アイドル状態でのクリックは、今選ばれているモード(既定は常時待受)を実行する。
+      setIsHandsFreeEnabled(true);
+      return;
+    }
     toggleListening();
   };
 
   const handleSelectPushToTalk = () => {
     setIsVoiceMenuOpen(false);
+    setVoiceMode("speak");
     if (isHandsFreeEnabled) {
       setIsHandsFreeEnabled(false);
     }
@@ -300,6 +311,7 @@ export default function App() {
 
   const handleSelectHandsFree = () => {
     setIsVoiceMenuOpen(false);
+    setVoiceMode("handsfree");
     if (isListening) {
       toggleListening();
     }
@@ -578,7 +590,7 @@ export default function App() {
                       : "音声入力を開始"
                 }
               >
-                {isHandsFreeEnabled ? <BroadcastIcon /> : <MicLineIcon />}
+                {isHandsFreeEnabled || voiceMode === "handsfree" ? <BroadcastIcon /> : <MicLineIcon />}
               </button>
               {isWakeWordAvailable && (
                 <button
