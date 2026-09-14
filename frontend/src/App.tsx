@@ -250,6 +250,17 @@ export default function App() {
     }
   }, [isListening, isRunning, isHandsFreeEnabled, rearmWakeWord]);
 
+  // デフォルトをプッシュトゥトークではなく常時待受にする(2026-09-14要望)。
+  // isWakeWordAvailableの判定(/api/wake-word/enabledのfetch)が終わるまではONにしない
+  // (機能が無効な環境でページを開くたびマイク許可を求めてしまうのを避けるため)。
+  // 一度ONにした後にユーザーが手動でOFFにした場合は、isWakeWordAvailable自体は
+  // 変化しないのでこのeffectは再発火せず、OFFのまま保たれる。
+  useEffect(() => {
+    if (isWakeWordAvailable) {
+      setIsHandsFreeEnabled(true);
+    }
+  }, [isWakeWordAvailable]);
+
   // composerの展開メニュー(+/音声)を、外側クリックまたはEscapeで閉じる。
   useEffect(() => {
     if (!isAttachMenuOpen && !isVoiceMenuOpen) {
@@ -471,9 +482,9 @@ export default function App() {
               <div className="hands-free-badge">
                 <span>
                   {isListening
-                    ? "🎙️ 聞き取り中…(話し終えると自動送信されます)"
+                    ? "🎙️ 聞き取り中…"
                     : isWakeWordArmed
-                      ? "📡 常時待受中(「かもも」と話しかけてください)"
+                      ? "📡 常時待受中"
                       : "⏳ 常時待受を準備中…"}
                 </span>
                 <button type="button" onClick={() => setIsHandsFreeEnabled(false)} title="常時待受を終了">
