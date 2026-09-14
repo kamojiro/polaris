@@ -41,12 +41,18 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | undefin
  * Web Speech APIによる音声入力(Chrome前提)。1回の発話を認識してテキスト化する。
  * 継続的な逐次認識(interimResults)はせず、発話が終わったタイミングでまとめて
  * `onResult`を呼ぶ単純な方式にしている(チャットの入力欄への差し込み用途にはこれで十分)。
+ *
+ * `start()`は結果の宛先を1回分だけ差し替える`overrideOnResult`を受け取れる
+ * (026-voice-input Stage 1.5: ウェイクワード検知起動時はフック既定の「入力欄に差し込む」
+ * ではなく「そのまま送信する」に切り替えるため。手動のマイクボタン(`toggle`)は
+ * 常に既定の`onResult`を使う)。
  */
 export function useSpeechRecognition(onResult: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const onResultRef = useRef(onResult);
   onResultRef.current = onResult;
+  const overrideOnResultRef = useRef<((text: string) => void) | null>(null);
 
   const isSupported = getSpeechRecognitionCtor() !== undefined;
 
@@ -54,11 +60,12 @@ export function useSpeechRecognition(onResult: (text: string) => void) {
     recognitionRef.current?.stop();
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback((overrideOnResult?: (text: string) => void) => {
     const Ctor = getSpeechRecognitionCtor();
     if (Ctor === undefined || recognitionRef.current !== null) {
       return;
     }
+    overrideOnResultRef.current = overrideOnResult ?? null;
     const recognition = new Ctor();
     recognition.lang = "ja-JP";
     recognition.continuous = false;
@@ -68,7 +75,7 @@ export function useSpeechRecognition(onResult: (text: string) => void) {
         .map((result) => result[0]?.transcript ?? "")
         .join("");
       if (transcript.trim() !== "") {
-        onResultRef.current(transcript);
+        (overrideOnResultRef.current ?? onResultRef.current)(transcript);
       }
     };
     recognition.onerror = () => {
@@ -94,5 +101,5 @@ export function useSpeechRecognition(onResult: (text: string) => void) {
 
   useEffect(() => stop, [stop]);
 
-  return { isSupported, isListening, toggle };
+  return { isSupported, isListening, toggle, start };
 }

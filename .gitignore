@@ -18,6 +18,9 @@ wheels/
 # storage
 /data/
 
+# cert
+/cert/
+
 # frontend
 frontend/node_modules/
 frontend/dist/
@@ -32,3 +35,7 @@ frontend/*.tsbuildinfo
 
 # macOS
 .DS_Store
+
+# ウェイクワード検知モデル(026-voice-input Stage 1.5)。自分の声・自分のウェイクワードに
+# チューニングした個人用データのため非公開(.envのWAKE_WORD__MODEL_PATH経由でパスを渡す)。
+model.npz

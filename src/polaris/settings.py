@@ -247,6 +247,28 @@ class PaperResearchSettings(BaseModel):
     max_record_attempts: int = 2
 
 
+class WakeWordSettings(BaseModel):
+    """ウェイクワード検知(026-voice-input Stage 1.5)の設定.
+
+    Whisper tiny.enの凍結エンコーダー(768次元 = 384次元のmean+max pooling)の上に
+    ロジスティック回帰を1つだけ乗せた軽量モデル(`model.npz`)でホットワードを検知する。
+    `model.npz`は自分の声・自分のウェイクワードにチューニングした個人用データのため
+    リポジトリにコミットしない。`model_path`が未設定(空文字列)の場合、機能自体を
+    無効化する(discord.bot_tokenと同じゲート方式)。
+    """
+
+    model_path: str = ""
+    whisper_model_id: str = "tiny.en"
+    threshold: float = 0.5
+    # 移植元(realtime_detect_whisper.py)のLOG_THRESHOLD相当。検出扱いにはしないが、
+    # 閾値調整のために「惜しいスコア」をログへ残す。
+    log_threshold: float = 0.3
+    sample_rate: int = 16000
+    window_seconds: float = 2.0
+    chunk_seconds: float = 0.4
+    n_pool_frames: int = 100
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -272,6 +294,7 @@ class Settings(BaseSettings):
     discord: DiscordSettings = DiscordSettings()
     semantic_scholar: SemanticScholarSettings = SemanticScholarSettings()
     paper_research: PaperResearchSettings = PaperResearchSettings()
+    wake_word: WakeWordSettings = WakeWordSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

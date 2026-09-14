@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,6 +17,7 @@ import { Sidebar } from "./Sidebar";
 import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 import { useSpeechRecognition } from "./useSpeechRecognition";
+import { useWakeWord } from "./useWakeWord";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -187,10 +188,11 @@ export default function App() {
   // compositionstart/compositionend でも独自に追跡して二重にガードする。
   const isComposingRef = useRef(false);
 
-  // 音声入力(Web Speech API、Chrome前提)。認識結果を入力欄に差し込むだけで、
-  // 送信するかどうかは他の入力方法と同じくユーザーの明示的な送信操作に委ねる。
-  const { isSupported: isSpeechSupported, isListening, toggle: toggleListening } = useSpeechRecognition(
-    (transcript) => {
+  // 音声入力(Web Speech API、Chrome前提)。手動のマイクボタン経由では認識結果を
+  // 入力欄に差し込むだけで、送信するかどうかは他の入力方法と同じくユーザーの
+  // 明示的な送信操作に委ねる。
+  const { isSupported: isSpeechSupported, isListening, toggle: toggleListening, start: startListening } =
+    useSpeechRecognition((transcript) => {
       setInput((prev) => (prev.trim() === "" ? transcript : `${prev} ${transcript}`));
       requestAnimationFrame(() => {
         if (textareaRef.current) {
@@ -198,8 +200,45 @@ export default function App() {
           textareaRef.current.focus();
         }
       });
+    });
+
+  // ウェイクワード検知(026-voice-input Stage 1.5)。検知したら手動マイクボタンとは
+  // 別経路で認識を自動起動し、結果は入力欄に差し込まず直接送信する(真のハンズフリー)。
+  // 認識セッション終了後は、ハンズフリーモードがまだONならウェイクワード待ち受けを
+  // 再開する(下のuseEffect参照、rearmWakeWordはuseWakeWordが公開するconnect相当)。
+  //
+  // isRunningによる二重ガード(実機検証で発見: 応答が返ってくる前に2通連続で送信される
+  // 不具合の対策、2026-09-14)。手動マイクボタンは`disabled={isRunning}`で自然にガードが
+  // 効くが、ウェイクワードは常時リスニング+検知トリガーの構造上そうならない:
+  // 1つ目は下のuseEffectで、認識セッション終了(`isListening`)だけでなくエージェントの
+  // 応答完了(`isRunning`)も待ってから待ち受けを再開することで、「1通目の応答待ち中に
+  // 2回目の検知→2通目を送信してしまう」レースを防ぐ。2つ目は`onDetected`自身で、
+  // 何らかの理由でisRunning中に検知イベントが届いても新しいターンを開始せず
+  // 待ち受けだけ再開する(defense in depth、本質的な直し方は1つ目)。
+  const [isHandsFreeEnabled, setIsHandsFreeEnabled] = useState(false);
+  const pendingRearmRef = useRef(false);
+  const { isAvailable: isWakeWordAvailable, isArmed: isWakeWordArmed, rearm: rearmWakeWord } = useWakeWord({
+    enabled: isHandsFreeEnabled,
+    onDetected: () => {
+      if (isRunning) {
+        void rearmWakeWord();
+        return;
+      }
+      pendingRearmRef.current = true;
+      startListening((transcript) => {
+        void sendMessage(transcript);
+      });
     },
-  );
+  });
+
+  useEffect(() => {
+    if (!isListening && !isRunning && pendingRearmRef.current) {
+      pendingRearmRef.current = false;
+      if (isHandsFreeEnabled) {
+        void rearmWakeWord();
+      }
+    }
+  }, [isListening, isRunning, isHandsFreeEnabled, rearmWakeWord]);
 
   const handleToggleDiaryMode = () => {
     toggleDiaryMode();
@@ -410,6 +449,23 @@ export default function App() {
               title={isListening ? "音声入力を停止" : "音声入力を開始"}
             >
               {isListening ? "⏹️" : "🎙️"}
+            </button>
+          )}
+          {isWakeWordAvailable && (
+            <button
+              type="button"
+              className={isHandsFreeEnabled ? "wake-word-toggle wake-word-toggle-active" : "wake-word-toggle"}
+              aria-pressed={isHandsFreeEnabled}
+              onClick={() => setIsHandsFreeEnabled((prev) => !prev)}
+              title={
+                isHandsFreeEnabled
+                  ? isWakeWordArmed
+                    ? "ハンズフリーモードを終了(ウェイクワード待ち受け中)"
+                    : "ハンズフリーモードを終了"
+                  : "ハンズフリーモードを開始(ウェイクワードで話しかける)"
+              }
+            >
+              👂
             </button>
           )}
           <textarea

@@ -1163,3 +1163,15 @@ header p {
 .composer button.mic-button-active {
   background: #fca5a5;
 }
+
+/* ウェイクワード検知(026-voice-input Stage 1.5)のハンズフリートグル。
+   diary-mode-toggle(琥珀)・mic-button(赤)と区別できる緑系のアクセントにする */
+.composer button.wake-word-toggle {
+  background: #e5e7eb;
+  color: #111827;
+  padding: 0.65rem 0.9rem;
+}
+
+.composer button.wake-word-toggle-active {
+  background: #a7f3d0;
+}

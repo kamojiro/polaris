@@ -8,6 +8,11 @@ dependencies = [
     "fastapi>=0.121.3",
     "feedparser>=6.0.14",
     "httpx>=0.28.1",
+    # sentence-transformers/torch の推移的依存だが、ウェイクワード検知(services/wake_word.py)で
+    # 直接importするため明示する。
+    "numpy>=2.5.2",
+    # ウェイクワード検知(026-voice-input Stage 1.5)のWhisper tiny.en凍結エンコーダー本体。
+    "openai-whisper>=20250625",
     "pydantic>=2.12.4",
     "pydantic-ai-slim[ag-ui,openrouter,web-fetch]>=2.30.0",
     "pydantic-settings>=2.12.0",
@@ -22,6 +27,9 @@ dependencies = [
     # 差し替えるには直接の依存として宣言されている必要があるため明示する。
     "torch>=2.13.0",
     "uvicorn>=0.38.0",
+    # uvicorn単体にはWebSocket実装が含まれておらず、無いとUpgradeが失敗する
+    # (026-voice-input Stage 1.5の常時ストリーミングWSエンドポイントに必須)。
+    "websockets>=15.0",
 ]
 
 [tool.uv.sources]

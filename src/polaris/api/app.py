@@ -14,14 +14,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import httpx
+import numpy as np
 from ag_ui.core import BaseEvent, CustomEvent, MessagesSnapshotEvent, RunAgentInput, StateSnapshotEvent
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from pydantic_ai.messages import ModelResponse, ToolCallPart, ToolReturnPart
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
 from polaris.adapters.discord.client import DiscordFetchError, fetch_recent_messages
+from polaris.adapters.wake_word.encoder import WhisperWakeWordEncoder
 from polaris.agent.chat_agent import ChatDeps, ChatUIState, build_chat_agent
 from polaris.agent.diary_date_infer import AgentDiaryDateInferrer, build_diary_date_infer_agent
 from polaris.agent.diary_rewrite import AgentDiaryRewriter, build_diary_rewrite_agent
@@ -54,6 +56,7 @@ from polaris.services.discord_title_cache import read_cache as read_discord_titl
 from polaris.services.discord_title_cache import write_cache as write_discord_title_cache
 from polaris.services.history_trim import trim_stale_full_text_results
 from polaris.services.memory import extract_and_store_memory, recall_memory
+from polaris.services.wake_word import WakeWordModel, WakeWordStream
 from polaris.settings import Settings
 
 if TYPE_CHECKING:
@@ -113,7 +116,7 @@ _gpu_log_handler = RotatingFileHandler(
     encoding="utf-8",
 )
 _gpu_log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
-for _logger_name in ("polaris.services.ingest_paper",):
+for _logger_name in ("polaris.services.ingest_paper", "polaris.adapters.wake_word.encoder"):
     logging.getLogger(_logger_name).addHandler(_gpu_log_handler)
 
 _engine = create_db_engine(settings.DB_PATH, embedding_dim=settings.ingest.embedding_dim)
@@ -151,6 +154,17 @@ _agent = build_chat_agent(
 
 _upload_dir = Path(settings.ingest.upload_dir)
 _upload_dir.mkdir(parents=True, exist_ok=True)
+
+# 026-voice-input Stage 1.5: model_path未設定なら機能自体を無効化する
+# (discord.bot_tokenと同じゲート方式)。有効時のみtiny.en(約75MB)をロードする。
+_wake_word_encoder: WhisperWakeWordEncoder | None = None
+_wake_word_model: WakeWordModel | None = None
+if settings.wake_word.model_path:
+    _wake_word_encoder = WhisperWakeWordEncoder(
+        settings.wake_word.whisper_model_id, n_pool_frames=settings.wake_word.n_pool_frames
+    )
+    _wake_word_model = WakeWordModel.load(settings.wake_word.model_path)
+_wake_word_window_len = int(settings.wake_word.window_seconds * settings.wake_word.sample_rate)
 
 # 017-chat-memory: バックグラウンドで走らせる記憶抽出タスクへの強参照。asyncio.create_task が
 # 返す Task はどこからも参照されないとGCされ、タスクの途中で実行が打ち切られることがある
@@ -684,3 +698,48 @@ async def chat(request: Request) -> Response:
                 await _record_diary_task(user_text, result.output, turn_id=turn_id)
 
     return await AGUIAdapter.dispatch_request(request, agent=_agent, deps=deps, on_complete=on_complete)
+
+
+@app.get("/api/wake-word/enabled")
+def wake_word_enabled() -> dict[str, bool]:
+    """ウェイクワード検知(026-voice-input Stage 1.5)が有効か.
+
+    フロントがマイク許可を求める前に👂トグルの出し分けを決めるための軽量エンドポイント。
+    """
+    return {"enabled": _wake_word_model is not None}
+
+
+@app.websocket("/api/wake-word/stream")
+async def wake_word_stream(websocket: WebSocket) -> None:
+    """マイク音声(16kHz Int16 PCM、0.4秒刻み)を受け取り、ウェイクワード検知結果を返す.
+
+    無効時(`settings.wake_word.model_path`未設定)は接続を受理した直後に閉じる。
+    有効時は接続ごとに独立した`WakeWordStream`(スライディングウィンドウ)を持ち、
+    チャンクが届くたびにスコアリングする。閾値を超えたら`{"type": "detected", ...}`を
+    返し(バッファはWakeWordStream側でクリアされるので連続発火はしない)、送信のたびに
+    新しい発話の待ち受けへ戻る。文字起こし自体はここでは行わない(フロント側が
+    既存のWeb Speech APIを自動起動する、026-voice-input spec Stage 2節の決定)。
+    """
+    await websocket.accept()
+    if _wake_word_model is None or _wake_word_encoder is None:
+        await websocket.close(code=1008, reason="ウェイクワード機能は無効です")
+        return
+
+    stream = WakeWordStream(
+        model=_wake_word_model,
+        encoder=_wake_word_encoder,
+        window_len=_wake_word_window_len,
+        threshold=settings.wake_word.threshold,
+        log_threshold=settings.wake_word.log_threshold,
+    )
+    try:
+        while True:
+            data = await websocket.receive_bytes()
+            chunk = np.frombuffer(data, dtype=np.int16).astype(np.float32) / 32768.0
+            score = await stream.push(chunk)
+            if score is not None:
+                await websocket.send_json({"type": "detected", "score": score})
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        logger.exception("wake word stream failed")

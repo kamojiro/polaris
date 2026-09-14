@@ -35,6 +35,21 @@ MacBookをクラムシェル運用(蓋を閉じて外部ディスプレイ接続
 - **モデルファイルの配置(2026-09-13決定)**: `model.npz`は自分の声・自分のウェイクワードにチューニングした個人用データのため、リポジトリにコミットしない(GitHubに上げない)。既存の`SearxngSettings`等と同じ設定パターンに倣い、`WakeWordSettings.model_path: Path`のような設定値を新設し、`.env`(既にgitignore対象)経由でファイルパスを渡す。モデルファイル自体はGPUマシンのローカルディスク上の任意の場所に置き、`.env`にそのパスを書くだけでよい
 - **ウェイクワード検知後の扱い(2026-09-13決定)**: Stage 2本来の「常時リスニング+VADによる発話区間切り出し+3分類(無視/独り言/お願い)」には進まない。代わりに、ウェイクワード検知を**Stage 1のハンズフリー版トリガー**として位置づける: 検知したら、ボタン押下の代わりに1回分の発話を録音→文字起こし→既存の`sendMessage()`、というStage 1と全く同じ経路に合流させる。3分類・VADのような難しい判断は引き続き保留したまま、「手ぶらで話しかけられる」という体験だけを先に取り込む。これにより、残る技術課題(WebSocket化・チャンク生成・CORS)は「1回分の発話を検知して送るだけ」という小さいスコープの実装詳細に限定される
 
+**Stage 1.5実装完了(2026-09-13)**: 上記の方針通り実装した。
+
+- バックエンド: `settings.wake_word`(`model_path`未設定なら機能無効、discord.bot_tokenと同じゲート方式)、`adapters/wake_word/encoder.py::WhisperWakeWordEncoder`(torch/whisperに触れる唯一の層、`openai-whisper`を新規依存として追加)、`services/wake_word.py::WakeWordModel`/`WakeWordStream`(numpyのみ、スコアリング多重起動のガード付き)、`api/app.py`の`GET /api/wake-word/enabled`+`WS /api/wake-word/stream`(接続ごとにスライディングウィンドウを持ち、検知したらバッファをゼロクリアして連続発火を防ぐ)。文字起こし自体はバックエンドでは行わない(下記)
+- フロントエンド: `frontend/public/wake-word-processor.js`(AudioWorkletProcessor、16kHz・0.4秒刻みでfloat32→Int16 PCM変換)、`useWakeWord.ts`(WS+マイク管理、検知時に自前のマイク・WSを完全停止してから`onDetected`を呼ぶ)、`useSpeechRecognition.ts`に`start(overrideOnResult?)`を追加(検知直後は入力欄に差し込まず**自動でsendMessage()まで走らせる**、手動マイクボタンは従来通り入力欄に差し込むだけ)、composerに👂トグルを追加(`/api/wake-word/enabled`がtrueの時だけ表示)
+- **文字起こしエンジンの決定**: バックエンドにWhisperのデコーダー(音声→テキスト)は持たない。検知後の1発話は既存の`useSpeechRecognition`(Web Speech API)を自動起動して文字起こしする。バックエンドの責務は「検知して知らせる」だけに限定し、ウェイクワード検知(tiny.enの凍結エンコーダー+ロジスティック回帰、分類のみ)と発話の文字起こし(全文デコード)を混同しない
+- 実データ(移植元プロジェクトの`data/positive`・`data/negative`)でのバックエンド単体検証: positive 5件全て検知・negative 5件全て未検知(閾値0.5)。WebSocket経由でも同じ結果を確認済み
+- **既知の制約**: `vite.config.ts`の`host: true`でLANの別デバイスから開いた場合、`getUserMedia`はセキュアコンテキスト(HTTPS or localhost)でないとブラウザが拒否する。既存のStage 1(Web Speech API)も同じ制約を受けているため新たな劣化ではない
+- 未検証: 実運用での誤検知率(閾値のチューニング)、CUDA利用可能な実機でのレイテンシ(開発機はドライバの互換性エラーでCPU実行のみで検証した)
+
+**不具合と対策: 応答が返ってくる前に2通連続で送信される(2026-09-14実機検証で発見・修正)**: 手動マイクボタンは`disabled={isRunning}`で自然にガードされるが、ウェイクワードは常時リスニング+検知トリガーの構造上そうならない。原因は認識セッション終了(`isListening`)だけを再開条件にしていたこと: 1通目の`sendMessage()`(エージェントの応答待ち、`isRunning`)がまだ終わっていなくても、Web Speech APIの`onend`が先に(応答より早く)発火してウェイクワード待ち受けを再開してしまい、そこへ2回目の検知が入ると新しい認識セッション→2通目の送信が走ってしまう。対策として`frontend/src/App.tsx`に`isRunning`による二重ガードを追加した:
+- 待ち受け再開の条件を`!isListening`から`!isListening && !isRunning`に変更(応答が返ってくるまで再開しない)
+- `onDetected`自身にも`isRunning`チェックを追加(defense in depth。何らかの理由でisRunning中に検知イベントが届いても新しいターンは開始せず、待ち受けだけ再開する)
+
+1発話に対してバックエンドの検知イベント自体が複数回飛ぶケース(スライディングウィンドウの閾値付近での連続発火)は、`useSpeechRecognition.start()`の二重起動防止ガード(`recognitionRef.current !== null`なら無視)で既に吸収されるため、今回の二重送信の直接原因ではなかったと判断した。
+
 - マイクを常時オン(または任意のトリガーで区間検出)にし、Voice Activity Detection(VAD)で発話区間を切り出してSTTにかける
 - 各発話を軽量LLMで3分類する: 「無視してよい雑音・無関係な発話」「独り言(関連情報を検索して知らせる)」「お願い(タスクとして実際に処理する)」
 - 「独り言」への反応は、`023-daily-summary-notification`と同様の通知バナー的な見せ方が候補(即座に割り込まず、気づいたときに見られる形)
