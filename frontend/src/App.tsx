@@ -18,7 +18,7 @@ import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 import { useSpeechRecognition } from "./useSpeechRecognition";
 import { useWakeWord } from "./useWakeWord";
-import { BroadcastIcon, MicLineIcon, PlusIcon } from "./icons";
+import { BroadcastIcon, ChevronIcon, MicLineIcon } from "./icons";
 
 const HANDS_FREE_PLACEHOLDER = "『かもも』と話しかけてください…";
 const DEFAULT_PLACEHOLDER = "arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)";
@@ -515,18 +515,19 @@ export default function App() {
           <div className="composer-menu-group" ref={attachMenuRef}>
             <button
               type="button"
-              className="composer-plus-button"
+              className="composer-icon-button"
               disabled={isRunning || isUploading}
               aria-expanded={isAttachMenuOpen}
               onClick={() => setIsAttachMenuOpen((prev) => !prev)}
               title="添付・論文一覧・日記モード"
             >
-              {isUploading ? "…" : <PlusIcon />}
+              {isUploading ? "…" : "＋"}
             </button>
             {isAttachMenuOpen && (
               <div className="composer-menu">
                 <button
                   type="button"
+                  className="composer-menu-item"
                   onClick={() => {
                     setIsAttachMenuOpen(false);
                     fileInputRef.current?.click();
@@ -536,6 +537,7 @@ export default function App() {
                 </button>
                 <button
                   type="button"
+                  className="composer-menu-item"
                   onClick={() => {
                     setIsAttachMenuOpen(false);
                     void sendMessage("論文一覧ちょうだい");
@@ -545,7 +547,7 @@ export default function App() {
                 </button>
                 <button
                   type="button"
-                  className={uiState.diary_mode ? "composer-menu-item-active" : undefined}
+                  className={uiState.diary_mode ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"}
                   onClick={() => {
                     setIsAttachMenuOpen(false);
                     handleToggleDiaryMode();
@@ -575,15 +577,15 @@ export default function App() {
             disabled={isRunning}
           />
           {isSpeechSupported && (
-            <div className="composer-menu-group" ref={voiceMenuRef}>
+            <div className="composer-menu-group composer-voice-group" ref={voiceMenuRef}>
               <button
                 type="button"
                 className={
                   isHandsFreeEnabled
-                    ? "composer-voice-button composer-voice-button-handsfree"
+                    ? "composer-icon-button composer-voice-active"
                     : isListening
-                      ? "composer-voice-button composer-voice-button-listening"
-                      : "composer-voice-button"
+                      ? "composer-icon-button composer-voice-active"
+                      : "composer-icon-button"
                 }
                 aria-pressed={isListening || isHandsFreeEnabled}
                 disabled={isRunning}
@@ -599,26 +601,44 @@ export default function App() {
                 }
               >
                 {isHandsFreeEnabled || voiceMode === "handsfree" ? <BroadcastIcon /> : <MicLineIcon />}
+                {isWakeWordAvailable && <ChevronIcon />}
               </button>
               {isWakeWordAvailable && (
                 <button
                   type="button"
-                  className="composer-voice-chevron"
+                  className="composer-voice-chevron-hit"
                   disabled={isRunning}
                   aria-expanded={isVoiceMenuOpen}
+                  aria-label="音声入力の方式を選ぶ"
                   onClick={() => setIsVoiceMenuOpen((prev) => !prev)}
                   title="音声入力の方式を選ぶ"
-                >
-                  ▾
-                </button>
+                />
               )}
               {isVoiceMenuOpen && (
                 <div className="composer-menu composer-menu-right">
-                  <button type="button" onClick={handleSelectHandsFree}>
-                    <BroadcastIcon /> 常時待受
+                  <button
+                    type="button"
+                    className={
+                      voiceMode === "handsfree" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"
+                    }
+                    onClick={handleSelectHandsFree}
+                  >
+                    <BroadcastIcon />
+                    <span className="composer-menu-item-label">
+                      常時待受
+                      <span className="composer-menu-item-sub">「かもも」で自動起動</span>
+                    </span>
                   </button>
-                  <button type="button" className="composer-menu-item-speak" onClick={handleSelectPushToTalk}>
-                    <MicLineIcon /> 話す
+                  <button
+                    type="button"
+                    className={voiceMode === "speak" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"}
+                    onClick={handleSelectPushToTalk}
+                  >
+                    <MicLineIcon />
+                    <span className="composer-menu-item-label">
+                      話す
+                      <span className="composer-menu-item-sub">クリックで開始/停止</span>
+                    </span>
                   </button>
                 </div>
               )}
