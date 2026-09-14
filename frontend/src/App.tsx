@@ -187,6 +187,7 @@ export default function App() {
   const [isPaperResearchHistoryOpen, setIsPaperResearchHistoryOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesRef = useRef<HTMLElement>(null);
   // composerのアイコン整理(003 spec、2026-09-14): 📎📚📔を「+」1個の展開メニューへ、
   // 🎙️👂を波形アイコン1個+シェブロン展開メニューへ集約する。
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
@@ -318,6 +319,13 @@ export default function App() {
     setIsHandsFreeEnabled(true);
   };
 
+  // メッセージの送受信のたびに一番下へスクロールする(2026-09-14要望)。streaming中の
+  // 応答も`messages`が都度更新される(useChatAgentのonMessagesChanged)ため、
+  // 生成中も追従してスクロールし続ける。
+  useEffect(() => {
+    messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight });
+  }, [messages]);
+
   const handleToggleDiaryMode = () => {
     toggleDiaryMode();
     // トグル直後にそのままメッセージを打ち始められるよう、入力欄へフォーカスを移す。
@@ -399,7 +407,7 @@ export default function App() {
           )}
         </header>
 
-        <main className="messages">
+        <main className="messages" ref={messagesRef}>
           {messages
             .filter((message) => message.role === "user" || message.role === "assistant")
             .map((message) => (
