@@ -250,17 +250,6 @@ export default function App() {
     }
   }, [isListening, isRunning, isHandsFreeEnabled, rearmWakeWord]);
 
-  // デフォルトをプッシュトゥトークではなく常時待受にする(2026-09-14要望)。
-  // isWakeWordAvailableの判定(/api/wake-word/enabledのfetch)が終わるまではONにしない
-  // (機能が無効な環境でページを開くたびマイク許可を求めてしまうのを避けるため)。
-  // 一度ONにした後にユーザーが手動でOFFにした場合は、isWakeWordAvailable自体は
-  // 変化しないのでこのeffectは再発火せず、OFFのまま保たれる。
-  useEffect(() => {
-    if (isWakeWordAvailable) {
-      setIsHandsFreeEnabled(true);
-    }
-  }, [isWakeWordAvailable]);
-
   // composerの展開メニュー(+/音声)を、外側クリックまたはEscapeで閉じる。
   useEffect(() => {
     if (!isAttachMenuOpen && !isVoiceMenuOpen) {
@@ -605,11 +594,11 @@ export default function App() {
               )}
               {isVoiceMenuOpen && (
                 <div className="composer-menu composer-menu-right">
-                  <button type="button" className="composer-menu-item-speak" onClick={handleSelectPushToTalk}>
-                    <MicLineIcon /> 話す
-                  </button>
                   <button type="button" onClick={handleSelectHandsFree}>
                     <BroadcastIcon /> 常時待受
+                  </button>
+                  <button type="button" className="composer-menu-item-speak" onClick={handleSelectPushToTalk}>
+                    <MicLineIcon /> 話す
                   </button>
                 </div>
               )}
