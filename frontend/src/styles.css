@@ -1127,51 +1127,89 @@ header p {
   cursor: default;
 }
 
-/* PDFアップロード用の📎ボタン(送信ボタンと見た目のトーンは揃え、控えめな色にする) */
-.composer button.attach {
+/* composerのアイコン整理(003 spec、2026-09-14): 📎📚📔/🎙️👂の5ボタンを
+   「+」1個+音声アイコン1個(シェブロン展開)の2グループへ集約した。
+   各グループはposition:relativeの入れ物で、展開メニューをその場に絶対配置する。 */
+.composer-menu-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* `.composer button`(送信ボタンの青)より詳細度を上げるため`.composer button.xxx`の
+   形で揃える(既存の.attach等と同じ書き方)。 */
+.composer button.composer-plus-button,
+.composer button.composer-voice-button,
+.composer button.composer-voice-chevron {
   background: #e5e7eb;
   color: #111827;
+}
+
+.composer button.composer-plus-button,
+.composer button.composer-voice-button {
   padding: 0.65rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 003-chat-ui-polish 追加提案: 論文一覧クイックアクションボタン。📎と見た目のトーンを揃える */
-.composer button.quick-action {
-  background: #e5e7eb;
-  color: #111827;
-  padding: 0.65rem 0.9rem;
+/* シェブロンは音声ボタン本体より小さく、隣接して1つの分割ボタンに見えるようにする */
+.composer button.composer-voice-chevron {
+  padding: 0.65rem 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1;
 }
 
-/* 019-diary-domain: 日記モードのトグルボタン。OFF時は他のツールボタンと同じトーン、
-   ON時はモードチップ(.diary-mode-badge)と同じアクセントカラーで状態が一目で分かるようにする */
-.composer button.diary-mode-toggle {
-  background: #e5e7eb;
-  color: #111827;
-  padding: 0.65rem 0.9rem;
-}
-
-.composer button.diary-mode-toggle-active {
-  background: #fde68a;
-}
-
-/* 音声入力(Web Speech API)ボタン。録音中は他のトグル系ボタンと区別できる目立つ色にする */
-.composer button.mic-button {
-  background: #e5e7eb;
-  color: #111827;
-  padding: 0.65rem 0.9rem;
-}
-
-.composer button.mic-button-active {
+/* 音声入力中(プッシュトゥトーク)は他のトグル系ボタンと区別できる目立つ色にする */
+.composer button.composer-voice-button-listening {
   background: #fca5a5;
 }
 
-/* ウェイクワード検知(026-voice-input Stage 1.5)のハンズフリートグル。
-   diary-mode-toggle(琥珀)・mic-button(赤)と区別できる緑系のアクセントにする */
-.composer button.wake-word-toggle {
-  background: #e5e7eb;
-  color: #111827;
-  padding: 0.65rem 0.9rem;
+/* 常時待受(ウェイクワード、026-voice-input Stage 1.5)中はオレンジ系にする
+   (アイコン自体は変えず配色とプレースホルダーで状態を示す、003 spec決定) */
+.composer button.composer-voice-button-handsfree {
+  background: #fdba74;
 }
 
-.composer button.wake-word-toggle-active {
-  background: #a7f3d0;
+/* 「+」・音声シェブロンの展開メニュー。ボタン群の直上にポップアップさせる */
+.composer-menu {
+  position: absolute;
+  bottom: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 11rem;
+  padding: 0.35rem;
+  background: white;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 0.6rem;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+
+.composer-menu-right {
+  left: auto;
+  right: 0;
+}
+
+.composer-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: none;
+  color: #111827;
+  font-size: 0.9rem;
+  text-align: left;
+  border-radius: 0.4rem;
+}
+
+.composer-menu button:hover {
+  background: rgb(0 0 0 / 6%);
+}
+
+.composer-menu button.composer-menu-item-active {
+  color: #b45309;
+  font-weight: 600;
 }

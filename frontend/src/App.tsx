@@ -18,6 +18,10 @@ import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
 import { useSpeechRecognition } from "./useSpeechRecognition";
 import { useWakeWord } from "./useWakeWord";
+import { BroadcastIcon, MicLineIcon, PlusIcon, WaveformIcon } from "./icons";
+
+const HANDS_FREE_PLACEHOLDER = "『かもも』と話しかけてください…";
+const DEFAULT_PLACEHOLDER = "arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)";
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -183,6 +187,12 @@ export default function App() {
   const [isPaperResearchHistoryOpen, setIsPaperResearchHistoryOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // composerのアイコン整理(003 spec、2026-09-14): 📎📚📔を「+」1個の展開メニューへ、
+  // 🎙️👂を波形アイコン1個+シェブロン展開メニューへ集約する。
+  const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
+  const [isVoiceMenuOpen, setIsVoiceMenuOpen] = useState(false);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
+  const voiceMenuRef = useRef<HTMLDivElement>(null);
   // IME変換確定のEnterで誤送信しないためのフラグ。event.nativeEvent.isComposing だけだと
   // Safari で compositionend 直後の keydown でも true になり損ねることがあるため、
   // compositionstart/compositionend でも独自に追跡して二重にガードする。
@@ -239,6 +249,62 @@ export default function App() {
       }
     }
   }, [isListening, isRunning, isHandsFreeEnabled, rearmWakeWord]);
+
+  // composerの展開メニュー(+/音声)を、外側クリックまたはEscapeで閉じる。
+  useEffect(() => {
+    if (!isAttachMenuOpen && !isVoiceMenuOpen) {
+      return;
+    }
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (attachMenuRef.current && !attachMenuRef.current.contains(target)) {
+        setIsAttachMenuOpen(false);
+      }
+      if (voiceMenuRef.current && !voiceMenuRef.current.contains(target)) {
+        setIsVoiceMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsAttachMenuOpen(false);
+        setIsVoiceMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAttachMenuOpen, isVoiceMenuOpen]);
+
+  const handleVoiceButtonClick = () => {
+    if (isHandsFreeEnabled) {
+      // 常時待受モード中にメインボタンを押したら、常時待受を終了してアイドルに戻る
+      // (003 spec「トグルオフ挙動」決定)。
+      setIsHandsFreeEnabled(false);
+      return;
+    }
+    toggleListening();
+  };
+
+  const handleSelectPushToTalk = () => {
+    setIsVoiceMenuOpen(false);
+    if (isHandsFreeEnabled) {
+      setIsHandsFreeEnabled(false);
+    }
+    if (!isListening) {
+      toggleListening();
+    }
+  };
+
+  const handleSelectHandsFree = () => {
+    setIsVoiceMenuOpen(false);
+    if (isListening) {
+      toggleListening();
+    }
+    setIsHandsFreeEnabled(true);
+  };
 
   const handleToggleDiaryMode = () => {
     toggleDiaryMode();
@@ -412,61 +478,99 @@ export default function App() {
             hidden
             onChange={(event) => void handleFileSelected(event)}
           />
-          <button
-            type="button"
-            className="attach"
-            disabled={isRunning || isUploading}
-            onClick={() => fileInputRef.current?.click()}
-            title="PDFをアップロードして保存"
-          >
-            {isUploading ? "…" : "📎"}
-          </button>
-          <button
-            type="button"
-            className="quick-action"
-            disabled={isRunning}
-            onClick={() => void sendMessage("論文一覧ちょうだい")}
-            title="論文一覧を表示"
-          >
-            📚
-          </button>
-          <button
-            type="button"
-            className={uiState.diary_mode ? "diary-mode-toggle diary-mode-toggle-active" : "diary-mode-toggle"}
-            aria-pressed={uiState.diary_mode}
-            onClick={handleToggleDiaryMode}
-            title={uiState.diary_mode ? "日記モードを終了" : "日記モードを開始"}
-          >
-            📔
-          </button>
+          <div className="composer-menu-group" ref={attachMenuRef}>
+            <button
+              type="button"
+              className="composer-plus-button"
+              disabled={isRunning || isUploading}
+              aria-expanded={isAttachMenuOpen}
+              onClick={() => setIsAttachMenuOpen((prev) => !prev)}
+              title="添付・論文一覧・日記モード"
+            >
+              {isUploading ? "…" : <PlusIcon />}
+            </button>
+            {isAttachMenuOpen && (
+              <div className="composer-menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  📎 PDFを添付
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachMenuOpen(false);
+                    void sendMessage("論文一覧ちょうだい");
+                  }}
+                >
+                  📚 論文一覧
+                </button>
+                <button
+                  type="button"
+                  className={uiState.diary_mode ? "composer-menu-item-active" : undefined}
+                  onClick={() => {
+                    setIsAttachMenuOpen(false);
+                    handleToggleDiaryMode();
+                  }}
+                >
+                  📔 {uiState.diary_mode ? "日記モードを終了" : "日記モードを開始"}
+                </button>
+              </div>
+            )}
+          </div>
           {isSpeechSupported && (
-            <button
-              type="button"
-              className={isListening ? "mic-button mic-button-active" : "mic-button"}
-              aria-pressed={isListening}
-              disabled={isRunning}
-              onClick={toggleListening}
-              title={isListening ? "音声入力を停止" : "音声入力を開始"}
-            >
-              {isListening ? "⏹️" : "🎙️"}
-            </button>
-          )}
-          {isWakeWordAvailable && (
-            <button
-              type="button"
-              className={isHandsFreeEnabled ? "wake-word-toggle wake-word-toggle-active" : "wake-word-toggle"}
-              aria-pressed={isHandsFreeEnabled}
-              onClick={() => setIsHandsFreeEnabled((prev) => !prev)}
-              title={
-                isHandsFreeEnabled
-                  ? isWakeWordArmed
-                    ? "ハンズフリーモードを終了(ウェイクワード待ち受け中)"
-                    : "ハンズフリーモードを終了"
-                  : "ハンズフリーモードを開始(ウェイクワードで話しかける)"
-              }
-            >
-              👂
-            </button>
+            <div className="composer-menu-group" ref={voiceMenuRef}>
+              <button
+                type="button"
+                className={
+                  isHandsFreeEnabled
+                    ? "composer-voice-button composer-voice-button-handsfree"
+                    : isListening
+                      ? "composer-voice-button composer-voice-button-listening"
+                      : "composer-voice-button"
+                }
+                aria-pressed={isListening || isHandsFreeEnabled}
+                disabled={isRunning}
+                onClick={handleVoiceButtonClick}
+                title={
+                  isHandsFreeEnabled
+                    ? isWakeWordArmed
+                      ? "常時待受を終了(ウェイクワード待ち受け中)"
+                      : "常時待受を終了"
+                    : isListening
+                      ? "音声入力を停止"
+                      : "音声入力を開始"
+                }
+              >
+                <WaveformIcon />
+              </button>
+              {isWakeWordAvailable && (
+                <button
+                  type="button"
+                  className="composer-voice-chevron"
+                  disabled={isRunning}
+                  aria-expanded={isVoiceMenuOpen}
+                  onClick={() => setIsVoiceMenuOpen((prev) => !prev)}
+                  title="音声入力の方式を選ぶ"
+                >
+                  ▾
+                </button>
+              )}
+              {isVoiceMenuOpen && (
+                <div className="composer-menu composer-menu-right">
+                  <button type="button" onClick={handleSelectPushToTalk}>
+                    <MicLineIcon /> 話す
+                  </button>
+                  <button type="button" onClick={handleSelectHandsFree}>
+                    <BroadcastIcon /> 常時待受
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           <textarea
             ref={textareaRef}
@@ -482,7 +586,7 @@ export default function App() {
             onCompositionEnd={() => {
               isComposingRef.current = false;
             }}
-            placeholder="arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)"
+            placeholder={isHandsFreeEnabled ? HANDS_FREE_PLACEHOLDER : DEFAULT_PLACEHOLDER}
             rows={1}
             disabled={isRunning}
           />
