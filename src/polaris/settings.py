@@ -61,16 +61,25 @@ class ChatSettings(BaseModel):
     usd_jpy_rate: float = 159.0
 
 
-class SearxngSettings(BaseModel):
-    """自前ホスト済み SearXNG インスタンスへの接続設定(018-web-search-tool)."""
+class TavilySettings(BaseModel):
+    """Tavily検索APIへの接続設定(018-web-search-tool、2026-09-14にSearXNGから移行).
 
-    # Polarisと同じdocker-composeネットワーク内ならサービス名解決(例: http://searxng:8080)、
-    # そうでなければポートマッピング済みのlocalhostを指す想定。
-    base_url: str = "http://localhost:8080"
-    # 実測: results 1件あたり210〜399文字。10件でも3.2k文字程度だが、他のツールと
-    # 共存するチャットのコンテキストを無駄に膨らませないため既定は5件に絞る。
+    自前ホスト済みSearXNGは検索結果の質(関連度・情報の新しさ)が不十分だったため、
+    LLM向けに作られたホスト型の検索API(Tavily)に切り替えた。APIキー認証が必須の
+    サービスのため、`api_key`が未設定(空文字列)の場合は機能自体を無効化する
+    (discord.bot_tokenと同じゲート方式)。キーは秘密情報なので値そのものをリポジトリに
+    コミットしない(`.env`経由、既にgitignore対象)。
+    """
+
+    api_key: str = ""
+    base_url: str = "https://api.tavily.com"
+    # 実測(SearXNG時代): results 1件あたり210〜399文字。10件でも3.2k文字程度だが、
+    # 他のツールと共存するチャットのコンテキストを無駄に膨らませないため既定は5件に絞る。
     max_results: int = 5
     timeout_seconds: float = 10.0
+    # Tavilyの`include_answer`(LLM向け要約回答)。SearXNGのanswers相当で、情報密度が
+    # 高くコストもほぼゼロなので既定で有効にする。
+    include_answer: bool = True
 
 
 class DiscordSettings(BaseModel):
@@ -286,7 +295,7 @@ class Settings(BaseSettings):
     llm: LLMSettings = LLMSettings()
     ingest: IngestSettings = IngestSettings()
     chat: ChatSettings = ChatSettings()
-    searxng: SearxngSettings = SearxngSettings()
+    tavily: TavilySettings = TavilySettings()
     memory: MemorySettings = MemorySettings()
     news: NewsSettings = NewsSettings()
     daily_summary: DailySummarySettings = DailySummarySettings()

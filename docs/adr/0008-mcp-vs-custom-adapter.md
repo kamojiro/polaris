@@ -21,7 +21,7 @@
 
 ## 結果(Consequences)
 
-良い面: `018-web-search-tool`はSearXNG専用の自前adapter(`adapters/searxng/client.py`)を採用し、サードパーティMCPサブプロセスを避けられた。Google Calendar/Gmailのような複雑なAPI(`020-google-workspace-integration`候補)では、公式MCPサーバーの利用が引き続き有力候補として残る。
+良い面: `018-web-search-tool`は自前adapter方式(当初SearXNG、2026-09-14にTavilyへ移行後も`adapters/tavily/client.py`として踏襲)を採用し、サードパーティMCPサブプロセスを避けられた。バックエンドが変わってもこの判断軸自体は変わらない(APIがシンプルなら自前adapter)。Google Calendar/Gmailのような複雑なAPI(`020-google-workspace-integration`候補)では、公式MCPサーバーの利用が引き続き有力候補として残る。
 
 悪い面: 「複雑さ」「信頼できる実装の有無」はどちらも定量化しにくい主観的判断のため、本ADRだけでは自動的に結論が出ず、都度spec側で個別に判断を書き残す必要がある。EDINET/arXivのようにPolaris独自のデータモデル(Hub/Satellite、冪等性チェック)に深く結びつく取り込みロジックは、どちらの方式を選んでも結局自前adapterに落ち着く(MCPで生データだけ取ってきても、その先の永続化ロジックは自前で書く必要があるため)。
 

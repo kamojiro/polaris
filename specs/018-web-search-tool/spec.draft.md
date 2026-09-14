@@ -2,7 +2,7 @@
 
 ## ステータス
 
-🔧 改修中(2026-09-14、SearXNGからTavilyへの移行を決定。詳細は「移行: SearXNG→Tavily」参照)
+✔️ SearXNGからTavilyへの移行実装完了(2026-09-14)。`TAVILY__API_KEY`の`.env`設定・実機E2E確認は未実施。詳細は「移行: SearXNG→Tavily」参照
 
 ## 概要
 
@@ -68,6 +68,16 @@ SearXNGでの検索結果の質(関連度・情報の新しさ)が不十分だ�
 - **設定変更**: `SearxngSettings(base_url, max_results, timeout_seconds)`を`TavilySettings`に置き換える。TavilyはAPIキー認証が必要なホスト型サービスのため、既存の`.env`ネスト設定パターン(`LLM__MODEL_ID`等)に倣い`TAVILY__API_KEY`のような形で環境変数管理する。SearXNGと違い**キーは秘密情報**なので、026のモデルパスと同様、値そのものをリポジトリにコミットしない(`.env`はすでにgitignore対象)
 - **インフラ影響**: 自前ホストのSearXNGコンテナは、移行完了後は他に利用箇所が無ければ停止・撤去できる見込み(現時点で018以外にSearXNGを直接使っている箇所は無い、上記「利用箇所」参照)
 - **未確認事項**: Tavilyの料金体系・無料枠のレート制限、日本語クエリでの精度、`answers`/`infoboxes`相当の即答機能の有無(Tavilyは`include_answer`オプションでLLM向け要約回答を返せる模様だが実機未検証)。実装時に確認する
+
+### 実装完了(2026-09-14)
+
+Tavily公式ドキュメント(`POST https://api.tavily.com/search`、`Authorization: Bearer <api_key>`、リクエストボディに`query`/`max_results`/`include_answer`)を確認した上で実装した。
+
+- `adapters/tavily/client.py`(新規、`adapters/searxng/client.py`を置き換え): `search(query, *, client, api_key, base_url, max_results, timeout_seconds, include_answer) -> TavilyResponse`。`TavilyResponse`は`answer: str | None`+`results: list[SearchResult]`(title/url/content)。SearXNGと違い`max_results`がリクエスト側で効くため、クライアント側での「多めに取得して先頭N件に切り詰める」処理は不要になった
+- `settings.py`: `SearxngSettings`を`TavilySettings`(`api_key`/`base_url`/`max_results`/`timeout_seconds`/`include_answer`)に置き換え。`api_key`未設定なら`web_search`ツール側で機能自体を無効化する(discord.bot_tokenと同じゲート方式、SearXNGには無かった要件)。`.env`の`TAVILY__API_KEY`で設定する
+- `agent/tools/web_search.py`: `_format_search_results()`をTavilyの形(単一の`answer`文字列、infoboxes相当は無し)に合わせて簡素化。それ以外の構造(`register()`のtool登録・エラー時の日本語メッセージ方針)は変更なし
+- `adapters/searxng/`・`tests/adapters/test_searxng_client.py`・`tests/adapters/fixture_searxng.json`は削除。自前ホストのSearXNGコンテナも今後停止・撤去できる
+- テストは`tests/adapters/test_tavily_client.py`(respxモック、Tavily公式ドキュメントのレスポンス例に基づく合成フィクスチャ。SearXNGと違い自前ホストしていないため実機採取フィクスチャは無い)。実APIキーでの実機E2E検証は未実施(`TAVILY__API_KEY`をユーザーが`.env`に設定後に確認する)
 
 ## 未決定事項
 
