@@ -449,7 +449,7 @@ export default function App() {
         {error !== null && <div className="error">{error}</div>}
         {uploadError !== null && <div className="error">{uploadError}</div>}
 
-        {(uiState.active_paper !== null || uiState.diary_mode) && (
+        {(uiState.active_paper !== null || uiState.diary_mode || isHandsFreeEnabled) && (
           <div className="mode-chips">
             {uiState.active_paper !== null && (
               <div className="paper-mode-badge">
@@ -463,6 +463,20 @@ export default function App() {
               <div className="diary-mode-badge">
                 <span>📔 日記モード</span>
                 <button type="button" onClick={handleToggleDiaryMode} title="日記モードを終了">
+                  ✕
+                </button>
+              </div>
+            )}
+            {isHandsFreeEnabled && (
+              <div className="hands-free-badge">
+                <span>
+                  {isListening
+                    ? "🎙️ 聞き取り中…(話し終えると自動送信されます)"
+                    : isWakeWordArmed
+                      ? "📡 常時待受中(「かもも」と話しかけてください)"
+                      : "⏳ 常時待受を準備中…"}
+                </span>
+                <button type="button" onClick={() => setIsHandsFreeEnabled(false)} title="常時待受を終了">
                   ✕
                 </button>
               </div>

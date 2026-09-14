@@ -1022,6 +1022,32 @@ header p {
   padding: 0.15rem 0.4rem;
 }
 
+/* 常時待受(ウェイクワード、026-voice-input Stage 1.5)中の明示バッジ。
+   音声ボタン単体の配色差(赤=プッシュトゥトーク中/オレンジ=常時待受)だけでは
+   「今どちらのモードか」が伝わりにくいという指摘(2026-09-14)を受け、
+   paper-mode-badge/diary-mode-badgeと同じ「文言で状態を明示するチップ」に揃えた。 */
+.hands-free-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.6rem;
+  background: #fdba74;
+  color: #7c2d12;
+  font-size: 0.85rem;
+}
+
+.hands-free-badge button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+}
+
 /* 執筆中の日記パネル(019拡張 User Story 6)。.diary-mode-badgeと同系色でまとめる */
 .diary-panel {
   margin-top: 0.75rem;
