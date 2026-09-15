@@ -43,6 +43,8 @@ Discordとの連携。用途はまだ絞れていない(2026-08-23、雑談か�
 - **2つ目**: 新規toolは不要。既存の`web_search`/`web_fetch`(`018-web-search-tool`)がそのまま使える。「1つ目」の応答にURLが含まれていれば、LLMがそのURLを引数に`web_fetch`を呼ぶだけで済む。ただし`018`で記録済みの「URLを自己推測してはいけない」という既存の指示(`_INSTRUCTIONS`)がここでも効くはずで、直前の会話に実在するURLをそのまま使わせる、という制約と整合している
 - この2ストーリーにより、方向性3(Discordから読み取る)は「サイドバーのクリック導線」と「チャット経由の能動的な質問」の2つの入り口を持つことになる。裏側のデータ取得(`adapters/discord/client.py`)は共通のまま
 
+**実装完了(2026-09-15)**: `agent/tools/discord.py`(新規)に`get_discord_reading_list()`を`@agent.tool_plain`として追加した。`web_search.register`と同じ形(`register(agent, *, settings)`、`httpx.AsyncClient()`を登録時に1つ生成)。`settings.discord.bot_token`/`channel_id`未設定時は「機能無効」の日本語メッセージを返す(discord.bot_tokenゲートを他ツールと同じ方式に揃えた、サイドバーの「空リストで返す」とは異なりチャットでは能動的に聞かれているため理由を明示する)。`_format_reading_list()`は「著者: 本文」を番号付きで列挙する文字列を返し(構造化データをそのまま整形、LLMに追加の要約をさせすぎない)、2つ目のストーリー(URL指定で詳しく)は新規tool無しで既存`web_fetch`がそのまま使える設計通り、コード変更なしで成立する。`chat_agent.py`に`discord.INSTRUCTIONS`と`discord.register()`を配線。`agent/tools/`層のtool登録関数はweb_search.py等と同じく既存方針でユニットテスト対象外(adapter層`tests/adapters/test_discord_client.py`が土台をカバー済み、agent層は手動E2Eで担保)。`uv run nox`全通過、`build_chat_agent()`の`tool_names`に`get_discord_reading_list`が含まれることを確認済み。
+
 ## 未決定事項
 
 - 通知先/代替フロントエンド/Discordから読み取る、どれを優先するか(あるいは全部やるか)

@@ -17,7 +17,7 @@ from pydantic_ai.models.openrouter import OpenRouterModelSettings
 
 from .chat_state import ChatDeps, ChatUIState
 from .model import build_model
-from .tools import diary, ir, memory, news, paper, paper_qa, paper_research, todo, web_search
+from .tools import diary, discord, ir, memory, news, paper, paper_qa, paper_research, todo, web_search
 
 if TYPE_CHECKING:
     from polaris.agent.extract_ir_metadata import IrMetadataExtractor
@@ -42,6 +42,7 @@ _INSTRUCTIONS = (
     f"{_INSTRUCTIONS_HEADER}\n\n"
     f"{paper.INSTRUCTIONS}\n{todo.INSTRUCTIONS}\n{paper_qa.INSTRUCTIONS}\n{paper_research.INSTRUCTIONS}\n"
     f"{web_search.INSTRUCTIONS}\n{news.INSTRUCTIONS}\n{ir.INSTRUCTIONS}\n{diary.INSTRUCTIONS}\n"
+    f"{discord.INSTRUCTIONS}\n"
     f"{_INSTRUCTIONS_FOOTER}\n"
 )
 
@@ -106,4 +107,5 @@ def build_chat_agent(
     news.register(agent, news_repo)
     ir.register(agent, ir_repo, settings=settings, ir_extractor=ir_extractor)
     diary.register(agent, diary_repo, settings=settings)
+    discord.register(agent, settings=settings)
     return agent
