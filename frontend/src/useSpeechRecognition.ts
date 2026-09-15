@@ -4,15 +4,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // prefix付き(`webkitSpeechRecognition`)のことが多い。Chrome前提(2026-09-13時点、
 // Safariは挙動が異なるため対象外)の最小限の型だけをここで宣言する。
 
-interface SpeechRecognitionResultLike {
+interface SpeechRecognitionAlternativeLike {
   transcript: string;
 }
 
-interface SpeechRecognitionEventLike extends Event {
-  results: ArrayLike<ArrayLike<SpeechRecognitionResultLike>>;
+// `results[i]`(1発話ぶん)。`isFinal`はcontinuous:trueのセッションで「確定済みか」を示す
+// (`useAmbientVoice.ts`が`resultIndex`と合わせてバッファリングに使う)。
+export interface SpeechRecognitionResultLike extends ArrayLike<SpeechRecognitionAlternativeLike> {
+  isFinal: boolean;
 }
 
-interface SpeechRecognitionLike extends EventTarget {
+export interface SpeechRecognitionEventLike extends Event {
+  // continuous:trueのセッションで、このイベントから新規に確定・更新された結果の開始位置。
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+export interface SpeechRecognitionLike extends EventTarget {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
@@ -30,7 +38,10 @@ declare global {
   }
 }
 
-function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | undefined {
+// `useAmbientVoice.ts`(026-voice-input Stage2代替案)も同じWeb Speech API型を使うため、
+// `declare global`のWindow拡張を2箇所に書いて型の不整合を起こさないよう、ここでexportして
+// 再利用する。
+export function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | undefined {
   if (typeof window === "undefined") {
     return undefined;
   }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { AmbientVoiceBanner } from "./AmbientVoiceBanner";
 import { DailySummaryBanner } from "./DailySummaryBanner";
 import { MemoryHousekeepingBanner } from "./MemoryHousekeepingBanner";
 import { PaperResearchBanner } from "./PaperResearchBanner";
@@ -16,9 +17,10 @@ import { PaperList, type PaperListResult } from "./PaperList";
 import { Sidebar } from "./Sidebar";
 import { TodoList, type TodoListResult } from "./TodoList";
 import { type ToolTiming, type TurnUsage, useChatAgent } from "./useChatAgent";
+import { useAmbientVoice } from "./useAmbientVoice";
 import { useSpeechRecognition } from "./useSpeechRecognition";
 import { useWakeWord } from "./useWakeWord";
-import { BroadcastIcon, ChevronIcon, MicLineIcon } from "./icons";
+import { BroadcastIcon, ChevronIcon, EarIcon, MicLineIcon } from "./icons";
 
 const HANDS_FREE_PLACEHOLDER = "『かもも』と話しかけてください…";
 const DEFAULT_PLACEHOLDER = "arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)";
@@ -230,12 +232,15 @@ export default function App() {
   // 2回目の検知→2通目を送信してしまう」レースを防ぐ。2つ目は`onDetected`自身で、
   // 何らかの理由でisRunning中に検知イベントが届いても新しいターンを開始せず
   // 待ち受けだけ再開する(defense in depth、本質的な直し方は1つ目)。
-  const [isHandsFreeEnabled, setIsHandsFreeEnabled] = useState(false);
+  // ウェイクワード(常時待受)とアンビエント(常時認識、2026-09-15追加)はどちらも
+  // 常時マイクを使うため、同時に有効化するとマイク競合が起きる。両者を排他にし、
+  // 実際にバックグラウンドで動いている方だけをactiveModeで表す(nullはどちらも無効)。
+  const [activeMode, setActiveMode] = useState<"handsfree" | "ambient" | null>(null);
   // 音声ボタンの見た目・初回クリック時の挙動が「今どちらのモードを指しているか」
   // (実際に接続中かどうかとは別、2026-09-14要望: 見た目のデフォルトは常時待受にしつつ
   // ページ読み込み時に自動でマイク許可を求めない)。展開メニューで明示的に選ぶか、
   // アイドル状態でメインボタンを押した(=このモードを実行した)ときに切り替わる。
-  const [voiceMode, setVoiceMode] = useState<"speak" | "handsfree">("handsfree");
+  const [voiceMode, setVoiceMode] = useState<"speak" | "handsfree" | "ambient">("handsfree");
   const pendingRearmRef = useRef(false);
   // ウェイクワード検知直後の文字起こしを即送信せず、入力欄に入れてカウントダウン後に
   // 自動送信する(026-voice-input「文字起こし結果の修正」要望、2026-09-15)。
@@ -283,7 +288,7 @@ export default function App() {
   useEffect(() => cancelAutoSend, [cancelAutoSend]);
 
   const { isAvailable: isWakeWordAvailable, isArmed: isWakeWordArmed, rearm: rearmWakeWord } = useWakeWord({
-    enabled: isHandsFreeEnabled,
+    enabled: activeMode === "handsfree",
     onDetected: () => {
       if (isRunning) {
         void rearmWakeWord();
@@ -294,14 +299,18 @@ export default function App() {
     },
   });
 
+  const { isAvailable: isAmbientVoiceAvailable, isActive: isAmbientVoiceActive } = useAmbientVoice({
+    enabled: activeMode === "ambient",
+  });
+
   useEffect(() => {
     if (!isListening && !isRunning && pendingAutoSend === null && pendingRearmRef.current) {
       pendingRearmRef.current = false;
-      if (isHandsFreeEnabled) {
+      if (activeMode === "handsfree") {
         void rearmWakeWord();
       }
     }
-  }, [isListening, isRunning, pendingAutoSend, isHandsFreeEnabled, rearmWakeWord]);
+  }, [isListening, isRunning, pendingAutoSend, activeMode, rearmWakeWord]);
 
   // composerの展開メニュー(+/音声)を、外側クリックまたはEscapeで閉じる。
   useEffect(() => {
@@ -332,16 +341,18 @@ export default function App() {
   }, [isAttachMenuOpen, isVoiceMenuOpen]);
 
   const handleVoiceButtonClick = () => {
-    if (isHandsFreeEnabled) {
-      // 常時待受モード中にメインボタンを押したら、常時待受を終了してアイドルに戻る
-      // (003 spec「トグルオフ挙動」決定)。保留中の自動送信があれば一緒にキャンセルする。
-      cancelAutoSend();
-      setIsHandsFreeEnabled(false);
+    if (activeMode !== null) {
+      // どちらのモード中でもメインボタンを押したら終了してアイドルに戻る
+      // (003 spec「トグルオフ挙動」決定、常時認識にも同じ挙動を適用)。
+      if (activeMode === "handsfree") {
+        cancelAutoSend();
+      }
+      setActiveMode(null);
       return;
     }
-    if (voiceMode === "handsfree") {
+    if (voiceMode === "handsfree" || voiceMode === "ambient") {
       // アイドル状態でのクリックは、今選ばれているモード(既定は常時待受)を実行する。
-      setIsHandsFreeEnabled(true);
+      setActiveMode(voiceMode);
       return;
     }
     toggleListening();
@@ -350,10 +361,10 @@ export default function App() {
   const handleSelectPushToTalk = () => {
     setIsVoiceMenuOpen(false);
     setVoiceMode("speak");
-    if (isHandsFreeEnabled) {
+    if (activeMode === "handsfree") {
       cancelAutoSend();
-      setIsHandsFreeEnabled(false);
     }
+    setActiveMode(null);
     if (!isListening) {
       toggleListening();
     }
@@ -365,8 +376,26 @@ export default function App() {
     if (isListening) {
       toggleListening();
     }
-    setIsHandsFreeEnabled(true);
+    setActiveMode("handsfree");
   };
+
+  const handleSelectAmbient = () => {
+    setIsVoiceMenuOpen(false);
+    setVoiceMode("ambient");
+    if (isListening) {
+      toggleListening();
+    }
+    if (activeMode === "handsfree") {
+      cancelAutoSend();
+    }
+    setActiveMode("ambient");
+  };
+
+  // 音声ボタンに出すアイコンの決定(2026-09-15、常時認識追加に伴う3値化)。
+  // 実際に動いている方(activeMode)があればそれを、無ければ選ばれているモード
+  // (voiceMode)のアイコンを見た目のデフォルトとして出す。
+  const displayVoiceMode = activeMode ?? voiceMode;
+  const isVoiceMenuAvailable = isWakeWordAvailable || isAmbientVoiceAvailable;
 
   // メッセージの送受信のたびに一番下へスクロールする(2026-09-14要望)。streaming中の
   // 応答も`messages`が都度更新される(useChatAgentのonMessagesChanged)ため、
@@ -515,11 +544,12 @@ export default function App() {
         <DailySummaryBanner />
         <MemoryHousekeepingBanner />
         <PaperResearchBanner />
+        <AmbientVoiceBanner />
 
         {error !== null && <div className="error">{error}</div>}
         {uploadError !== null && <div className="error">{uploadError}</div>}
 
-        {(uiState.active_paper !== null || uiState.diary_mode || isHandsFreeEnabled) && (
+        {(uiState.active_paper !== null || uiState.diary_mode || activeMode !== null) && (
           <div className="mode-chips">
             {uiState.active_paper !== null && (
               <div className="paper-mode-badge">
@@ -537,7 +567,7 @@ export default function App() {
                 </button>
               </div>
             )}
-            {isHandsFreeEnabled && (
+            {activeMode === "handsfree" && (
               <div className="hands-free-badge">
                 <span>
                   {pendingAutoSend
@@ -552,10 +582,18 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     cancelAutoSend();
-                    setIsHandsFreeEnabled(false);
+                    setActiveMode(null);
                   }}
                   title="常時待受を終了"
                 >
+                  ✕
+                </button>
+              </div>
+            )}
+            {activeMode === "ambient" && (
+              <div className="hands-free-badge">
+                <span>{isAmbientVoiceActive ? "🎧 常時認識中(気づいたら通知します)" : "⏳ 常時認識を準備中…"}</span>
+                <button type="button" onClick={() => setActiveMode(null)} title="常時認識を終了">
                   ✕
                 </button>
               </div>
@@ -639,7 +677,7 @@ export default function App() {
             onCompositionEnd={() => {
               isComposingRef.current = false;
             }}
-            placeholder={isHandsFreeEnabled ? HANDS_FREE_PLACEHOLDER : DEFAULT_PLACEHOLDER}
+            placeholder={activeMode === "handsfree" ? HANDS_FREE_PLACEHOLDER : DEFAULT_PLACEHOLDER}
             rows={1}
             disabled={isRunning}
           />
@@ -648,29 +686,35 @@ export default function App() {
               <button
                 type="button"
                 className={
-                  isHandsFreeEnabled
+                  activeMode !== null || isListening
                     ? "composer-icon-button composer-voice-active"
-                    : isListening
-                      ? "composer-icon-button composer-voice-active"
-                      : "composer-icon-button"
+                    : "composer-icon-button"
                 }
-                aria-pressed={isListening || isHandsFreeEnabled}
+                aria-pressed={isListening || activeMode !== null}
                 disabled={isRunning}
                 onClick={handleVoiceButtonClick}
                 title={
-                  isHandsFreeEnabled
+                  activeMode === "handsfree"
                     ? isWakeWordArmed
                       ? "常時待受を終了(ウェイクワード待ち受け中)"
                       : "常時待受を終了"
-                    : isListening
-                      ? "音声入力を停止"
-                      : "音声入力を開始"
+                    : activeMode === "ambient"
+                      ? "常時認識を終了"
+                      : isListening
+                        ? "音声入力を停止"
+                        : "音声入力を開始"
                 }
               >
-                {isHandsFreeEnabled || voiceMode === "handsfree" ? <BroadcastIcon /> : <MicLineIcon />}
-                {isWakeWordAvailable && <ChevronIcon />}
+                {displayVoiceMode === "ambient" ? (
+                  <EarIcon />
+                ) : displayVoiceMode === "handsfree" ? (
+                  <BroadcastIcon />
+                ) : (
+                  <MicLineIcon />
+                )}
+                {isVoiceMenuAvailable && <ChevronIcon />}
               </button>
-              {isWakeWordAvailable && (
+              {isVoiceMenuAvailable && (
                 <button
                   type="button"
                   className="composer-voice-chevron-hit"
@@ -683,19 +727,36 @@ export default function App() {
               )}
               {isVoiceMenuOpen && (
                 <div className="composer-menu composer-menu-right">
-                  <button
-                    type="button"
-                    className={
-                      voiceMode === "handsfree" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"
-                    }
-                    onClick={handleSelectHandsFree}
-                  >
-                    <BroadcastIcon />
-                    <span className="composer-menu-item-label">
-                      常時待受
-                      <span className="composer-menu-item-sub">「かもも」で自動起動</span>
-                    </span>
-                  </button>
+                  {isWakeWordAvailable && (
+                    <button
+                      type="button"
+                      className={
+                        voiceMode === "handsfree" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"
+                      }
+                      onClick={handleSelectHandsFree}
+                    >
+                      <BroadcastIcon />
+                      <span className="composer-menu-item-label">
+                        常時待受
+                        <span className="composer-menu-item-sub">「かもも」で自動起動</span>
+                      </span>
+                    </button>
+                  )}
+                  {isAmbientVoiceAvailable && (
+                    <button
+                      type="button"
+                      className={
+                        voiceMode === "ambient" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"
+                      }
+                      onClick={handleSelectAmbient}
+                    >
+                      <EarIcon />
+                      <span className="composer-menu-item-label">
+                        常時認識
+                        <span className="composer-menu-item-sub">気づいたら通知します</span>
+                      </span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={voiceMode === "speak" ? "composer-menu-item composer-menu-item-active" : "composer-menu-item"}

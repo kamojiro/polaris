@@ -957,6 +957,32 @@ header p {
   flex-shrink: 0;
 }
 
+/* 常時音声認識(026-voice-input Stage2代替案): 023の寒色(indigo)・024の暖色(amber)・
+   027の緑系(emerald)と区別できるシアン系のアクセント */
+.ambient-voice-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: #ecfeff;
+  color: #155e75;
+  font-size: 0.85rem;
+}
+
+.ambient-voice-banner button {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+  flex-shrink: 0;
+}
+
 /* 論文モード(015拡張): AG-UIのstateで同期した「今読んでいる論文」バッジ */
 .paper-mode-badge {
   display: flex;

@@ -79,6 +79,25 @@ MacBookをクラムシェル運用(蓋を閉じて外部ディスプレイ接続
 - **設定**: `AmbientVoiceSettings`(`max_wait_seconds`(既定60)・`judge_model_id`・`enabled`)を新設。既定は`enabled=false`(オプトイン)とし、常時マイクオンという性質上、誤って有効化しない設計にする
 - **未検討のまま残る点**: 「反応する価値があるか」の判定精度(017の`worth_remembering`判定が無料枠モデルで不安定だった前例があり、同種の不安定さが出る可能性)、`web_search`を毎チャンク呼ぶことになった場合のコスト、`AmbientVoiceChunkRecord`の保存期間(ログとして無期限に残すか、一定期間で削除するか)
 
+### 実装完了(2026-09-15)
+
+バックエンドは`027-related-paper-research`のキュー+バッチパターンをそのまま踏襲、フロントエンドは既存のウェイクワード(常時待受)と同じcomposer音声メニューの3つ目の選択肢として追加した(実装前にユーザーへUI配置を確認済み: 「1メッセージ送信の手段ではなくバックグラウンド常駐トグル」という性質の違いはあるが、既存UIへの追加を優先)。
+
+**バックエンド**:
+- `settings.AmbientVoiceSettings`(`enabled=false`既定、`judge_model_id`・`max_wait_seconds`・`max_records_per_run`等)
+- `domain.entities.AmbientVoiceChunkRecord`・`db/ambient_voice_repository.py`: `PaperResearchRecord`/`PaperResearchRepository`と同型のstatus列キュー
+- `agent/ambient_voice_judge.py`: 判定(worth_reacting)+反応生成(comment)を1回のエージェント実行で行う。`web_search.register()`を再利用してtool呼び出し能力を持たせた(deps_type/output_typeを問わず任意のAgentに登録できる既存設計をそのまま活用、新規tool実装は不要だった)
+- `services/ambient_voice.py`・`cli/run_ambient_voice.py`: `run_paper_research_batch`と同じオーケストレーション(1件の失敗でバッチ全体を落とさない)
+- `api/app.py`: `GET /api/ambient-voice/enabled`・`POST /api/ambient-voice/chunk`(pending行を1つ作るだけ)・`GET /api/ambient-voice/latest`
+
+**フロントエンド**:
+- `useAmbientVoice.ts`(新規): `continuous: true`のWeb Speech APIセッションを張りっぱなしにし、独自VADは組まない(spec方針通り、ブラウザの無音区切りに任せる)。`resultIndex`以降の新規確定結果だけをバッファへ積み、60秒間隔でフラッシュして`POST /api/ambient-voice/chunk`へ送る
+- **マイクの排他制御**: ウェイクワード(常時待受)とアンビエント(常時認識)はどちらも常時マイクを使うため、`isHandsFreeEnabled: boolean`を`activeMode: "handsfree" | "ambient" | null`に置き換えて排他にした(一方を選ぶともう一方は自動でOFFになる)
+- composerの音声展開メニューに「🎧 常時認識」を追加、新規`EarIcon`(003で「耳アイコンは聞いている以上の意味が伝わらない」と判断してウェイクワードには不採用にしたが、常時認識は文字通り「常に聞いている」ことを示したい場面のため矛盾しない)
+- `AmbientVoiceBanner.tsx`(新規): `PaperResearchBanner.tsx`と同型、`chunk_id`で既読管理(`completed_at`だと短時間に連続実行された場合に衝突しうるため)
+
+**実データでの検証(2026-09-15、scratch DB)**: 雑談("週末どこか旅行に行きたいな")では`worth_reacting=false`、明確な調べ物("明日の大阪の天気")では実際に`web_search`→Tavily APIが呼ばれ、`worth_reacting=true`で「明日の大阪は曇りのち雨で、最高気温25℃、最低気温23℃と過ごしやすいです。傘を持って出かけましょう。」という日本語コメントが生成されることを確認した。`GET /api/ambient-voice/latest`も正しく反映される。フロントエンドの`useAmbientVoice`自体(継続認識セッションの実機挙動、60秒フラッシュ)は`npm run build`のみ確認済みで、実機での長時間運用・排他切り替えの動作確認は未実施(ユーザー側での確認待ち)。
+
 ## Stage 2(将来): 常時リスニング+発話分類
 
 **ウェイクワード検出の準備進捗(2026-09-13)**: 常時リスニングの入り口として、カスタムウェイクワード(「かもも」という自分専用フレーズ)をローカルで検出する仕組みを別途プロトタイピング済み。方式はWhisper tiny.enの凍結エンコーダーで2秒窓の音声から768次元特徴量(384次元のmean+max pooling)を作り、その上にロジスティック回帰(scikit-learn、C=0.001)を1つだけ学習する軽量な構成(`greg1232/hey-claude`の方式を参考。openWakeWordの2020年製CNN方式より高精度、かつtflite-runtime依存が無くPython 3.14環境でも問題が出ない)。

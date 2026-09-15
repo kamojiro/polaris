@@ -74,3 +74,26 @@ export function ChevronIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** 展開メニューの「常時認識」(026-voice-input Stage2代替案、アンビエントモード)項目用。
+ * ウェイクワードの「信号バースト」と違い、こちらは文字通り「常に聞いている」ことを
+ * 示したいので耳の線画にする(003の「耳アイコンは聞いている以上の意味が伝わらない」
+ * という過去の判断はトリガー検知向けの話で、常時認識の性質とは矛盾しない)。 */
+export function EarIcon({ className }: IconProps) {
+  return (
+    <svg
+      width={ICON_SIZE}
+      height={ICON_SIZE}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0" />
+      <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 0 1-2 2" />
+    </svg>
+  );
+}

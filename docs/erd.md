@@ -5,6 +5,20 @@
 <!-- BEGIN_SQLALCHEMY_DOCS -->
 ```mermaid
 erDiagram
+  ambient_voice_chunk_records {
+    VARCHAR id PK
+    INTEGER attempts
+    VARCHAR comment "nullable"
+    DATETIME completed_at "nullable"
+    DATETIME created_at
+    VARCHAR error "nullable"
+    VARCHAR previous_comment "nullable"
+    DATETIME started_at "nullable"
+    VARCHAR status "indexed"
+    VARCHAR transcript
+    BOOLEAN worth_reacting "nullable"
+  }
+
   chunks {
     VARCHAR id PK
     VARCHAR item_id FK "indexed"
