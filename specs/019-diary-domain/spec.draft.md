@@ -124,6 +124,14 @@ class DiaryRecord(SQLModel, table=True):
 - この「サイドバーを隠してcanvas的に半々分割」というパターンは日記専用にせず、汎用のレイアウトモードとして実装するのが良さそう(`027-related-paper-research`の統合結果表示でも同じパターンを採用することが決まったため、`003-chat-ui-polish`側で共通コンポーネント化を検討する)
 - **実装用モックアップ**: `specs/019-diary-domain/layout-mockup.html`(このリポジトリ内)に実物HTML/CSSを置いた。実装時はこのファイルを直接参照すること(`003-chat-ui-polish`の`composer-mockup.html`と同じ運用、文章の説明だけに頼ると意図と異なる見た目になった前例があるため)
 
+**実装完了(2026-09-15)**: `layout-mockup.html`の配色・寸法をそのまま踏襲した。
+
+- `App.tsx`: `uiState.diary_mode`で分岐し、trueなら`<Sidebar>`(pickup/discord/論文調査一覧)の代わりに`<aside className="diary-canvas">`(ヘッダー+`DiaryPanel`)を描画する。falseなら従来通り`<Sidebar>`。両者は排他で、どちらか一方しか画面に出ない
+- `Sidebar.tsx`: 日記モード用の`wide`propを削除(サイドバー自体を差し替える方式になったため、幅を可変にする理由が無くなった)。`.sidebar-wide`のCSSも削除
+- `DiaryPanel.tsx`: 見出し・開閉トグルを`App.tsx`側(`.diary-canvas-header`)に移し、エントリのカード一覧だけを描画する薄いコンポーネントに変更。カードのスタイル(`.entry-card`/`.entry-card-today`/`.entry-card-badge`)は`layout-mockup.html`のものをそのまま採用し、「気になっていること: パネル内の見づらさ」で候補に挙がっていた「カード的な区切り」を合わせて解消した(1〜2行プレビューへの縮小は候補止まりで未決定だったため見送り、必要になれば別途対応する)
+- `.diary-canvas`は`.app`と同じ`height: calc(100vh - 3rem)`にして、ヘッダー(固定)+本文(`overflow-y:auto`)の2段構成で内部スクロールする(`.messages`と同じパターン)
+- 検証: `npm run build`通過。バックエンド無しの静的ビルドをPlaywrightで確認し、日記モードON→右半分がcanvasに切り替わりサイドバーが隠れること、「✕閉じる」→元のサイドバー表示に戻ることを確認済み(実データでのエントリ表示・狭い画面でのスタック表示は実機確認待ち)
+
 ### 追記: パネル内の見づらさ(2026-09-14、実機スクリーンショットで確認)
 
 サイドバー幅を広げる/広げないの問題とは別に、今の中身の見せ方自体が見づらい。実機では3日分の本文(段落)が、日付見出しだけを挟んで縦にそのまま積まれており、狭い列幅で長めの段落が詰まって見える。当日分は左ボーダー+「編集中」バッジで区別されているが、それ以外は視覚的な区切りが弱い。

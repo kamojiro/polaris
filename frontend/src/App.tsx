@@ -650,12 +650,25 @@ export default function App() {
         </form>
       </div>
 
-      <Sidebar wide={uiState.diary_mode}>
-        <NewsSidebar onSelect={handleSelectSidebarNews} />
-        <DiscordSidebar onSelect={handleSelectDiscordMessage} />
-        <PaperResearchList onOpenHistory={() => setIsPaperResearchHistoryOpen(true)} />
-        {uiState.diary_mode && <DiaryPanel entries={diaryEntries} />}
-      </Sidebar>
+      {uiState.diary_mode ? (
+        <aside className="diary-canvas">
+          <div className="diary-canvas-header">
+            <span>📔 日記</span>
+            <button type="button" className="diary-canvas-close" onClick={handleToggleDiaryMode}>
+              ✕ 閉じる
+            </button>
+          </div>
+          <div className="diary-canvas-body">
+            <DiaryPanel entries={diaryEntries} />
+          </div>
+        </aside>
+      ) : (
+        <Sidebar>
+          <NewsSidebar onSelect={handleSelectSidebarNews} />
+          <DiscordSidebar onSelect={handleSelectDiscordMessage} />
+          <PaperResearchList onOpenHistory={() => setIsPaperResearchHistoryOpen(true)} />
+        </Sidebar>
+      )}
 
       {isPaperResearchHistoryOpen && (
         <PaperResearchHistoryModal onClose={() => setIsPaperResearchHistoryOpen(false)} />
