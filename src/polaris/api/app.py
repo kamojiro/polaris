@@ -8,7 +8,7 @@ import logging
 import random
 import time
 import uuid
-from datetime import date, datetime  # noqa: TC003 (pydanticがランタイムで解決するため実importが必要)
+from datetime import UTC, date, datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -39,6 +39,7 @@ from polaris.agent.memory_extract import (
 from polaris.agent.memory_recall import AgentMemoryRecaller, build_memory_recall_agent
 from polaris.agent.sidebar_title import AgentSidebarTitler, build_sidebar_title_agent
 from polaris.agent.structure_paper import AgentPaperStructurer, build_structure_agent
+from polaris.db.ambient_voice_repository import AmbientVoiceRepository
 from polaris.db.daily_summary_repository import DailySummaryRepository
 from polaris.db.diary_repository import DiaryRepository
 from polaris.db.ir_repository import IrRepository
@@ -49,6 +50,7 @@ from polaris.db.paper_research_repository import PaperResearchRepository
 from polaris.db.repository import PaperRepository
 from polaris.db.session import create_db_engine
 from polaris.db.todo_repository import TodoRepository
+from polaris.domain.entities import AmbientVoiceChunkRecord
 from polaris.progress import get_progress_lines
 from polaris.services.daily_summary import local_today
 from polaris.services.diary import record_diary_turn
@@ -129,6 +131,7 @@ _ir_repo = IrRepository(_engine)  # 013-ir-analysis-domain: 同上
 _diary_repo = DiaryRepository(_engine)  # 019-diary-domain: 同上
 _memory_housekeeping_repo = MemoryHousekeepingRepository(_engine)  # 024-memory-theme-housekeeping: 同上(読み取り専用)
 _paper_research_repo = PaperResearchRepository(_engine)  # 027-related-paper-research: 同上
+_ambient_voice_repo = AmbientVoiceRepository(_engine)  # 026-voice-input Stage2代替案: 同上
 _structurer = AgentPaperStructurer(build_structure_agent(settings))
 _extractor = AgentPaperMetadataExtractor(build_extract_metadata_agent(settings))
 _ir_extractor = AgentIrMetadataExtractor(build_extract_ir_metadata_agent(settings))
@@ -743,3 +746,65 @@ async def wake_word_stream(websocket: WebSocket) -> None:
         pass
     except Exception:
         logger.exception("wake word stream failed")
+
+
+class AmbientVoiceChunkRequest(BaseModel):
+    """`POST /api/ambient-voice/chunk`のリクエストボディ(026-voice-input Stage2代替案)."""
+
+    transcript: str
+
+
+class AmbientVoiceResponse(BaseModel):
+    """反応価値ありと判定された常時音声認識チャンク1件分."""
+
+    chunk_id: str
+    comment: str
+    completed_at: datetime
+
+
+@app.get("/api/ambient-voice/enabled")
+def ambient_voice_enabled() -> dict[str, bool]:
+    """常時音声認識(026-voice-input Stage2代替案)が有効か.
+
+    常時マイクオンという性質上、既定で無効(オプトイン)。フロントが常時認識トグルの
+    出し分けを決めるための軽量エンドポイント(`wake_word_enabled`と同じ役割)。
+    """
+    return {"enabled": settings.ambient_voice.enabled}
+
+
+@app.post("/api/ambient-voice/chunk")
+def ambient_voice_chunk(payload: AmbientVoiceChunkRequest) -> dict[str, str]:
+    """クライアントがバッファをフラッシュするたびに叩く軽量エンドポイント.
+
+    `research_related_papers`ツールと同じく`pending`行を1つ作るだけで、判定処理は
+    ここでは行わない(cron駆動の`cli/run_ambient_voice.py`が担う)。`isRunning`のような
+    チャットターンの状態とは一切連動させない(常時音声認識はバックグラウンドジョブとして
+    設計する、spec方針)。無効時は404にする(フロントが誤って有効化していない限り
+    叩かれない想定だが、明示的にエラーにして気づけるようにする)。
+    """
+    if not settings.ambient_voice.enabled:
+        raise HTTPException(status_code=404, detail="ambient voice is disabled")
+    transcript = payload.transcript.strip()
+    if transcript == "":
+        raise HTTPException(status_code=400, detail="transcript is empty")
+    record = AmbientVoiceChunkRecord(
+        id=str(uuid.uuid4()),
+        transcript=transcript,
+        status="pending",
+        created_at=datetime.now(UTC),
+    )
+    _ambient_voice_repo.save(record)
+    return {"status": "accepted"}
+
+
+@app.get("/api/ambient-voice/latest")
+def ambient_voice_latest() -> AmbientVoiceResponse | None:
+    """直近の反応価値ありチャンクを返す(通知バナー用、`paper_research_latest`と同型).
+
+    判定処理はここでは行わない(CLI専用、cron駆動)。既読管理はフロント側のlocalStorageで
+    行う(`completed_at`を最終既読値と比較する、023/027と同じ方式)。
+    """
+    record = _ambient_voice_repo.get_latest_reaction()
+    if record is None or record.comment is None or record.completed_at is None:
+        return None
+    return AmbientVoiceResponse(chunk_id=record.id, comment=record.comment, completed_at=record.completed_at)

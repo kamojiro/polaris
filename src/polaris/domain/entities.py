@@ -311,3 +311,29 @@ class PaperResearchDiscoveredPaper(SQLModel, table=True):
     item_id: str = Field(foreign_key="items.id", index=True, unique=True)
     research_id: str = Field(foreign_key="paper_research_records.id", index=True)
     discovered_at: datetime
+
+
+class AmbientVoiceChunkRecord(SQLModel, table=True):
+    """常時音声認識のチャンク1件(026-voice-input Stage2代替案).
+
+    `PaperResearchRecord`と同型のstatus列キュー(`status`: "pending" → "in_progress" →
+    "done"/"failed")。`Item`ハブは経由しない(特定の知識アイテムを表すものではない、
+    `PaperResearchRecord`と同じ判断)。フロントがWeb Speech APIでバッファした文字起こしを
+    一定間隔(既定60秒)ごとに1行として送ってくる。`worth_reacting`/`comment`はバッチ処理
+    (`services/ambient_voice.py`)がLLM判定・生成した結果。`previous_comment`は直前チャンクの
+    `comment`を非正規化して持ち、話題の継続性をLLMに緩く判断させるために使う。
+    """
+
+    __tablename__ = "ambient_voice_chunk_records"  # pyright: ignore[reportAssignmentType]
+
+    id: str = Field(primary_key=True)
+    transcript: str
+    status: str = Field(index=True)  # "pending" | "in_progress" | "done" | "failed"
+    attempts: int = 0
+    previous_comment: str | None = None
+    worth_reacting: bool | None = None
+    comment: str | None = None
+    error: str | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    completed_at: datetime | None = None

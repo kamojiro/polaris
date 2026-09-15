@@ -278,6 +278,27 @@ class WakeWordSettings(BaseModel):
     n_pool_frames: int = 100
 
 
+class AmbientVoiceSettings(BaseModel):
+    """常時音声認識+定期バッチ判断(026-voice-input Stage2代替案)の設定.
+
+    ウェイクワード(WakeWordSettings)とは別に、常時マイクをONにして発話をバッファに溜め、
+    一定間隔でLLMに「反応する価値があるか」を判定させる機能。常時マイクオンという性質上、
+    discord.bot_tokenのような「空文字なら無効」ではなく明示的なboolで既定を無効にする
+    (誤って有効化しないようにするため)。
+    """
+
+    enabled: bool = False
+    # 想起(memory.recall_model_id)・triage(paper_research.triage_model_id)と同じ
+    # 「軽い判定は軽いモデル」という判断。
+    judge_model_id: str = "qwen/qwen3-8b"
+    # クライアント側がバッファをフラッシュする間隔の目安(秒)。バックエンド側の設定値だが、
+    # フロントの`GET /api/ambient-voice/enabled`経由で参照させ、両者で値をずらさないようにする。
+    max_wait_seconds: int = 60
+    max_records_per_run: int = 5
+    stale_in_progress_minutes: int = 10
+    max_record_attempts: int = 2
+
+
 class Settings(BaseSettings):
     """アプリケーション全体の設定.
 
@@ -304,6 +325,7 @@ class Settings(BaseSettings):
     semantic_scholar: SemanticScholarSettings = SemanticScholarSettings()
     paper_research: PaperResearchSettings = PaperResearchSettings()
     wake_word: WakeWordSettings = WakeWordSettings()
+    ambient_voice: AmbientVoiceSettings = AmbientVoiceSettings()
 
     model_config = SettingsConfigDict(
         env_file=".env",

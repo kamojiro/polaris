@@ -137,6 +137,7 @@ layers = [
 # (ワイルドカードにしないのは、services->agentの実行時importこそこの契約が本来
 # 検知すべき違反のため、方向ごと丸ごと除外しない判断、2026-09-13)。
 ignore_imports = [
+    "polaris.services.ambient_voice -> polaris.agent.ambient_voice_judge",
     "polaris.services.daily_summary -> polaris.agent.daily_summary",
     "polaris.services.diary -> polaris.agent.diary_rewrite",
     "polaris.services.ingest_ir -> polaris.agent.extract_ir_metadata",
