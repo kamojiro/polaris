@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Message } from "@ag-ui/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,6 +22,10 @@ import { BroadcastIcon, ChevronIcon, MicLineIcon } from "./icons";
 
 const HANDS_FREE_PLACEHOLDER = "『かもも』と話しかけてください…";
 const DEFAULT_PLACEHOLDER = "arXiv の URL / PDFの直リンクを貼るか、質問を入力…(Shift+Enter で改行)";
+// ウェイクワード検知後、文字起こし結果を確認・修正する時間を確保しつつ自動送信するまでの
+// 秒数(026-voice-input「文字起こし結果の修正」要望、2026-09-15)。編集・タップで
+// キャンセルできる(App関数内のcancelAutoSend参照)。
+const AUTO_SEND_COUNTDOWN_SECONDS = 3;
 
 const LIST_PAPERS_TOOL_NAME = "list_papers";
 const LIST_TODOS_TOOL_NAME = "list_todos";
@@ -233,6 +237,51 @@ export default function App() {
   // アイドル状態でメインボタンを押した(=このモードを実行した)ときに切り替わる。
   const [voiceMode, setVoiceMode] = useState<"speak" | "handsfree">("handsfree");
   const pendingRearmRef = useRef(false);
+  // ウェイクワード検知直後の文字起こしを即送信せず、入力欄に入れてカウントダウン後に
+  // 自動送信する(026-voice-input「文字起こし結果の修正」要望、2026-09-15)。
+  // 入力欄をタップ(フォーカス)・編集するとキャンセルされ、手動での送信に切り替わる。
+  const [pendingAutoSend, setPendingAutoSend] = useState<{ secondsLeft: number } | null>(null);
+  const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSendIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const cancelAutoSend = useCallback(() => {
+    if (autoSendTimeoutRef.current !== null) {
+      clearTimeout(autoSendTimeoutRef.current);
+      autoSendTimeoutRef.current = null;
+    }
+    if (autoSendIntervalRef.current !== null) {
+      clearInterval(autoSendIntervalRef.current);
+      autoSendIntervalRef.current = null;
+    }
+    setPendingAutoSend(null);
+  }, []);
+
+  const scheduleAutoSend = useCallback(
+    (text: string) => {
+      setInput(text);
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          autoResize(textareaRef.current);
+        }
+      });
+      setPendingAutoSend({ secondsLeft: AUTO_SEND_COUNTDOWN_SECONDS });
+      autoSendIntervalRef.current = setInterval(() => {
+        setPendingAutoSend((prev) => (prev ? { secondsLeft: prev.secondsLeft - 1 } : prev));
+      }, 1000);
+      autoSendTimeoutRef.current = setTimeout(() => {
+        cancelAutoSend();
+        setInput("");
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+        }
+        void sendMessage(text);
+      }, AUTO_SEND_COUNTDOWN_SECONDS * 1000);
+    },
+    [cancelAutoSend, sendMessage],
+  );
+
+  useEffect(() => cancelAutoSend, [cancelAutoSend]);
+
   const { isAvailable: isWakeWordAvailable, isArmed: isWakeWordArmed, rearm: rearmWakeWord } = useWakeWord({
     enabled: isHandsFreeEnabled,
     onDetected: () => {
@@ -241,20 +290,18 @@ export default function App() {
         return;
       }
       pendingRearmRef.current = true;
-      startListening((transcript) => {
-        void sendMessage(transcript);
-      });
+      startListening({ handsFree: true, onResult: scheduleAutoSend });
     },
   });
 
   useEffect(() => {
-    if (!isListening && !isRunning && pendingRearmRef.current) {
+    if (!isListening && !isRunning && pendingAutoSend === null && pendingRearmRef.current) {
       pendingRearmRef.current = false;
       if (isHandsFreeEnabled) {
         void rearmWakeWord();
       }
     }
-  }, [isListening, isRunning, isHandsFreeEnabled, rearmWakeWord]);
+  }, [isListening, isRunning, pendingAutoSend, isHandsFreeEnabled, rearmWakeWord]);
 
   // composerの展開メニュー(+/音声)を、外側クリックまたはEscapeで閉じる。
   useEffect(() => {
@@ -287,7 +334,8 @@ export default function App() {
   const handleVoiceButtonClick = () => {
     if (isHandsFreeEnabled) {
       // 常時待受モード中にメインボタンを押したら、常時待受を終了してアイドルに戻る
-      // (003 spec「トグルオフ挙動」決定)。
+      // (003 spec「トグルオフ挙動」決定)。保留中の自動送信があれば一緒にキャンセルする。
+      cancelAutoSend();
       setIsHandsFreeEnabled(false);
       return;
     }
@@ -303,6 +351,7 @@ export default function App() {
     setIsVoiceMenuOpen(false);
     setVoiceMode("speak");
     if (isHandsFreeEnabled) {
+      cancelAutoSend();
       setIsHandsFreeEnabled(false);
     }
     if (!isListening) {
@@ -337,6 +386,7 @@ export default function App() {
     if (text === "" || isRunning) {
       return;
     }
+    cancelAutoSend();
     setInput("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -490,13 +540,22 @@ export default function App() {
             {isHandsFreeEnabled && (
               <div className="hands-free-badge">
                 <span>
-                  {isListening
-                    ? "🎙️ 聞き取り中…"
-                    : isWakeWordArmed
-                      ? "📡 常時待受中"
-                      : "⏳ 常時待受を準備中…"}
+                  {pendingAutoSend
+                    ? `⏳ ${pendingAutoSend.secondsLeft}秒後に送信…(編集でキャンセル)`
+                    : isListening
+                      ? "🎙️ 聞き取り中…"
+                      : isWakeWordArmed
+                        ? "📡 常時待受中"
+                        : "⏳ 常時待受を準備中…"}
                 </span>
-                <button type="button" onClick={() => setIsHandsFreeEnabled(false)} title="常時待受を終了">
+                <button
+                  type="button"
+                  onClick={() => {
+                    cancelAutoSend();
+                    setIsHandsFreeEnabled(false);
+                  }}
+                  title="常時待受を終了"
+                >
                   ✕
                 </button>
               </div>
@@ -562,8 +621,16 @@ export default function App() {
             ref={textareaRef}
             value={input}
             onChange={(event) => {
+              if (pendingAutoSend !== null) {
+                cancelAutoSend();
+              }
               setInput(event.target.value);
               autoResize(event.target);
+            }}
+            onFocus={() => {
+              if (pendingAutoSend !== null) {
+                cancelAutoSend();
+              }
             }}
             onKeyDown={handleKeyDown}
             onCompositionStart={() => {
